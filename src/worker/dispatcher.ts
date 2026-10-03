@@ -10,6 +10,9 @@ export interface DispatcherOptions {
   maxRetries?: number;
   backoffOptions?: BackoffOptions;
   nowProvider?: () => number;
+  onDelivered?: (record: QueueRecord) => void;
+  onRetried?: (record: QueueRecord) => void;
+  onFailed?: (record: QueueRecord) => void;
 }
 
 /**
@@ -35,6 +38,7 @@ export function createDeliveryHandler(
     switch (classification.disposition) {
       case 'success':
         queueRepo.markDelivered(record.id, nowMs);
+        options?.onDelivered?.(record);
         logger.info('Message successfully delivered to webhook', {
           messageId: record.id,
           deliveryId: deliveryResult.deliveryId,
@@ -52,6 +56,7 @@ export function createDeliveryHandler(
           classification.reason,
           nowMs
         );
+        options?.onRetried?.(record);
         logger.warn('Transient webhook failure; scheduled retry', {
           messageId: record.id,
           deliveryId: deliveryResult.deliveryId,
@@ -73,6 +78,7 @@ export function createDeliveryHandler(
           classification.reason,
           nowMs
         );
+        options?.onRetried?.(record);
         logger.error('Authentication failure from webhook; scheduled slow retry', {
           messageId: record.id,
           deliveryId: deliveryResult.deliveryId,
@@ -90,6 +96,7 @@ export function createDeliveryHandler(
           classification.reason,
           nowMs
         );
+        options?.onFailed?.(record);
         logger.error('Terminal delivery failure; message marked failed', {
           messageId: record.id,
           deliveryId: deliveryResult.deliveryId,
