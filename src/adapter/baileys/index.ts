@@ -38,7 +38,8 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
   private isRunning: boolean = false;
   private reconnectTimer: NodeJS.Timeout | null = null;
-  private groupCache = new Map<string, { subject: string; lidToPhone: Map<string, string> }>();
+  private groupCache = new Map<string, { subject: string }>();
+  private lidToPhoneGlobal = new Map<string, string>();
   private readonly sessionPath: string;
   private readonly printQR: boolean;
   private readonly reconnectIntervalMs: number;
@@ -47,6 +48,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     this.sessionPath = options?.sessionPath ?? './.session';
     this.printQR = options?.printQRInTerminal ?? true;
     this.reconnectIntervalMs = options?.reconnectIntervalMs ?? 5000;
+    this.loadLidCache();
   }
 
   public async start(): Promise<void> {
@@ -188,15 +190,64 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       }
     });
 
+    sock.ev.on('contacts.upsert', (contacts) => {
+      let updated = false;
+      for (const c of contacts) {
+        const phoneJid = (c.jid && c.jid.endsWith('@s.whatsapp.net'))
+          ? c.jid
+          : (c.id && c.id.endsWith('@s.whatsapp.net')) ? c.id : null;
+        const lid = c.lid || (c.id && c.id.includes('@lid') ? c.id : null);
+        if (lid && phoneJid) {
+          this.registerLidMapping(lid, phoneJid);
+          updated = true;
+        }
+      }
+      if (updated) this.saveLidCache();
+    });
+
+    sock.ev.on('contacts.update', (updates) => {
+      let updated = false;
+      for (const c of updates) {
+        const phoneJid = (c.jid && c.jid.endsWith('@s.whatsapp.net'))
+          ? c.jid
+          : (c.id && c.id.endsWith('@s.whatsapp.net')) ? c.id : null;
+        const lid = c.lid || (c.id && c.id.includes('@lid') ? c.id : null);
+        if (lid && phoneJid) {
+          this.registerLidMapping(lid, phoneJid);
+          updated = true;
+        }
+      }
+      if (updated) this.saveLidCache();
+    });
+
     sock.ev.on('groups.update', (updates) => {
       for (const update of updates) {
         if (update.id && update.subject) {
-          const existing = this.groupCache.get(update.id);
-          this.groupCache.set(update.id, {
-            subject: update.subject,
-            lidToPhone: existing ? existing.lidToPhone : new Map()
-          });
+          this.groupCache.set(update.id, { subject: update.subject });
         }
+      }
+    });
+
+    sock.ev.on('group-participants.update', async (event) => {
+      if (event.id) {
+        try {
+          const meta = await sock.groupMetadata(event.id);
+          if (meta && Array.isArray(meta.participants)) {
+            let updated = false;
+            for (const p of meta.participants as unknown as Array<Record<string, unknown>>) {
+              const rawJid = (typeof p.jid === 'string') ? p.jid : (typeof p.id === 'string' && p.id.endsWith('@s.whatsapp.net')) ? p.id : null;
+              const rawLid = (typeof p.lid === 'string') ? p.lid : (typeof p.id === 'string' && p.id.includes('@lid')) ? p.id : null;
+              const rawPhone = (typeof p.phoneNumber === 'string') ? p.phoneNumber : (typeof p.phone_number === 'string') ? p.phone_number : null;
+              const phoneJid = rawJid || (rawPhone ? `${rawPhone.replace(/[^0-9]/g, '')}@s.whatsapp.net` : null);
+
+              if (rawLid && phoneJid) {
+                this.registerLidMapping(rawLid, phoneJid);
+                updated = true;
+              }
+            }
+            if (updated) this.saveLidCache();
+          }
+        } catch {}
       }
     });
 
@@ -213,30 +264,23 @@ export class BaileysAdapter implements IWhatsAppAdapter {
             try {
               const meta = await sock.groupMetadata(remoteJid);
               if (meta) {
-                const lidMap = new Map<string, string>();
+                cached = { subject: meta.subject || remoteJid };
+                this.groupCache.set(remoteJid, cached);
                 if (Array.isArray(meta.participants)) {
-                  for (const p of meta.participants as Array<{ id?: string; lid?: string; jid?: string; phoneNumber?: string }>) {
-                    const phoneJid = (p.jid && p.jid.endsWith('@s.whatsapp.net'))
-                      ? p.jid
-                      : (p.id && p.id.endsWith('@s.whatsapp.net'))
-                        ? p.id
-                        : (p.phoneNumber ? `${p.phoneNumber.replace(/[^0-9]/g, '')}@s.whatsapp.net` : null);
+                  let updated = false;
+                  for (const p of meta.participants as unknown as Array<Record<string, unknown>>) {
+                    const rawJid = (typeof p.jid === 'string') ? p.jid : (typeof p.id === 'string' && p.id.endsWith('@s.whatsapp.net')) ? p.id : null;
+                    const rawLid = (typeof p.lid === 'string') ? p.lid : (typeof p.id === 'string' && p.id.includes('@lid')) ? p.id : null;
+                    const rawPhone = (typeof p.phoneNumber === 'string') ? p.phoneNumber : (typeof p.phone_number === 'string') ? p.phone_number : null;
+                    const phoneJid = rawJid || (rawPhone ? `${rawPhone.replace(/[^0-9]/g, '')}@s.whatsapp.net` : null);
 
-                    const lid = (p.lid && p.lid.includes('@lid'))
-                      ? p.lid
-                      : (p.id && p.id.includes('@lid'))
-                        ? p.id
-                        : null;
-
-                    if (lid && phoneJid) {
-                      lidMap.set(lid, phoneJid);
-                      // Also map without suffix just in case
-                      lidMap.set(lid.split('@')[0], phoneJid);
+                    if (rawLid && phoneJid) {
+                      this.registerLidMapping(rawLid, phoneJid);
+                      updated = true;
                     }
                   }
+                  if (updated) this.saveLidCache();
                 }
-                cached = { subject: meta.subject || remoteJid, lidToPhone: lidMap };
-                this.groupCache.set(remoteJid, cached);
               }
             } catch (err) {
               logger.debug('Could not fetch group metadata for chat', { remoteJid, error: err });
@@ -245,13 +289,15 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
           if (cached) {
             (msg as unknown as Record<string, unknown>).chatName = cached.subject;
-            const participant = msg.key?.participant;
-            if (participant && msg.key) {
-              const resolved = cached.lidToPhone.get(participant) || cached.lidToPhone.get(participant.split('@')[0]);
-              if (resolved) {
-                msg.key.participant = resolved;
-              }
+          }
+
+          const rawParticipant = msg.key?.participant || (msg as unknown as Record<string, unknown>).participant as string | undefined;
+          if (rawParticipant) {
+            const resolvedPhoneJid = await this.resolveParticipant(remoteJid, rawParticipant);
+            if (resolvedPhoneJid && msg.key) {
+              msg.key.participant = resolvedPhoneJid;
             }
+            (msg as unknown as Record<string, unknown>).participant = resolvedPhoneJid;
           }
         }
 
@@ -314,5 +360,107 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     } catch (err) {
       logger.debug('Could not write session state file', { error: err });
     }
+  }
+
+  private loadLidCache(): void {
+    try {
+      const cachePath = path.join(this.sessionPath, 'lid_cache.json');
+      if (fs.existsSync(cachePath)) {
+        const raw = fs.readFileSync(cachePath, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === 'object' && parsed !== null) {
+          for (const [k, v] of Object.entries(parsed)) {
+            if (typeof v === 'string') {
+              this.lidToPhoneGlobal.set(k, v);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      logger.debug('Could not load lid cache', { error: err });
+    }
+  }
+
+  private saveLidCache(): void {
+    try {
+      if (!fs.existsSync(this.sessionPath)) {
+        fs.mkdirSync(this.sessionPath, { recursive: true });
+      }
+      const cachePath = path.join(this.sessionPath, 'lid_cache.json');
+      const obj: Record<string, string> = {};
+      for (const [k, v] of this.lidToPhoneGlobal.entries()) {
+        obj[k] = v;
+      }
+      fs.writeFileSync(cachePath, JSON.stringify(obj, null, 2), 'utf8');
+    } catch (err) {
+      logger.debug('Could not save lid cache', { error: err });
+    }
+  }
+
+  public registerLidMapping(lid: string | undefined | null, phoneJid: string | undefined | null): void {
+    if (!lid || !phoneJid) return;
+    const cleanLid = lid.trim();
+    const cleanPhone = phoneJid.trim();
+    if (!cleanPhone.endsWith('@s.whatsapp.net')) return;
+
+    this.lidToPhoneGlobal.set(cleanLid, cleanPhone);
+    this.lidToPhoneGlobal.set(cleanLid.split('@')[0], cleanPhone);
+    if (cleanLid.includes(':')) {
+      this.lidToPhoneGlobal.set(cleanLid.split(':')[0], cleanPhone);
+      this.lidToPhoneGlobal.set(cleanLid.split(':')[0] + '@lid', cleanPhone);
+    }
+  }
+
+  private async resolveParticipant(remoteJid: string, participant: string): Promise<string> {
+    if (!participant) return participant;
+
+    if (participant.endsWith('@s.whatsapp.net')) {
+      return participant;
+    }
+
+    const cached = this.lidToPhoneGlobal.get(participant) ||
+      this.lidToPhoneGlobal.get(participant.split('@')[0]) ||
+      this.lidToPhoneGlobal.get(participant.split(':')[0]);
+
+    if (cached) {
+      return cached;
+    }
+
+    if (this.sock && remoteJid.endsWith('@g.us')) {
+      try {
+        const meta = await this.sock.groupMetadata(remoteJid);
+        if (meta && Array.isArray(meta.participants)) {
+          let updated = false;
+          for (const p of meta.participants as unknown as Array<Record<string, unknown>>) {
+            const rawJid = (typeof p.jid === 'string') ? p.jid : (typeof p.id === 'string' && p.id.endsWith('@s.whatsapp.net')) ? p.id : null;
+            const rawLid = (typeof p.lid === 'string') ? p.lid : (typeof p.id === 'string' && p.id.includes('@lid')) ? p.id : null;
+            const rawPhone = (typeof p.phoneNumber === 'string') ? p.phoneNumber : (typeof p.phone_number === 'string') ? p.phone_number : null;
+
+            const phoneJid = rawJid || (rawPhone ? `${rawPhone.replace(/[^0-9]/g, '')}@s.whatsapp.net` : null);
+
+            if (rawLid && phoneJid) {
+              this.registerLidMapping(rawLid, phoneJid);
+              updated = true;
+            }
+          }
+
+          if (updated) {
+            this.saveLidCache();
+          }
+
+          const resolvedAfterRefresh = this.lidToPhoneGlobal.get(participant) ||
+            this.lidToPhoneGlobal.get(participant.split('@')[0]) ||
+            this.lidToPhoneGlobal.get(participant.split(':')[0]);
+
+          if (resolvedAfterRefresh) {
+            return resolvedAfterRefresh;
+          }
+        }
+      } catch (err) {
+        logger.debug('Failed to query groupMetadata for participant LID', { remoteJid, participant, error: err });
+      }
+    }
+
+    return participant;
   }
 }
