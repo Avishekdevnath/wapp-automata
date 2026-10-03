@@ -18,6 +18,21 @@ module.exports = {
       env: {
         NODE_ENV: 'production'
       }
+    },
+    {
+      name: 'wapp-dashboard',
+      script: './scripts/local-receiver.js',
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      max_restarts: 10,
+      restart_delay: 5000,
+      watch: false,
+      env: {
+        PORT: 4000,
+        NODE_ENV: 'production',
+        WEBHOOK_SECRET: 'local_dev_webhook_secret_key_12345'
+      }
     }
   ]
 };
