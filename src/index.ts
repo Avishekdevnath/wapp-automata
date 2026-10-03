@@ -9,6 +9,7 @@ import { QueueWorker, createDeliveryHandler, QueueWatchdog, IQueueWorker } from 
 import { recoverStartupState, GracefulShutdownManager } from './lifecycle';
 import { CollectorMetrics, HeartbeatReporter } from './health';
 import { IWhatsAppAdapter } from './adapter/interface';
+import { BaileysAdapter } from './adapter/baileys';
 
 export const SERVICE_NAME = 'wapp-automata';
 export const SERVICE_VERSION = '0.1.0';
@@ -79,7 +80,7 @@ export function createApplication(options?: ApplicationOptions): ApplicationCont
     memoryWarningThresholdMb: 200
   });
 
-  const adapter = options?.adapter;
+  const adapter = options?.adapter ?? (config.NODE_ENV !== 'test' ? new BaileysAdapter({ sessionPath: config.SESSION_DATA_PATH }) : undefined);
 
   if (adapter) {
     adapter.onMessage(async (rawEvent: unknown) => {

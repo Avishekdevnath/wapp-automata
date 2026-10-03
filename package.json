@@ -20,11 +20,14 @@
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20.11.0",
+    "@types/qrcode-terminal": "^0.12.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3"
+    "@whiskeysockets/baileys": "^6.7.24",
+    "better-sqlite3": "^13.0.3",
+    "qrcode-terminal": "^0.12.0"
   }
 }
