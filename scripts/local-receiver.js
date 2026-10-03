@@ -127,7 +127,6 @@ function saveMessagesToDisk(messages) {
 }
 
 const recentMessages = loadSavedMessages();
-const activeSessions = new Set();
 const serverStartTime = Date.now();
 
 const stats = {
@@ -178,13 +177,36 @@ function parseCookies(req) {
   return list;
 }
 
+function generateAuthToken() {
+  const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
+  const data = `${expiresAt}`;
+  const sig = crypto.createHmac('sha256', DASHBOARD_PASSWORD).update(data).digest('hex');
+  return `${data}.${sig}`;
+}
+
+function verifyAuthToken(token) {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+  const [expiresAtStr, sig] = parts;
+  const expiresAt = parseInt(expiresAtStr, 10);
+  if (isNaN(expiresAt) || Date.now() > expiresAt) return false;
+
+  const expectedSig = crypto.createHmac('sha256', DASHBOARD_PASSWORD).update(expiresAtStr).digest('hex');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(sig, 'utf8'), Buffer.from(expectedSig, 'utf8'));
+  } catch {
+    return false;
+  }
+}
+
 function isAuthenticated(req) {
   const cookies = parseCookies(req);
-  if (cookies.wapp_token && activeSessions.has(cookies.wapp_token)) return true;
+  if (cookies.wapp_token && verifyAuthToken(cookies.wapp_token)) return true;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
-    return activeSessions.has(token);
+    return verifyAuthToken(token);
   }
   return false;
 }
@@ -241,7 +263,12 @@ function serveStaticFile(reqPath, res) {
 
   try {
     const content = fs.readFileSync(filePath);
-    res.writeHead(200, { 'Content-Type': contentType });
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     res.end(content);
   } catch (err) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -351,8 +378,7 @@ const server = http.createServer((req, res) => {
       let parsed = {};
       try { parsed = JSON.parse(body); } catch {}
       if (parsed.password === DASHBOARD_PASSWORD) {
-        const token = crypto.randomBytes(24).toString('hex');
-        activeSessions.add(token);
+        const token = generateAuthToken();
         res.writeHead(200, {
           'Content-Type': 'application/json',
           'Set-Cookie': `wapp_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000` // 30 days
@@ -366,13 +392,9 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/logout') {
-    const cookies = parseCookies(req);
-    if (cookies.wapp_token) {
-      activeSessions.delete(cookies.wapp_token);
-    }
     res.writeHead(200, {
       'Content-Type': 'application/json',
-      'Set-Cookie': 'wapp_token=; Path=/; HttpOnly; Max-Age=0'
+      'Set-Cookie': 'wapp_token=; Path=/; HttpOnly; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
     });
     return res.end(JSON.stringify({ status: 'ok', logged_out: true }));
   }

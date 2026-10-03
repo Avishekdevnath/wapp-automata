@@ -6,6 +6,10 @@ let lastRenderedQR = null;
 async function pollSessionStatus() {
   try {
     const res = await fetch('/api/session/status');
+    if (res.status === 401) {
+      if (typeof checkAuth === 'function') checkAuth();
+      return;
+    }
     if (!res.ok) return;
     const session = await res.json();
 

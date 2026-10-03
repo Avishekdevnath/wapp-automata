@@ -10,6 +10,9 @@ function renderClientFeed() {
   const filterType = document.getElementById('client-filter-type')?.value || 'all';
 
   const filtered = (window.messagesCache || []).filter(m => {
+    // Hide internal protocol messages with no content
+    if (!m.text && !m.has_media) return false;
+
     if (filterType === 'group' && m.chat_type !== 'group') return false;
     if (filterType === 'direct' && m.chat_type !== 'direct') return false;
 
@@ -32,39 +35,41 @@ function renderClientFeed() {
     return;
   }
 
+  const esc = typeof escapeHtml === 'function' ? escapeHtml : (s) => String(s || '');
+
   container.innerHTML = filtered.map(m => {
-    const initials = getInitials(m.sender_name || m.sender_phone);
-    const avatarGradient = getAvatarColor(m.sender_phone || m.sender_name);
+    const initials = typeof getInitials === 'function' ? getInitials(m.sender_name || m.sender_phone) : 'WA';
+    const avatarGradient = typeof getAvatarColor === 'function' ? getAvatarColor(m.sender_phone || m.sender_name) : 'from-emerald-500 to-teal-700';
     const isGroup = m.chat_type === 'group';
 
     return `
       <div class="glass-card rounded-2xl p-4 sm:p-5 border border-dark-700/70 hover:border-dark-600 transition-all">
         <div class="flex items-start gap-3.5">
           <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0">
-            ${escapeHtml(initials)}
+            ${esc(initials)}
           </div>
 
           <div class="flex-1 min-w-0 space-y-1.5">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-white">${escapeHtml(m.sender_name || 'Contact')}</span>
+                <span class="text-sm font-bold text-white">${esc(m.sender_name || 'Contact')}</span>
                 ${m.sender_phone ? `
                   <span class="px-2 py-0.5 rounded-full bg-dark-950 border border-dark-700 text-slate-300 font-mono text-[11px]">
-                    ${escapeHtml(m.sender_phone)}
+                    ${esc(m.sender_phone)}
                   </span>
                 ` : ''}
                 ${isGroup ? `
                   <span class="px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-[11px] font-medium flex items-center gap-1">
                     <i data-lucide="users" class="w-3 h-3"></i>
-                    <span>${escapeHtml(m.chat_name || 'Group')}</span>
+                    <span>${esc(m.chat_name || 'Group')}</span>
                   </span>
                 ` : ''}
               </div>
-              <span class="text-[11px] text-slate-400 font-mono">${m.timestamp}</span>
+              <span class="text-[11px] text-slate-400 font-mono">${esc(m.timestamp || '')}</span>
             </div>
 
-            <div class="text-xs text-slate-200 bg-dark-950/80 p-3 rounded-xl border border-dark-800/80 leading-relaxed font-sans">
-              ${escapeHtml(m.text || '(media/image attachment)')}
+            <div class="text-xs text-slate-200 bg-dark-950/80 p-3 rounded-xl border border-dark-800/80 leading-relaxed font-sans whitespace-pre-wrap break-words">
+              ${esc(m.text || (m.has_media ? '📎 Media attachment' : ''))}
             </div>
           </div>
         </div>

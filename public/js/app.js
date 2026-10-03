@@ -46,6 +46,10 @@ function setUiMode(mode) {
 async function fetchMessages() {
   try {
     const res = await fetch('/api/messages');
+    if (res.status === 401) {
+      if (typeof checkAuth === 'function') checkAuth();
+      return;
+    }
     if (!res.ok) return;
     const data = await res.json();
     
@@ -57,14 +61,16 @@ async function fetchMessages() {
       showToast(`${data.length - previousLength} new message received`, 'success');
     }
 
-    updateStats(data);
+    if (typeof updateStats === 'function') updateStats(data);
     if (window.currentUiMode === 'client') {
-      renderClientFeed();
+      if (typeof renderClientFeed === 'function') renderClientFeed();
     } else {
-      renderDevFeed();
-      renderAuditTable();
+      if (typeof renderDevFeed === 'function') renderDevFeed();
+      if (typeof renderAuditTable === 'function') renderAuditTable();
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error('Error fetching messages:', err);
+  }
 }
 
 function exportMessagesJson() {
