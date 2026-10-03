@@ -1,0 +1,31 @@
+# Private project brain
+brain/
+
+# Dependencies & Build
+node_modules/
+dist/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Local runtime data
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# WhatsApp/session data
+.session/
+.auth/
+.sessions/
+
+# Logs
+logs/
+*.log
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

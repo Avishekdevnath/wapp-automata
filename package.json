@@ -1,0 +1,26 @@
+{
+  "name": "whatsapp-raw-collector",
+  "version": "0.1.0",
+  "description": "Native WhatsApp message collector and webhook dispatcher with local SQLite durable queue",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "tsx --test tests/**/*.test.ts"
+  },
+  "keywords": [
+    "whatsapp",
+    "collector",
+    "sqlite",
+    "webhook"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.3.3"
+  }
+}
