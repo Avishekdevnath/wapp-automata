@@ -1331,9 +1331,10 @@ function processWebhookDelivery(body, headers) {
   return { isValid: isValidSig };
 }
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n🚀 SaaS Webhook Studio & Monitor running at: http://127.0.0.1:${PORT}/`);
-  console.log(`📡 Ingestion Endpoint:                      http://127.0.0.1:${PORT}/webhook`);
+const HOST = process.env.HOST || '0.0.0.0';
+server.listen(PORT, HOST, () => {
+  console.log(`\n🚀 SaaS Webhook Studio & Monitor running at: http://${HOST}:${PORT}/`);
+  console.log(`📡 Ingestion Endpoint:                      http://${HOST}:${PORT}/webhook`);
   console.log(`🔑 Listening with WEBHOOK_SECRET:            "${SECRET}"`);
   console.log('Ready to receive production WhatsApp events from wapp-automata.\n');
 });
