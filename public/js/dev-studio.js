@@ -62,7 +62,7 @@ function renderDevFeed() {
     <div class="glass-card rounded-2xl p-4 border border-dark-700 font-mono text-xs space-y-2">
       <div class="flex items-center justify-between">
         <span class="text-emerald-400 font-bold">${escapeHtml(m.event || 'whatsapp.message.received')}</span>
-        <span class="text-slate-400">${m.timestamp}</span>
+        <span class="text-slate-400">${escapeHtml(typeof formatDateTime === 'function' ? formatDateTime(m.occurred_at || m.timestamp) : (m.timestamp || ''))}</span>
       </div>
       <div class="flex items-center justify-between text-slate-400 text-[11px]">
         <span>Delivery: <code class="text-slate-200">${m.delivery_id || m.id}</code></span>

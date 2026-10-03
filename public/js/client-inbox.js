@@ -41,6 +41,7 @@ function renderClientFeed() {
     const initials = typeof getInitials === 'function' ? getInitials(m.sender_name || m.sender_phone) : 'WA';
     const avatarGradient = typeof getAvatarColor === 'function' ? getAvatarColor(m.sender_phone || m.sender_name) : 'from-emerald-500 to-teal-700';
     const isGroup = m.chat_type === 'group';
+    const formattedTime = typeof formatDateTime === 'function' ? formatDateTime(m.occurred_at || m.timestamp) : (m.timestamp || '');
 
     return `
       <div class="glass-card rounded-2xl p-4 sm:p-5 border border-dark-700/70 hover:border-dark-600 transition-all">
@@ -65,7 +66,7 @@ function renderClientFeed() {
                   </span>
                 ` : ''}
               </div>
-              <span class="text-[11px] text-slate-400 font-mono">${esc(m.timestamp || '')}</span>
+              <span class="text-[11px] text-slate-400 font-mono">${esc(formattedTime)}</span>
             </div>
 
             <div class="text-xs text-slate-200 bg-dark-950/80 p-3 rounded-xl border border-dark-800/80 leading-relaxed font-sans whitespace-pre-wrap break-words">

@@ -38,6 +38,21 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
+function formatDateTime(d) {
+  const date = d ? new Date(d) : new Date();
+  if (isNaN(date.getTime())) return String(d || '');
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }) + ', ' + date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
+
 function loadSavedMessages() {
   // 1. Try reading persistent JSON file
   try {
@@ -85,7 +100,7 @@ function loadSavedMessages() {
             chat_type: r.chat_type || 'direct',
             text: r.message_text || '',
             has_media: Boolean(r.has_media),
-            timestamp: new Date(r.created_at).toLocaleTimeString(),
+            timestamp: formatDateTime(r.created_at),
             occurred_at: new Date(r.created_at).toISOString(),
             latency_ms: 12,
             isValid: true,
@@ -337,7 +352,7 @@ function processWebhookDelivery(body, headers) {
     chat_type: chatType,
     text,
     has_media: hasMedia,
-    timestamp: new Date().toLocaleTimeString(),
+    timestamp: formatDateTime(occurredAt),
     occurred_at: occurredAt,
     latency_ms: latencyMs,
     isValid: isValidSig,
