@@ -36,6 +36,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
   private isRunning: boolean = false;
   private reconnectTimer: NodeJS.Timeout | null = null;
+  private groupCache = new Map<string, { subject: string; lidToPhone: Map<string, string> }>();
   private readonly sessionPath: string;
   private readonly printQR: boolean;
   private readonly reconnectIntervalMs: number;
@@ -158,10 +159,59 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       }
     });
 
+    sock.ev.on('groups.update', (updates) => {
+      for (const update of updates) {
+        if (update.id && update.subject) {
+          const existing = this.groupCache.get(update.id);
+          this.groupCache.set(update.id, {
+            subject: update.subject,
+            lidToPhone: existing ? existing.lidToPhone : new Map()
+          });
+        }
+      }
+    });
+
     sock.ev.on('messages.upsert', async (upsert) => {
       if (!upsert.messages || upsert.messages.length === 0) return;
 
       for (const msg of upsert.messages) {
+        const remoteJid = msg.key?.remoteJid;
+
+        // Automatically resolve group name and map participant LID to phone number
+        if (remoteJid && remoteJid.endsWith('@g.us')) {
+          let cached = this.groupCache.get(remoteJid);
+          if (!cached) {
+            try {
+              const meta = await sock.groupMetadata(remoteJid);
+              if (meta) {
+                const lidMap = new Map<string, string>();
+                if (Array.isArray(meta.participants)) {
+                  for (const p of meta.participants) {
+                    if (p.id && (p as { lid?: string }).lid) {
+                      lidMap.set((p as { lid?: string }).lid as string, p.id);
+                    }
+                  }
+                }
+                cached = { subject: meta.subject || remoteJid, lidToPhone: lidMap };
+                this.groupCache.set(remoteJid, cached);
+              }
+            } catch (err) {
+              logger.debug('Could not fetch group metadata for chat', { remoteJid, error: err });
+            }
+          }
+
+          if (cached) {
+            (msg as unknown as Record<string, unknown>).chatName = cached.subject;
+            const participant = msg.key?.participant;
+            if (participant && participant.endsWith('@lid')) {
+              const resolved = cached.lidToPhone.get(participant);
+              if (resolved && msg.key) {
+                msg.key.participant = resolved;
+              }
+            }
+          }
+        }
+
         for (const handler of this.messageHandlers) {
           try {
             await handler(msg);

@@ -182,10 +182,26 @@ const server = http.createServer((req, res) => {
       try {
         const parsed = JSON.parse(body);
         if (parsed.message) {
+          const rawSenderId = parsed.message.sender_id || '';
+          let phoneDisplay = rawSenderId;
+          if (rawSenderId.includes('@s.whatsapp.net')) {
+            phoneDisplay = '+' + rawSenderId.split('@')[0].split(':')[0];
+          } else if (rawSenderId.includes('@lid')) {
+            phoneDisplay = 'LID:' + rawSenderId.split('@')[0];
+          }
+
+          const senderDisplay = parsed.message.sender_name 
+            ? `${parsed.message.sender_name} [${phoneDisplay}]` 
+            : phoneDisplay;
+
+          const chatDisplay = parsed.message.chat_name
+            ? `${parsed.message.chat_name} (${parsed.message.chat_id})`
+            : parsed.message.chat_id;
+
           msgData = {
             message_id: parsed.message.message_id,
-            sender: parsed.message.sender_name || parsed.message.sender_id,
-            chat: parsed.message.chat_name || parsed.message.chat_id,
+            sender: senderDisplay,
+            chat: chatDisplay,
             text: parsed.message.text,
             has_media: parsed.message.has_media
           };
