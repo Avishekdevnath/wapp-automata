@@ -3,7 +3,7 @@
  * Service entry point (Phase 1 Stub)
  */
 
-export const SERVICE_NAME = 'whatsapp-raw-collector';
+export const SERVICE_NAME = 'wapp-automata';
 export const SERVICE_VERSION = '0.1.0';
 
 export function getServiceInfo(): { name: string; version: string; status: string } {
