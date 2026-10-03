@@ -1,5 +1,5 @@
 import { IQueueRepository } from '../queue/interface';
-import { WorkerDeliveryHandler, WorkerOptions } from './interface';
+import { WorkerDeliveryHandler, WorkerOptions, IQueueWorker } from './interface';
 import { rootLogger } from '../logging';
 
 const logger = rootLogger.forModule('worker');
@@ -9,7 +9,7 @@ const logger = rootLogger.forModule('worker');
  * Periodically polls SQLite for eligible pending records and dispatches them sequentially.
  * Uses recursive setTimeout to guarantee no overlapping polling executions.
  */
-export class QueueWorker {
+export class QueueWorker implements IQueueWorker {
   private queueRepo: IQueueRepository;
   private deliveryHandler: WorkerDeliveryHandler;
   private pollIntervalMs: number;
