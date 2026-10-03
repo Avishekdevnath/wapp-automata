@@ -92,6 +92,17 @@ describe('Phase 2 Configuration Tests', () => {
     assert.equal(config.WEBHOOK_URL, 'http://localhost:3000/webhook');
   });
 
+  it('should allow loopback HTTP in production environment', () => {
+    const prodLoopbackEnv = {
+      ...validBaseEnv,
+      NODE_ENV: 'production',
+      WEBHOOK_URL: 'http://127.0.0.1:4000/webhook'
+    };
+
+    const config = parseConfig(prodLoopbackEnv);
+    assert.equal(config.WEBHOOK_URL, 'http://127.0.0.1:4000/webhook');
+  });
+
   it('should throw ConfigurationError when WEBHOOK_SECRET is missing', () => {
     const invalidEnv = { ...validBaseEnv };
     delete invalidEnv.WEBHOOK_SECRET;

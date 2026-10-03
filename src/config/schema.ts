@@ -53,7 +53,8 @@ export function parseConfig(env: Record<string, string | undefined>): AppConfig 
     throw new ConfigurationError(`Invalid WEBHOOK_URL: "${webhookUrl}" is not a valid absolute URL.`);
   }
 
-  if (nodeEnv === 'production' && parsedUrl.protocol !== 'https:') {
+  const isLoopback = parsedUrl.hostname === '127.0.0.1' || parsedUrl.hostname === 'localhost';
+  if (nodeEnv === 'production' && parsedUrl.protocol !== 'https:' && !isLoopback) {
     throw new ConfigurationError(`Insecure WEBHOOK_URL: Production requires https://, got "${parsedUrl.protocol}".`);
   }
 
