@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason,
@@ -113,6 +115,15 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     });
     this.sock = sock;
 
+    if (state.creds?.me?.id) {
+      this.writeSessionState({
+        status: 'authenticated',
+        accountJid: state.creds.me.id,
+        name: state.creds.me.name || null,
+        updatedAt: Date.now()
+      });
+    }
+
     sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('connection.update', (update) => {
@@ -120,6 +131,11 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
       if (qr) {
         this.transitionState('auth_required');
+        this.writeSessionState({
+          status: 'scan_qr',
+          qr,
+          updatedAt: Date.now()
+        });
         if (this.printQR) {
           logger.info('WhatsApp authentication required. Scan QR code below to link device:');
           qrcode.generate(qr, { small: true });
@@ -130,6 +146,12 @@ export class BaileysAdapter implements IWhatsAppAdapter {
         this.accountJid = sock.user?.id ?? null;
         this.lastConnectedAt = Date.now();
         this.transitionState('authenticated');
+        this.writeSessionState({
+          status: 'authenticated',
+          accountJid: this.accountJid,
+          name: sock.user?.name || null,
+          updatedAt: Date.now()
+        });
         logger.info('WhatsApp multi-device connection established', {
           accountJid: this.accountJid
         });
@@ -140,6 +162,13 @@ export class BaileysAdapter implements IWhatsAppAdapter {
         const error = lastDisconnect?.error as { output?: { statusCode?: number } } | undefined;
         const statusCode = error?.output?.statusCode;
         const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+
+        this.writeSessionState({
+          status: isLoggedOut ? 'auth_required' : 'disconnected',
+          statusCode,
+          willReconnect: !isLoggedOut && this.isRunning,
+          updatedAt: Date.now()
+        });
 
         logger.warn('WhatsApp socket connection closed', {
           statusCode,
@@ -269,6 +298,21 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       } catch (err) {
         logger.error('Error in connection status handler', { error: err });
       }
+    }
+  }
+
+  private writeSessionState(state: Record<string, unknown>): void {
+    try {
+      if (!fs.existsSync(this.sessionPath)) {
+        fs.mkdirSync(this.sessionPath, { recursive: true });
+      }
+      fs.writeFileSync(
+        path.join(this.sessionPath, 'session_state.json'),
+        JSON.stringify(state, null, 2),
+        'utf8'
+      );
+    } catch (err) {
+      logger.debug('Could not write session state file', { error: err });
     }
   }
 }
