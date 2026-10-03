@@ -1,0 +1,121 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { normalizeMessage, classifyChatType } from '../../src/normalizer';
+import {
+  mockTextMessageEvent,
+  mockExtendedTextMessageEvent,
+  mockImageWithCaptionEvent,
+  mockMediaWithoutCaptionEvent,
+  mockEphemeralWrappedEvent,
+  mockMalformedEvent
+} from '../fixtures/messages';
+
+describe('Phase 4 Message Normalizer Tests', () => {
+  it('should correctly classify chat types by JID suffix', () => {
+    assert.equal(classifyChatType('120363025512345678@g.us'), 'group');
+    assert.equal(classifyChatType('447700900123@s.whatsapp.net'), 'individual');
+    assert.equal(classifyChatType('120363025599999999@newsletter'), 'channel');
+    assert.equal(classifyChatType('unknown-format-jid'), 'unknown');
+  });
+
+  it('should normalize standard conversation text message', () => {
+    const envelope = normalizeMessage(mockTextMessageEvent);
+
+    assert.ok(envelope !== null);
+    assert.equal(envelope.id, '3EB04F18B92A76C1');
+    assert.equal(envelope.chatId, '120363025512345678@g.us');
+    assert.equal(envelope.chatType, 'group');
+    assert.equal(envelope.senderId, '447700900123@s.whatsapp.net');
+    assert.equal(envelope.senderName, 'David Miller');
+    assert.equal(envelope.timestamp, 1727915100);
+    assert.equal(envelope.text, 'Grade A Wheat: $240/MT FOB. Minimum order 500 MT.');
+    assert.equal(envelope.hasMedia, false);
+    assert.equal(envelope.media, null);
+    assert.equal(envelope.replyTo, null);
+    assert.deepEqual(envelope.rawPayload, mockTextMessageEvent);
+  });
+
+  it('should normalize extended text message with quoted reply reference', () => {
+    const envelope = normalizeMessage(mockExtendedTextMessageEvent);
+
+    assert.ok(envelope !== null);
+    assert.equal(envelope.id, '3EB09911FF246802');
+    assert.equal(envelope.chatId, '120363025512345678@g.us');
+    assert.equal(envelope.chatType, 'group');
+    assert.equal(envelope.senderId, '447700900456@s.whatsapp.net');
+    assert.equal(envelope.senderName, 'Buyer Sarah');
+    assert.equal(envelope.text, 'We will take 1,000 MT at this price.');
+    assert.equal(envelope.hasMedia, false);
+    assert.equal(envelope.media, null);
+
+    assert.ok(envelope.replyTo !== null);
+    assert.equal(envelope.replyTo.messageId, '3EB04F18B92A76C1');
+    assert.equal(envelope.replyTo.senderId, '447700900123@s.whatsapp.net');
+    assert.equal(envelope.replyTo.quotedText, 'Grade A Wheat: $240/MT FOB. Minimum order 500 MT.');
+  });
+
+  it('should normalize media message with caption', () => {
+    const envelope = normalizeMessage(mockImageWithCaptionEvent);
+
+    assert.ok(envelope !== null);
+    assert.equal(envelope.id, '3EB088C32E9041A9');
+    assert.equal(envelope.text, 'Inspection certificate attached.');
+    assert.equal(envelope.hasMedia, true);
+
+    assert.ok(envelope.media !== null);
+    assert.equal(envelope.media.type, 'image');
+    assert.equal(envelope.media.mimetype, 'image/jpeg');
+    assert.equal(envelope.media.fileSize, 248910);
+    assert.equal(envelope.media.fileName, null);
+  });
+
+  it('should normalize media message without caption as empty string text', () => {
+    const envelope = normalizeMessage(mockMediaWithoutCaptionEvent);
+
+    assert.ok(envelope !== null);
+    assert.equal(envelope.id, '3EB0112233445566');
+    assert.equal(envelope.chatId, '447700900123@s.whatsapp.net');
+    assert.equal(envelope.chatType, 'individual');
+    assert.equal(envelope.text, '');
+    assert.equal(envelope.hasMedia, true);
+
+    assert.ok(envelope.media !== null);
+    assert.equal(envelope.media.type, 'document');
+    assert.equal(envelope.media.mimetype, 'application/pdf');
+    assert.equal(envelope.media.fileName, 'price_catalog_oct2026.pdf');
+    assert.equal(envelope.media.fileSize, 1048576);
+  });
+
+  it('should unwrap ephemeral wrapped message transparently', () => {
+    const envelope = normalizeMessage(mockEphemeralWrappedEvent);
+
+    assert.ok(envelope !== null);
+    assert.equal(envelope.id, '3EB0778899AABBCC');
+    assert.equal(envelope.text, 'Ephemeral announcement: Market closes at 4 PM.');
+    assert.equal(envelope.senderName, 'Admin Alice');
+  });
+
+  it('should return null for malformed events lacking ID or remoteJid', () => {
+    assert.equal(normalizeMessage(mockMalformedEvent), null);
+    assert.equal(normalizeMessage(null), null);
+    assert.equal(normalizeMessage(undefined), null);
+    assert.equal(normalizeMessage('not-an-object'), null);
+  });
+
+  it('should preserve verbatim text without parsing prices, currency, or altering formatting', () => {
+    const rawComplexText = '   Special Price: €120/ton!   \n   Includes 5% tax.   \t   ';
+    const event = {
+      key: { id: 'wamid_verbatim', remoteJid: 'test@s.whatsapp.net' },
+      message: { conversation: rawComplexText },
+      messageTimestamp: 1727915500
+    };
+
+    const envelope = normalizeMessage(event);
+    assert.ok(envelope !== null);
+    // Verbatim guarantee: exact characters including whitespace, tabs, and newlines
+    assert.equal(envelope.text, rawComplexText);
+    // Boundary check: no prices extracted as separate fields
+    assert.equal((envelope as unknown as Record<string, unknown>).price, undefined);
+    assert.equal((envelope as unknown as Record<string, unknown>).currency, undefined);
+  });
+});
