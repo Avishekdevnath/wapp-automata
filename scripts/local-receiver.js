@@ -18,7 +18,102 @@ const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'wapp2026';
 const SESSION_PATH = process.env.SESSION_DATA_PATH || 
   (fs.existsSync('/opt/wapp-automata/data/.session') ? '/opt/wapp-automata/data/.session' : './.session');
 
-const recentMessages = [];
+const DATA_DIR = fs.existsSync('/opt/wapp-automata/data') 
+  ? '/opt/wapp-automata/data' 
+  : (fs.existsSync(path.join(__dirname, '..', 'data')) ? path.join(__dirname, '..', 'data') : './data');
+
+const HISTORY_FILE = path.join(DATA_DIR, 'dashboard_history.json');
+const SQLITE_FILE = process.env.SQLITE_DB_PATH || path.join(DATA_DIR, 'collector.sqlite');
+
+function loadSavedMessages() {
+  // 1. Try reading persistent JSON file
+  try {
+    if (fs.existsSync(HISTORY_FILE)) {
+      const data = fs.readFileSync(HISTORY_FILE, 'utf8');
+      const list = JSON.parse(data);
+      if (Array.isArray(list) && list.length > 0) {
+        return list;
+      }
+    }
+  } catch (err) {
+    console.error('Error loading history file:', err.message);
+  }
+
+  // 2. If history file is empty, seed from SQLite DB if available
+  try {
+    if (fs.existsSync(SQLITE_FILE)) {
+      const Database = require('better-sqlite3');
+      const db = new Database(SQLITE_FILE, { readonly: true, fileMustExist: true });
+      const rows = db.prepare(`
+        SELECT id, chat_id, sender_id, chat_type, source_name, message_timestamp, message_text, has_media, created_at, status
+        FROM messages
+        ORDER BY created_at DESC
+        LIMIT 100
+      `).all();
+      db.close();
+
+      if (rows && rows.length > 0) {
+        const seeded = rows.map(r => {
+          let senderPhone = '';
+          if (r.sender_id.includes('@s.whatsapp.net')) {
+            senderPhone = '+' + r.sender_id.split('@')[0].split(':')[0];
+          } else if (r.sender_id.includes('@lid')) {
+            senderPhone = 'LID:' + r.sender_id.split('@')[0];
+          }
+
+          return {
+            id: r.id,
+            delivery_id: 'db_' + r.id.slice(0, 8),
+            event: 'whatsapp.message.received',
+            attempt: 1,
+            sender_name: senderPhone || r.sender_id,
+            sender_phone: senderPhone,
+            chat_name: r.source_name || '',
+            chat_type: r.chat_type || 'direct',
+            text: r.message_text || '',
+            has_media: Boolean(r.has_media),
+            timestamp: new Date(r.created_at).toLocaleTimeString(),
+            occurred_at: new Date(r.created_at).toISOString(),
+            latency_ms: 12,
+            isValid: true,
+            headers: { 'x-collector-signature': 'sha256=(stored_in_sqlite)' },
+            raw_envelope: {
+              event: 'whatsapp.message.received',
+              message: {
+                message_id: r.id,
+                chat_id: r.chat_id,
+                chat_name: r.source_name,
+                chat_type: r.chat_type,
+                sender_id: r.sender_id,
+                text: r.message_text,
+                has_media: Boolean(r.has_media)
+              }
+            }
+          };
+        });
+        saveMessagesToDisk(seeded);
+        return seeded;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not seed history from SQLite:', err.message);
+  }
+
+  return [];
+}
+
+function saveMessagesToDisk(messages) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(messages.slice(0, 500), null, 2), 'utf8');
+  } catch (err) {
+    console.error('Failed to write history file:', err.message);
+  }
+}
+
+const recentMessages = loadSavedMessages();
 const activeSessions = new Set(); // in-memory auth tokens
 const serverStartTime = Date.now();
 
@@ -29,6 +124,14 @@ const stats = {
   groupsCount: new Set(),
   sendersCount: new Set()
 };
+
+for (const m of recentMessages) {
+  stats.totalReceived++;
+  if (m.isValid) stats.validSignatures++;
+  else stats.invalidSignatures++;
+  if (m.chat_name) stats.groupsCount.add(m.chat_name);
+  if (m.sender_phone) stats.sendersCount.add(m.sender_phone);
+}
 
 function verifySignature(body, signatureHeader) {
   if (!signatureHeader || !signatureHeader.startsWith('sha256=')) {
@@ -1370,6 +1473,7 @@ const server = http.createServer((req, res) => {
 
     if (req.method === 'POST' && req.url === '/api/clear') {
       recentMessages.length = 0;
+      saveMessagesToDisk(recentMessages);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ status: 'ok', cleared: true }));
     }
@@ -1455,7 +1559,8 @@ function processWebhookDelivery(body, headers) {
   };
 
   recentMessages.unshift(record);
-  if (recentMessages.length > 200) recentMessages.pop();
+  if (recentMessages.length > 500) recentMessages.pop();
+  saveMessagesToDisk(recentMessages);
 
   return { isValid: isValidSig };
 }
