@@ -186,9 +186,23 @@ export class BaileysAdapter implements IWhatsAppAdapter {
               if (meta) {
                 const lidMap = new Map<string, string>();
                 if (Array.isArray(meta.participants)) {
-                  for (const p of meta.participants) {
-                    if (p.id && (p as { lid?: string }).lid) {
-                      lidMap.set((p as { lid?: string }).lid as string, p.id);
+                  for (const p of meta.participants as Array<{ id?: string; lid?: string; jid?: string; phoneNumber?: string }>) {
+                    const phoneJid = (p.jid && p.jid.endsWith('@s.whatsapp.net'))
+                      ? p.jid
+                      : (p.id && p.id.endsWith('@s.whatsapp.net'))
+                        ? p.id
+                        : (p.phoneNumber ? `${p.phoneNumber.replace(/[^0-9]/g, '')}@s.whatsapp.net` : null);
+
+                    const lid = (p.lid && p.lid.includes('@lid'))
+                      ? p.lid
+                      : (p.id && p.id.includes('@lid'))
+                        ? p.id
+                        : null;
+
+                    if (lid && phoneJid) {
+                      lidMap.set(lid, phoneJid);
+                      // Also map without suffix just in case
+                      lidMap.set(lid.split('@')[0], phoneJid);
                     }
                   }
                 }
@@ -203,9 +217,9 @@ export class BaileysAdapter implements IWhatsAppAdapter {
           if (cached) {
             (msg as unknown as Record<string, unknown>).chatName = cached.subject;
             const participant = msg.key?.participant;
-            if (participant && participant.endsWith('@lid')) {
-              const resolved = cached.lidToPhone.get(participant);
-              if (resolved && msg.key) {
+            if (participant && msg.key) {
+              const resolved = cached.lidToPhone.get(participant) || cached.lidToPhone.get(participant.split('@')[0]);
+              if (resolved) {
                 msg.key.participant = resolved;
               }
             }
