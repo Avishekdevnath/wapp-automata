@@ -71,10 +71,30 @@ function renderDevFeed() {
       <div class="bg-dark-950 p-2.5 rounded-lg text-slate-300 truncate">
         ${escapeHtml(m.text || '')}
       </div>
-      <div class="flex justify-end pt-1">
-        <button onclick="inspectMessage('${m.id}')" class="text-emerald-400 hover:text-emerald-300 text-xs flex items-center gap-1">
-          <i data-lucide="eye" class="w-3 h-3"></i> Inspect Payload
-        </button>
+      <div class="flex items-center justify-between pt-1 border-t border-dark-800/60">
+        <div>
+          ${m.forward_status === 'delivered' ? `
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+              <i data-lucide="check-check" class="w-3 h-3 text-emerald-400"></i> n8n Delivered (${m.forward_code || 200})
+            </span>
+          ` : m.forward_status === 'failed' ? `
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+              <i data-lucide="alert-circle" class="w-3 h-3 text-rose-400"></i> n8n Failed
+            </span>
+          ` : `
+            <span class="px-2 py-0.5 rounded text-[10px] text-slate-400 border border-dark-700/60 flex items-center gap-1">
+              <i data-lucide="send" class="w-3 h-3 text-slate-500"></i> Ready for n8n
+            </span>
+          `}
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="resendToForwarder('${m.id}')" class="text-slate-400 hover:text-emerald-400 text-xs flex items-center gap-1 transition-colors">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i> Resend to n8n
+          </button>
+          <button onclick="inspectMessage('${m.id}')" class="text-emerald-400 hover:text-emerald-300 text-xs flex items-center gap-1 transition-colors">
+            <i data-lucide="eye" class="w-3 h-3"></i> Inspect Payload
+          </button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -128,4 +148,38 @@ function copyDrawerJson() {
   if (!selectedMessage) return;
   navigator.clipboard.writeText(JSON.stringify(selectedMessage.raw_envelope || selectedMessage, null, 2));
   showToast('Payload JSON copied to clipboard', 'success');
+}
+
+async function resendToForwarder(id) {
+  try {
+    const res = await fetch('/api/forward/resend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message_id: id })
+    });
+    const data = await res.json();
+    if (res.ok && data.status === 'ok') {
+      showToast(`Dispatched to n8n (HTTP ${data.forward_code || 200})`, 'success');
+      if (typeof fetchMessages === 'function') fetchMessages();
+    } else {
+      showToast('Failed to forward message: ' + (data.error || 'Unknown error'), 'error');
+    }
+  } catch (err) {
+    showToast('Network error during dispatch', 'error');
+  }
+}
+
+async function testForwarderPing() {
+  try {
+    showToast('Sending test ping to n8n...', 'info');
+    const res = await fetch('/api/forward/test', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.status === 'ok') {
+      showToast(`n8n responded: HTTP ${data.statusCode} in ${data.latencyMs}ms`, 'success');
+    } else {
+      showToast(`n8n test failed: ${data.error || data.statusCode}`, 'error');
+    }
+  } catch (err) {
+    showToast('Network error testing n8n', 'error');
+  }
 }

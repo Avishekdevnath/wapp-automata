@@ -18,7 +18,7 @@ export interface IWebhookClient {
 
 export interface WebhookClientOptions {
   url: string;
-  secret: string;
+  secret?: string;
   timeoutMs?: number;
   userAgent?: string;
 }

@@ -11,7 +11,7 @@ export interface AppConfig {
   SQLITE_DB_PATH: string;
   SESSION_DATA_PATH: string;
   WEBHOOK_URL: string;
-  WEBHOOK_SECRET: string;
+  WEBHOOK_SECRET?: string;
   WEBHOOK_TIMEOUT_MS: number;
   WEBHOOK_MAX_RETRIES: number;
   POLL_INTERVAL_MS: number;
@@ -58,11 +58,8 @@ export function parseConfig(env: Record<string, string | undefined>): AppConfig 
     throw new ConfigurationError(`Insecure WEBHOOK_URL: Production requires https://, got "${parsedUrl.protocol}".`);
   }
 
-  const webhookSecret = env.WEBHOOK_SECRET?.trim();
-  if (!webhookSecret) {
-    throw new ConfigurationError('WEBHOOK_SECRET is required but was not provided in environment.');
-  }
-  if (webhookSecret.length < 16) {
+  const webhookSecret = env.WEBHOOK_SECRET?.trim() || undefined;
+  if (webhookSecret && webhookSecret.length < 16) {
     throw new ConfigurationError(`WEBHOOK_SECRET must be at least 16 characters long for security, got ${webhookSecret.length}.`);
   }
 

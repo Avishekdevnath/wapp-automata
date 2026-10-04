@@ -12,7 +12,7 @@ const logger = rootLogger.forModule('webhook-client');
  */
 export class WebhookClient implements IWebhookClient {
   private url: string;
-  private secret: string;
+  private secret?: string;
   private timeoutMs: number;
   private userAgent: string;
 
@@ -75,17 +75,20 @@ export class WebhookClient implements IWebhookClient {
     };
 
     const bodyString = JSON.stringify(payload);
-    const signature = computeHmacSignature(bodyString, this.secret);
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json; charset=utf-8',
       'User-Agent': this.userAgent,
-      'X-Collector-Signature': signature,
-      'X-Collector-Timestamp': String(dispatchTimeMs),
       'X-Collector-Delivery-Id': deliveryId,
       'X-Collector-Event': 'whatsapp.message.received',
       'X-Collector-Version': '1.0'
     };
+
+    if (this.secret) {
+      const signature = computeHmacSignature(bodyString, this.secret);
+      headers['X-Collector-Signature'] = signature;
+      headers['X-Collector-Timestamp'] = String(dispatchTimeMs);
+    }
 
     const abortController = new AbortController();
     const timeoutHandle = setTimeout(() => abortController.abort(), this.timeoutMs);

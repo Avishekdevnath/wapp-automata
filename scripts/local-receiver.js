@@ -15,6 +15,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 const HOST = process.env.HOST || '0.0.0.0';
 const SECRET = process.env.WEBHOOK_SECRET || 'local_dev_webhook_secret_key_12345';
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'wapp2026';
+const FORWARD_WEBHOOK_URL = process.env.FORWARD_WEBHOOK_URL || 'https://n8n.srv1718993.hstgr.cloud/webhook/ispsaddamb491e-a770-231f11c5fdff';
 
 const DATA_DIR = fs.existsSync('/opt/wapp-automata/data') 
   ? '/opt/wapp-automata/data' 
@@ -496,9 +497,58 @@ function processWebhookDelivery(body, headers) {
     downloadMediaInBackground(messageId, parsed.message.raw_payload);
   }
 
+  // Forward to client downstream webhook (n8n)
+  if (FORWARD_WEBHOOK_URL) {
+    forwardWebhookToClient(body, headers, record);
+  }
+
   console.log(`📥 Ingested Webhook [${new Date().toISOString()}] | ID: ${deliveryId} | From: ${senderDisplay} (${senderPhone}) | Chat: ${chatDisplay} [${chatType}] | HMAC: ${isValidSig ? '✅ VALID' : '❌ INVALID'}`);
 
   return { isValid: isValidSig };
+}
+
+async function forwardWebhookToClient(rawBodyString, headers, record) {
+  if (!FORWARD_WEBHOOK_URL) return;
+
+  const dispatchUrl = FORWARD_WEBHOOK_URL;
+  const dispatchHeaders = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'User-Agent': 'WhatsApp-Raw-Collector/1.0.0',
+    'X-Collector-Signature': (headers && headers['x-collector-signature']) || '',
+    'X-Collector-Timestamp': (headers && headers['x-collector-timestamp']) || String(Date.now()),
+    'X-Collector-Delivery-Id': (headers && headers['x-collector-delivery-id']) || `fwd_${Date.now()}`,
+    'X-Collector-Event': (headers && headers['x-collector-event']) || 'whatsapp.message.received',
+    'X-Collector-Version': '1.0'
+  };
+
+  const startTime = Date.now();
+  try {
+    const res = await fetch(dispatchUrl, {
+      method: 'POST',
+      headers: dispatchHeaders,
+      body: rawBodyString,
+      signal: AbortSignal.timeout(10000)
+    });
+    const latency = Date.now() - startTime;
+    record.forwarded_to = dispatchUrl;
+    record.forward_status = res.ok ? 'delivered' : 'failed';
+    record.forward_code = res.status;
+    record.forward_latency_ms = latency;
+    record.forwarded_at = new Date().toISOString();
+    saveMessagesToDisk(recentMessages);
+
+    console.log(`🚀 [Forwarder] Delivered message [${record.id}] to n8n -> HTTP ${res.status} in ${latency}ms`);
+  } catch (err) {
+    const latency = Date.now() - startTime;
+    record.forwarded_to = dispatchUrl;
+    record.forward_status = 'failed';
+    record.forward_error = err.message;
+    record.forward_latency_ms = latency;
+    record.forwarded_at = new Date().toISOString();
+    saveMessagesToDisk(recentMessages);
+
+    console.warn(`⚠️ [Forwarder] Failed delivering message [${record.id}] to n8n: ${err.message}`);
+  }
 }
 
 function downloadMediaInBackground(msgId, rawPayload) {
@@ -781,6 +831,103 @@ const server = http.createServer(async (req, res) => {
       storageWarning = null;
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ status: 'ok', dismissed: true }));
+    }
+
+    if (req.method === 'GET' && pathname === '/api/forward/status') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        url: FORWARD_WEBHOOK_URL,
+        enabled: !!FORWARD_WEBHOOK_URL
+      }));
+    }
+
+    if (req.method === 'POST' && pathname === '/api/forward/test') {
+      if (!FORWARD_WEBHOOK_URL) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'FORWARD_WEBHOOK_URL is not configured' }));
+      }
+      const testPayload = {
+        event: 'whatsapp.message.received',
+        version: '1.0',
+        delivery_id: `test_${Date.now()}`,
+        attempt: 1,
+        occurred_at: new Date().toISOString(),
+        received_at: new Date().toISOString(),
+        dispatched_at: new Date().toISOString(),
+        message: {
+          message_id: `test_msg_${Date.now()}`,
+          chat_id: 'test@s.whatsapp.net',
+          chat_name: 'Webhook Test Ping',
+          chat_type: 'direct',
+          sender_id: 'test@s.whatsapp.net',
+          sender_name: 'WappAutomata Gateway',
+          text: 'This is a test webhook verification from WappAutomata to n8n.',
+          has_media: false,
+          media: null,
+          reply_to: null,
+          raw_payload: { ping: true }
+        }
+      };
+      const bodyStr = JSON.stringify(testPayload);
+      const sig = computeSignature(bodyStr);
+      const startTime = Date.now();
+      try {
+        const fRes = await fetch(FORWARD_WEBHOOK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'User-Agent': 'WhatsApp-Raw-Collector/1.0.0',
+            'X-Collector-Signature': sig,
+            'X-Collector-Timestamp': String(Date.now()),
+            'X-Collector-Delivery-Id': testPayload.delivery_id,
+            'X-Collector-Event': testPayload.event,
+            'X-Collector-Version': '1.0'
+          },
+          body: bodyStr,
+          signal: AbortSignal.timeout(10000)
+        });
+        const latency = Date.now() - startTime;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({
+          status: 'ok',
+          statusCode: fRes.status,
+          latencyMs: latency,
+          url: FORWARD_WEBHOOK_URL
+        }));
+      } catch (err) {
+        const latency = Date.now() - startTime;
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({
+          status: 'error',
+          error: err.message,
+          latencyMs: latency,
+          url: FORWARD_WEBHOOK_URL
+        }));
+      }
+    }
+
+    if (req.method === 'POST' && pathname === '/api/forward/resend') {
+      let b = '';
+      req.on('data', c => { b += c; });
+      req.on('end', async () => {
+        let parsed = {};
+        try { parsed = JSON.parse(b); } catch {}
+        const msgId = parsed.message_id;
+        const record = recentMessages.find(m => m.id === msgId);
+        if (!record) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ error: 'Message not found in feed' }));
+        }
+        const bodyStr = JSON.stringify(record.raw_envelope);
+        await forwardWebhookToClient(bodyStr, record.headers || {}, record);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({
+          status: 'ok',
+          forward_status: record.forward_status,
+          forward_code: record.forward_code
+        }));
+      });
+      return;
     }
 
     if (req.method === 'POST' && pathname === '/api/clear') {
