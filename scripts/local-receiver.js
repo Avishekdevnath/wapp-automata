@@ -531,14 +531,25 @@ function buildCleanPayload(record) {
     else if (m.documentMessage) mediaType = 'document';
   }
 
+  let phone = record.sender_phone;
+  const participantPn = rawMsg.raw_payload?.key?.participantPn;
+  if (participantPn && participantPn.includes('@s.whatsapp.net')) {
+    phone = '+' + participantPn.split('@')[0].split(':')[0];
+  }
+
+  let chatType = record.chat_type;
+  if (rawMsg.chat_id === 'status@broadcast' || rawMsg.raw_payload?.key?.remoteJid === 'status@broadcast') {
+    chatType = 'status';
+  }
+
   return {
     event: record.event || 'whatsapp.message.received',
     message_id: record.id,
     delivery_id: record.delivery_id,
     sender_name: record.sender_name,
-    sender_phone: record.sender_phone,
-    chat_name: record.chat_name || record.sender_name,
-    chat_type: record.chat_type,
+    sender_phone: phone,
+    chat_name: record.chat_name || (chatType === 'status' ? `${record.sender_name}'s Status Story` : record.sender_name),
+    chat_type: chatType,
     text: record.text || '',
     has_media: Boolean(record.has_media),
     media_type: mediaType,
