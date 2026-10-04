@@ -16,6 +16,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const SECRET = process.env.WEBHOOK_SECRET || 'local_dev_webhook_secret_key_12345';
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'wapp2026';
 const FORWARD_WEBHOOK_URL = process.env.FORWARD_WEBHOOK_URL || 'https://n8n.srv1718993.hstgr.cloud/webhook/ispsaddamb491e-a770-231f11c5fdff';
+const FORWARD_FORMAT = process.env.FORWARD_FORMAT || 'clean'; // 'clean' or 'raw'
 
 const DATA_DIR = fs.existsSync('/opt/wapp-automata/data') 
   ? '/opt/wapp-automata/data' 
@@ -449,6 +450,9 @@ function processWebhookDelivery(body, headers) {
     text = parsed.message.text || '';
     hasMedia = Boolean(parsed.message.has_media);
     chatType = parsed.message.chat_type || 'direct';
+    if (parsed.message.chat_id === 'status@broadcast') {
+      chatType = 'status';
+    }
 
     const rawSenderId = parsed.message.sender_id || '';
     if (rawSenderId.includes('@s.whatsapp.net')) {
@@ -457,8 +461,14 @@ function processWebhookDelivery(body, headers) {
       senderPhone = 'LID:' + rawSenderId.split('@')[0];
     }
 
+    // Resolve actual phone number if participantPn is present in raw_payload
+    const participantPn = parsed.message.raw_payload?.key?.participantPn;
+    if (participantPn && participantPn.includes('@s.whatsapp.net')) {
+      senderPhone = '+' + participantPn.split('@')[0].split(':')[0];
+    }
+
     senderDisplay = parsed.message.sender_name || senderPhone || 'Contact';
-    chatDisplay = parsed.message.chat_name || parsed.message.chat_id || 'Chat';
+    chatDisplay = parsed.message.chat_name || (chatType === 'status' ? `${senderDisplay}'s Status Story` : (parsed.message.chat_id || 'Chat'));
     occurredAt = parsed.occurred_at || occurredAt;
 
     if (parsed.occurred_at) {
@@ -477,7 +487,7 @@ function processWebhookDelivery(body, headers) {
     attempt: (parsed && parsed.attempt) || 1,
     sender_name: senderDisplay,
     sender_phone: senderPhone,
-    chat_name: (parsed && parsed.message && parsed.message.chat_name) || '',
+    chat_name: (parsed && parsed.message && parsed.message.chat_name) || (chatType === 'status' ? `${senderDisplay}'s Status Story` : ''),
     chat_type: chatType,
     text,
     has_media: hasMedia,
@@ -507,10 +517,44 @@ function processWebhookDelivery(body, headers) {
   return { isValid: isValidSig };
 }
 
+function buildCleanPayload(record) {
+  const host = process.env.PUBLIC_URL || 'http://107.170.31.114:4000';
+  const mediaUrl = record.has_media ? `${host}/api/media/${record.id}` : null;
+  const rawMsg = record.raw_envelope?.message || {};
+
+  let mediaType = rawMsg.media?.type || null;
+  if (!mediaType && rawMsg.raw_payload?.message) {
+    const m = rawMsg.raw_payload.message;
+    if (m.imageMessage) mediaType = 'image';
+    else if (m.videoMessage) mediaType = 'video';
+    else if (m.audioMessage) mediaType = 'audio';
+    else if (m.documentMessage) mediaType = 'document';
+  }
+
+  return {
+    event: record.event || 'whatsapp.message.received',
+    message_id: record.id,
+    delivery_id: record.delivery_id,
+    sender_name: record.sender_name,
+    sender_phone: record.sender_phone,
+    chat_name: record.chat_name || record.sender_name,
+    chat_type: record.chat_type,
+    text: record.text || '',
+    has_media: Boolean(record.has_media),
+    media_type: mediaType,
+    media_url: mediaUrl,
+    timestamp: record.occurred_at || record.timestamp
+  };
+}
+
 async function forwardWebhookToClient(rawBodyString, headers, record) {
   if (!FORWARD_WEBHOOK_URL) return;
 
   const dispatchUrl = FORWARD_WEBHOOK_URL;
+  const payloadToSend = FORWARD_FORMAT === 'clean' 
+    ? JSON.stringify(buildCleanPayload(record)) 
+    : rawBodyString;
+
   const dispatchHeaders = {
     'Content-Type': 'application/json; charset=utf-8',
     'User-Agent': 'WhatsApp-Raw-Collector/1.0.0',
@@ -526,7 +570,7 @@ async function forwardWebhookToClient(rawBodyString, headers, record) {
     const res = await fetch(dispatchUrl, {
       method: 'POST',
       headers: dispatchHeaders,
-      body: rawBodyString,
+      body: payloadToSend,
       signal: AbortSignal.timeout(10000)
     });
     const latency = Date.now() - startTime;
@@ -537,7 +581,7 @@ async function forwardWebhookToClient(rawBodyString, headers, record) {
     record.forwarded_at = new Date().toISOString();
     saveMessagesToDisk(recentMessages);
 
-    console.log(`🚀 [Forwarder] Delivered message [${record.id}] to n8n -> HTTP ${res.status} in ${latency}ms`);
+    console.log(`🚀 [Forwarder] Delivered clean message [${record.id}] to n8n -> HTTP ${res.status} in ${latency}ms`);
   } catch (err) {
     const latency = Date.now() - startTime;
     record.forwarded_to = dispatchUrl;
