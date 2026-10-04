@@ -65,6 +65,122 @@ function formatDateTime(d) {
   });
 }
 
+let storageWarning = null;
+
+function getStorageStats() {
+  let disk = { totalGb: 25, usedGb: 5, freeGb: 20, usedPercent: 20 };
+  try {
+    if (fs.statfsSync) {
+      const s = fs.statfsSync('/');
+      const total = (s.bsize * s.blocks) / (1024 * 1024 * 1024);
+      const free = (s.bsize * s.bavail) / (1024 * 1024 * 1024);
+      const used = total - free;
+      const pct = s.blocks > 0 ? Math.round(((s.blocks - s.bavail) / s.blocks) * 100) : 0;
+      disk = {
+        totalGb: Number(total.toFixed(2)),
+        usedGb: Number(used.toFixed(2)),
+        freeGb: Number(free.toFixed(2)),
+        usedPercent: pct
+      };
+    }
+  } catch (err) {}
+
+  let totalFiles = 0;
+  let totalBytes = 0;
+  const files = [];
+
+  try {
+    if (fs.existsSync(MEDIA_DIR)) {
+      const names = fs.readdirSync(MEDIA_DIR);
+      for (const name of names) {
+        const filePath = path.join(MEDIA_DIR, name);
+        try {
+          const stat = fs.statSync(filePath);
+          if (stat.isFile()) {
+            totalBytes += stat.size;
+            files.push({ name, path: filePath, size: stat.size, mtime: stat.mtimeMs });
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+
+  // Sort oldest first
+  files.sort((a, b) => a.mtime - b.mtime);
+  totalFiles = files.length;
+
+  return {
+    disk,
+    media: {
+      totalFiles,
+      totalBytes,
+      totalMb: Number((totalBytes / (1024 * 1024)).toFixed(2))
+    },
+    autoPurgeThresholdPercent: 80,
+    autoPurgeEvictPercent: 50,
+    warning: storageWarning,
+    files
+  };
+}
+
+function purgeMediaFiles(percentage) {
+  const stats = getStorageStats();
+  const files = stats.files;
+  if (!files || files.length === 0) {
+    return { status: 'ok', deletedCount: 0, freedBytes: 0, freedMb: 0, remainingFiles: 0 };
+  }
+
+  let toDelete = [];
+  if (percentage >= 100) {
+    toDelete = files;
+  } else {
+    const fraction = Math.max(1, Math.min(100, percentage)) / 100;
+    const count = Math.ceil(files.length * fraction);
+    toDelete = files.slice(0, count);
+  }
+
+  let freedBytes = 0;
+  let deletedCount = 0;
+
+  for (const f of toDelete) {
+    try {
+      if (fs.existsSync(f.path)) {
+        fs.unlinkSync(f.path);
+        freedBytes += f.size;
+        deletedCount++;
+      }
+    } catch (err) {
+      console.warn(`Failed to unlink media file ${f.path}:`, err.message);
+    }
+  }
+
+  const freedMb = Number((freedBytes / (1024 * 1024)).toFixed(2));
+  console.log(`🧹 Purged ${deletedCount} media files (${percentage}%), freed ${freedMb} MB. Remaining files: ${files.length - deletedCount}`);
+
+  return {
+    status: 'ok',
+    deletedCount,
+    freedBytes,
+    freedMb,
+    remainingFiles: files.length - deletedCount
+  };
+}
+
+function checkStorageAndAutoPurge() {
+  const stats = getStorageStats();
+  if (stats.disk.usedPercent >= 80) {
+    console.warn(`⚠️ STORAGE WARNING: Disk usage at ${stats.disk.usedPercent}% (exceeds 80% threshold). Automatically purging oldest 50% media...`);
+    const result = purgeMediaFiles(50);
+    storageWarning = {
+      triggeredAt: Date.now(),
+      message: `Server storage reached ${stats.disk.usedPercent}%. The oldest 50% of cached media files (${result.deletedCount} files, ${result.freedMb} MB) were automatically purged to prevent system disruption.`
+    };
+  }
+}
+
+// Background storage monitor every 5 minutes
+setInterval(checkStorageAndAutoPurge, 5 * 60 * 1000).unref();
+
 function loadSavedMessages() {
   // 1. Try reading persistent JSON file
   try {
@@ -632,6 +748,39 @@ const server = http.createServer(async (req, res) => {
         uniqueGroups: stats.groupsCount.size,
         uniqueSenders: stats.sendersCount.size
       }));
+    }
+
+    if (req.method === 'GET' && pathname === '/api/storage/status') {
+      const stats = getStorageStats();
+      const output = {
+        disk: stats.disk,
+        media: stats.media,
+        autoPurgeThresholdPercent: stats.autoPurgeThresholdPercent,
+        autoPurgeEvictPercent: stats.autoPurgeEvictPercent,
+        warning: stats.warning
+      };
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify(output));
+    }
+
+    if (req.method === 'POST' && pathname === '/api/storage/purge') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        let parsed = {};
+        try { parsed = JSON.parse(body); } catch {}
+        const percentage = Number(parsed.percentage) || 100;
+        const result = purgeMediaFiles(percentage);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify(result));
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/storage/dismiss-warning') {
+      storageWarning = null;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ status: 'ok', dismissed: true }));
     }
 
     if (req.method === 'POST' && pathname === '/api/clear') {

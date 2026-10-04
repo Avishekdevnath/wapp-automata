@@ -140,6 +140,13 @@
               <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
             </button>
 
+            <!-- Disk & Media Storage Pill -->
+            <button onclick="openStorageModal()" id="btn-storage-status" class="px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-emerald-500/40 text-xs flex items-center gap-2 transition-all" title="Disk Storage & Media Management">
+              <span id="nav-storage-dot" class="w-2 h-2 rounded-full bg-rose-500 animate-pulse hidden"></span>
+              <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span id="nav-storage-text" class="text-slate-200 font-medium font-mono text-[11px]">--%</span>
+            </button>
+
             <!-- Sound Alert Toggle -->
             <button id="btn-sound" onclick="toggleSound()" class="p-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 hover:text-white transition-all text-xs" title="Toggle audio chime on message">
               <i id="icon-sound" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
@@ -157,6 +164,27 @@
 
     <!-- Main Dynamic Content Workspace -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+      <!-- Storage Warning Alert Banner -->
+      <div id="storage-alert-banner" class="hidden glass-card rounded-2xl p-4 border border-rose-500/40 bg-rose-950/20 text-rose-200 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-rose-300">Disk Storage Alert</h4>
+            <p id="storage-alert-text" class="text-xs text-rose-200/80">Storage is running high.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="openStorageModal()" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md transition-all">
+            Manage Storage
+          </button>
+          <button onclick="dismissStorageWarning()" class="p-1.5 rounded-lg bg-dark-900/60 hover:bg-dark-900 text-rose-300 hover:text-white transition-colors" title="Dismiss Alert">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
 
       <!-- ============================================== -->
       <!-- VIEW 1: CLIENT INBOX (Clean & Non-Technical)  -->
@@ -531,15 +559,99 @@ function verifyWebhook(body, sig, secret) {
     </div>
   </div>
 
+  <!-- ============================================== -->
+  <!-- 6. STORAGE & MEDIA MANAGEMENT MODAL           -->
+  <!-- ============================================== -->
+  <div id="storage-modal" class="fixed inset-0 z-50 overflow-hidden hidden" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-dark-950/80 backdrop-blur-sm" onclick="closeStorageModal()"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4">
+      <div class="glass-card max-w-lg w-full rounded-3xl p-6 sm:p-8 border border-dark-700 shadow-2xl space-y-5 text-left relative">
+        <button onclick="closeStorageModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <i data-lucide="hard-drive" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Media & Server Storage</h3>
+            <p class="text-xs text-slate-400">Monitor disk health and clean cached media files.</p>
+          </div>
+        </div>
+
+        <!-- VPS Disk Gauge -->
+        <div class="p-4 rounded-2xl bg-dark-900 border border-dark-800 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-300 font-medium">VPS Primary Disk</span>
+            <span id="modal-disk-usage-text" class="font-mono font-semibold text-emerald-400">--%</span>
+          </div>
+          <div class="w-full h-3 rounded-full bg-dark-950 border border-dark-800 overflow-hidden p-0.5">
+            <div id="modal-disk-progress" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Automated Protection: <strong class="text-emerald-400">Active</strong></span>
+            <span>Trigger threshold: <strong class="text-amber-400">80% Full</strong></span>
+          </div>
+        </div>
+
+        <!-- Media Storage Metrics -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-1">
+            <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Cached Media Files</p>
+            <p id="modal-media-count" class="text-xl font-bold font-mono text-white">0</p>
+            <p class="text-[11px] text-slate-400">Images, audio & docs</p>
+          </div>
+          <div class="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-1">
+            <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Storage Used</p>
+            <p id="modal-media-size" class="text-xl font-bold font-mono text-emerald-400">0 MB</p>
+            <p class="text-[11px] text-slate-400">In /data/media folder</p>
+          </div>
+        </div>
+
+        <!-- Automated Policy Notice -->
+        <div class="p-3.5 rounded-xl bg-dark-800/60 border border-dark-700/60 text-xs text-slate-300 space-y-1">
+          <div class="flex items-center gap-1.5 text-emerald-400 font-semibold text-xs">
+            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+            <span>Automated 80% Safety Policy</span>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            When server disk reaches 80% capacity, a warning is raised and the oldest 50% of media files are automatically deleted. Chat messages, contacts, and SQLite records remain permanently intact.
+          </p>
+        </div>
+
+        <!-- Manual Purge Controls -->
+        <div class="space-y-2 pt-1">
+          <p class="text-xs font-semibold text-slate-300">Manual Clean-up Options</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button type="button" id="btn-purge-80" onclick="handlePurgeMedia(80)" class="w-full py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium flex items-center justify-center gap-2 transition-all">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Delete Oldest 80%</span>
+            </button>
+            <button type="button" id="btn-purge-100" onclick="handlePurgeMedia(100)" class="w-full py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium flex items-center justify-center gap-2 transition-all">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span>Purge 100% Media</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end pt-2">
+          <button type="button" onclick="closeStorageModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
 
   <!-- Modular Component Scripts -->
-  <script src="/js/app.js?v=6"></script>
-  <script src="/js/auth.js?v=6"></script>
-  <script src="/js/client-inbox.js?v=6"></script>
-  <script src="/js/dev-studio.js?v=6"></script>
-  <script src="/js/device-manager.js?v=6"></script>
-  <script src="/js/simulator.js?v=6"></script>
+  <script src="/js/app.js?v=7"></script>
+  <script src="/js/auth.js?v=7"></script>
+  <script src="/js/client-inbox.js?v=7"></script>
+  <script src="/js/dev-studio.js?v=7"></script>
+  <script src="/js/device-manager.js?v=7"></script>
+  <script src="/js/storage-manager.js?v=7"></script>
+  <script src="/js/simulator.js?v=7"></script>
 </body>
 </html>

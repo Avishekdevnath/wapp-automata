@@ -13,6 +13,7 @@ async function checkAuth() {
       setUiMode(window.currentUiMode || 'client');
       fetchMessages();
       pollSessionStatus();
+      if (typeof pollStorageStatus === 'function') pollStorageStatus();
     }
   } catch (e) {
     document.getElementById('auth-overlay').classList.remove('hidden');
@@ -44,6 +45,7 @@ async function handleLoginSubmit(e) {
       setUiMode(window.currentUiMode || 'client');
       fetchMessages();
       pollSessionStatus();
+      if (typeof pollStorageStatus === 'function') pollStorageStatus();
       showToast('Dashboard unlocked successfully', 'success');
     } else {
       err.innerText = data.error || 'Incorrect authorization password';

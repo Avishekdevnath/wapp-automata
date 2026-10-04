@@ -203,4 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   setInterval(fetchMessages, 1500);
   setInterval(pollSessionStatus, 2000);
+  if (typeof pollStorageStatus === 'function') {
+    pollStorageStatus();
+    setInterval(pollStorageStatus, 15000);
+  }
 });
