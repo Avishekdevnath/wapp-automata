@@ -310,6 +310,15 @@ export class BaileysAdapter implements IWhatsAppAdapter {
             });
           }
         }
+
+        // Automatically mark incoming messages as read / seen (sends read receipt and clears unread badge)
+        if (msg.key && !msg.key.fromMe) {
+          try {
+            await sock.readMessages([msg.key]);
+          } catch (readErr) {
+            logger.debug('Could not send read receipt for message', { key: msg.key, error: readErr });
+          }
+        }
       }
     });
   }

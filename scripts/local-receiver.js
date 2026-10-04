@@ -26,6 +26,11 @@ const SESSION_PATH = process.env.SESSION_DATA_PATH ||
 const HISTORY_FILE = path.join(DATA_DIR, 'dashboard_history.json');
 const SQLITE_FILE = process.env.SQLITE_DB_PATH || path.join(DATA_DIR, 'collector.sqlite');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const MEDIA_DIR = path.join(DATA_DIR, 'media');
+
+if (!fs.existsSync(MEDIA_DIR)) {
+  try { fs.mkdirSync(MEDIA_DIR, { recursive: true }); } catch {}
+}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -34,6 +39,13 @@ const MIME_TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.mp4': 'video/mp4',
+  '.ogg': 'audio/ogg',
+  '.opus': 'audio/ogg',
+  '.mp3': 'audio/mpeg',
+  '.pdf': 'application/pdf',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon'
 };
@@ -364,12 +376,41 @@ function processWebhookDelivery(body, headers) {
   if (recentMessages.length > 500) recentMessages.pop();
   saveMessagesToDisk(recentMessages);
 
+  if (hasMedia && parsed && parsed.message && parsed.message.raw_payload) {
+    downloadMediaInBackground(messageId, parsed.message.raw_payload);
+  }
+
   console.log(`📥 Ingested Webhook [${new Date().toISOString()}] | ID: ${deliveryId} | From: ${senderDisplay} (${senderPhone}) | Chat: ${chatDisplay} [${chatType}] | HMAC: ${isValidSig ? '✅ VALID' : '❌ INVALID'}`);
 
   return { isValid: isValidSig };
 }
 
-const server = http.createServer((req, res) => {
+function downloadMediaInBackground(msgId, rawPayload) {
+  setImmediate(async () => {
+    try {
+      const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+      const buffer = await downloadMediaMessage(
+        rawPayload,
+        'buffer',
+        {},
+        { logger: { debug(){}, info(){}, error(){}, warn(){} } }
+      );
+      if (buffer && buffer.length > 0) {
+        let ext = '.jpg';
+        const m = rawPayload.message || {};
+        if (m.videoMessage) ext = '.mp4';
+        else if (m.audioMessage) ext = '.ogg';
+        else if (m.documentMessage) ext = '.pdf';
+
+        const savePath = path.join(MEDIA_DIR, `${msgId}${ext}`);
+        fs.writeFileSync(savePath, buffer);
+        console.log(`🖼️ Auto-cached media attachment for [${msgId}] (${buffer.length} bytes)`);
+      }
+    } catch (err) {}
+  });
+}
+
+const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
 
@@ -482,6 +523,99 @@ const server = http.createServer((req, res) => {
         return res.end(JSON.stringify({ status: 'ok', simulated: true, valid: result.isValid }));
       });
       return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/api/media/')) {
+      const msgId = pathname.replace('/api/media/', '').split('?')[0].trim();
+      if (!msgId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Message ID is required' }));
+      }
+
+      // 1. Check if media file already exists on disk in MEDIA_DIR
+      const possibleExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.mp4', '.ogg', '.opus', '.mp3', '.pdf', '.bin'];
+      for (const ext of possibleExtensions) {
+        const filePath = path.join(MEDIA_DIR, `${msgId}${ext}`);
+        if (fs.existsSync(filePath)) {
+          const mime = MIME_TYPES[ext] || 'application/octet-stream';
+          res.writeHead(200, {
+            'Content-Type': mime,
+            'Cache-Control': 'public, max-age=86400',
+            'Content-Length': fs.statSync(filePath).size
+          });
+          return fs.createReadStream(filePath).pipe(res);
+        }
+      }
+
+      // 2. Locate the message in recentMessages or SQLite
+      let msgRecord = recentMessages.find(m => m.id === msgId);
+      let rawPayload = null;
+      if (msgRecord && msgRecord.raw_envelope) {
+        rawPayload = msgRecord.raw_envelope.message?.raw_payload || msgRecord.raw_envelope.raw_payload;
+      }
+
+      if (!rawPayload && fs.existsSync(SQLITE_FILE)) {
+        try {
+          const Database = require('better-sqlite3');
+          const db = new Database(SQLITE_FILE, { readonly: true, fileMustExist: true });
+          const row = db.prepare('SELECT raw_payload FROM messages WHERE id = ?').get(msgId);
+          db.close();
+          if (row && row.raw_payload) {
+            rawPayload = JSON.parse(row.raw_payload);
+          }
+        } catch (err) {}
+      }
+
+      // 3. Attempt download and decrypt via Baileys downloadMediaMessage
+      if (rawPayload && (rawPayload.message || rawPayload.key)) {
+        try {
+          const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+          const buffer = await downloadMediaMessage(
+            rawPayload,
+            'buffer',
+            {},
+            { logger: { debug(){}, info(){}, error(){}, warn(){} } }
+          );
+
+          if (buffer && buffer.length > 0) {
+            let ext = '.bin';
+            let mime = 'application/octet-stream';
+            const m = rawPayload.message || {};
+            if (m.imageMessage) { ext = '.jpg'; mime = 'image/jpeg'; }
+            else if (m.videoMessage) { ext = '.mp4'; mime = 'video/mp4'; }
+            else if (m.audioMessage) { ext = '.ogg'; mime = 'audio/ogg'; }
+            else if (m.documentMessage) { ext = '.pdf'; mime = m.documentMessage.mimetype || 'application/pdf'; }
+
+            const savePath = path.join(MEDIA_DIR, `${msgId}${ext}`);
+            try { fs.writeFileSync(savePath, buffer); } catch {}
+
+            res.writeHead(200, {
+              'Content-Type': mime,
+              'Cache-Control': 'public, max-age=86400',
+              'Content-Length': buffer.length
+            });
+            return res.end(buffer);
+          }
+        } catch (downloadErr) {
+          console.warn(`Failed to download full media for ${msgId}:`, downloadErr.message);
+        }
+
+        // 4. Fallback to jpegThumbnail if available
+        const thumbBase64 = rawPayload.message?.imageMessage?.jpegThumbnail ||
+                            rawPayload.message?.videoMessage?.jpegThumbnail;
+        if (thumbBase64) {
+          const thumbBuffer = Buffer.from(thumbBase64, 'base64');
+          res.writeHead(200, {
+            'Content-Type': 'image/jpeg',
+            'Cache-Control': 'public, max-age=86400',
+            'Content-Length': thumbBuffer.length
+          });
+          return res.end(thumbBuffer);
+        }
+      }
+
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Media not found or expired' }));
     }
 
     if (req.method === 'GET' && pathname === '/api/messages') {
