@@ -44,6 +44,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
   private groupCache = new Map<string, { subject: string }>();
   private lidToPhoneGlobal = new Map<string, string>();
   private archivedChats = new Set<string>();
+  private consecutive428Errors: number = 0;
   private readonly sessionPath: string;
   private readonly printQR: boolean;
   private readonly reconnectIntervalMs: number;
@@ -54,6 +55,21 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     this.reconnectIntervalMs = options?.reconnectIntervalMs ?? 5000;
     this.loadLidCache();
     this.loadArchivedChatsCache();
+  }
+
+  private purgeSessionFiles(dir: string): void {
+    try {
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir);
+        for (const file of files) {
+          if (file !== 'session_state.json' && file !== 'lid_cache.json' && file !== 'archived_chats.json') {
+            fs.rmSync(path.join(dir, file), { recursive: true, force: true });
+          }
+        }
+      }
+    } catch (cleanErr) {
+      logger.error('Failed to clean session directory', { error: cleanErr });
+    }
   }
 
   public async start(): Promise<void> {
@@ -113,11 +129,20 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     this.transitionState('connecting');
 
     const resolvedSessionDir = initSessionDirectory(this.sessionPath);
-    const { state, saveCreds } = await useMultiFileAuthState(resolvedSessionDir);
+    let { state, saveCreds } = await useMultiFileAuthState(resolvedSessionDir);
+
+    // If session credentials on disk are explicitly unregistered, purge stale credentials to allow fresh pairing
+    if (state.creds && state.creds.registered === false && state.creds.me) {
+      logger.warn('WhatsApp session on disk has registered=false (unlinked/invalidated). Purging stale auth files for clean pairing...');
+      this.purgeSessionFiles(resolvedSessionDir);
+      const freshAuth = await useMultiFileAuthState(resolvedSessionDir);
+      state = freshAuth.state;
+      saveCreds = freshAuth.saveCreds;
+    }
 
     const sock = makeWASocket({
       auth: state,
-      browser: Browsers.macOS('Desktop'),
+      browser: Browsers.ubuntu('Chrome'),
       syncFullHistory: true,
       markOnlineOnConnect: true,
       generateHighQualityLinkPreview: false,
@@ -164,11 +189,18 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       }
     }, 1000);
 
-    if (state.creds?.me?.id) {
+    // Only update state to connecting if creds exist; do NOT falsely report 'authenticated' before socket is open!
+    if (state.creds?.me?.id && state.creds.registered) {
       this.writeSessionState({
-        status: 'authenticated',
+        status: 'connecting',
         accountJid: state.creds.me.id,
         name: state.creds.me.name || null,
+        updatedAt: Date.now()
+      });
+    } else if (!state.creds?.registered) {
+      this.writeSessionState({
+        status: 'scan_qr',
+        qr: this.lastQR,
         updatedAt: Date.now()
       });
     }
@@ -193,6 +225,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       }
 
       if (connection === 'open') {
+        this.consecutive428Errors = 0;
         if (this.pairPollTimer) {
           clearInterval(this.pairPollTimer);
           this.pairPollTimer = null;
@@ -221,41 +254,46 @@ export class BaileysAdapter implements IWhatsAppAdapter {
         const statusCode = error?.output?.statusCode;
         const isLoggedOut = statusCode === DisconnectReason.loggedOut;
 
-        this.writeSessionState({
-          status: isLoggedOut ? 'auth_required' : 'disconnected',
-          statusCode,
-          willReconnect: !isLoggedOut && this.isRunning,
-          updatedAt: Date.now()
-        });
+        if (statusCode === 428) {
+          this.consecutive428Errors++;
+          logger.warn(`WhatsApp socket closed with statusCode 428 (consecutive: ${this.consecutive428Errors})`);
+        } else {
+          this.consecutive428Errors = 0;
+        }
 
-        logger.warn('WhatsApp socket connection closed', {
-          statusCode,
-          isLoggedOut,
-          willReconnect: !isLoggedOut && this.isRunning
-        });
+        const isUnregistered = Boolean(state.creds && state.creds.registered === false);
+        const shouldPurgeStaleSession = isLoggedOut || (this.consecutive428Errors >= 3 && isUnregistered);
 
-        if (isLoggedOut) {
+        if (shouldPurgeStaleSession) {
           this.transitionState('auth_required');
-          logger.warn('WhatsApp session logged out or invalidated. Purging stale auth credentials and generating fresh QR pairing...');
-          try {
-            const dir = initSessionDirectory(this.sessionPath);
-            const files = fs.readdirSync(dir);
-            for (const file of files) {
-              if (file !== 'session_state.json' && file !== 'lid_cache.json') {
-                fs.rmSync(path.join(dir, file), { recursive: true, force: true });
-              }
-            }
-          } catch (cleanErr) {
-            logger.error('Failed to clean session directory after logout', { error: cleanErr });
-          }
+          logger.warn('WhatsApp session invalidated or unlinked on device. Purging stale auth credentials and generating fresh pairing...');
+          this.purgeSessionFiles(resolvedSessionDir);
+          this.writeSessionState({
+            status: 'scan_qr',
+            statusCode,
+            willReconnect: true,
+            updatedAt: Date.now()
+          });
           if (this.isRunning) {
             this.scheduleReconnect();
           }
         } else if (this.isRunning) {
           this.transitionState('connecting');
+          this.writeSessionState({
+            status: 'disconnected',
+            statusCode,
+            willReconnect: true,
+            updatedAt: Date.now()
+          });
           this.scheduleReconnect();
         } else {
           this.transitionState('disconnected');
+          this.writeSessionState({
+            status: 'disconnected',
+            statusCode,
+            willReconnect: false,
+            updatedAt: Date.now()
+          });
         }
       }
     });
