@@ -11,6 +11,23 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 
+// Zero-dependency .env loader — must run before any process.env reads
+const _envPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(_envPath)) {
+  const _lines = fs.readFileSync(_envPath, 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/);
+  for (const _line of _lines) {
+    const trimmed = _line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const idx = trimmed.indexOf('=');
+    if (idx > 0) {
+      const k = trimmed.slice(0, idx).trim();
+      let v = trimmed.slice(idx + 1).trim();
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+      if (process.env[k] === undefined) process.env[k] = v;
+    }
+  }
+}
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 const HOST = process.env.HOST || '0.0.0.0';
 const SECRET = process.env.WEBHOOK_SECRET || 'local_dev_webhook_secret_key_12345';
