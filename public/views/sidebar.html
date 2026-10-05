@@ -26,72 +26,80 @@
           
           <!-- Route Matrix -->
           <button onclick="switchView('routes')" data-view="routes" class="sidebar-nav-btn active w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
               <i data-lucide="table" class="w-4 h-4 text-emerald-400"></i>
               <span>Route Matrix</span>
+              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">1</kbd>
             </div>
             <span id="route-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
           </button>
 
           <!-- Market Trends & Charts -->
           <button onclick="switchView('trends')" data-view="trends" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
               <i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i>
               <span>Market Trends</span>
+              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">2</kbd>
             </div>
             <span class="text-[10px] text-slate-500">Charts</span>
           </button>
 
           <!-- AI Insights & Arbitrage -->
           <button onclick="switchView('insights')" data-view="insights" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
               <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
               <span>AI Insights</span>
+              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">3</kbd>
             </div>
             <span class="sidebar-badge px-1.5 py-0.5 rounded text-[9px] font-semibold">Signals</span>
           </button>
 
           <!-- Telco News & Outages -->
           <button onclick="switchView('news')" data-view="news" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
               <i data-lucide="newspaper" class="w-4 h-4 text-rose-400"></i>
               <span>Telco News</span>
+              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">4</kbd>
             </div>
             <span id="news-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
           </button>
 
           <!-- Vendor Directory -->
           <button onclick="switchView('vendors')" data-view="vendors" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
               <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
               <span>Carriers & Vendors</span>
+              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">5</kbd>
             </div>
             <span id="vendor-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
           </button>
 
           <!-- Live WhatsApp Message Stream -->
           <button onclick="switchView('terminal')" data-view="terminal" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
               <i data-lucide="radio" class="w-4 h-4 text-emerald-400 animate-pulse"></i>
               <span>Live Messages Stream</span>
+              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">6</kbd>
             </div>
             <span id="stream-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
           </button>
 
           <!-- System Pipeline & AI Inspector -->
           <button onclick="switchView('pipeline')" data-view="pipeline" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
               <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i>
               <span>System Pipeline</span>
+              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">7</kbd>
             </div>
             <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 uppercase">Live AI</span>
           </button>
 
           <!-- Developer Studio -->
           <button onclick="switchView('dev')" data-view="dev" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2">
               <i data-lucide="code-2" class="w-4 h-4 text-sky-400"></i>
               <span>Developer Studio</span>
+              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">8</kbd>
             </div>
             <span class="text-[10px] text-slate-500">API</span>
           </button>

@@ -571,5 +571,80 @@
   </div>
 </div>
 
+<!-- Trader Keyboard Shortcuts Modal (Press ?) -->
+<div id="shortcuts-modal" class="win-modal-container hidden" role="dialog" aria-modal="true" onclick="if (event.target === this) closeShortcutsModal()">
+  <div class="glass-modal win-window max-w-md w-full rounded-2xl p-5 border border-dark-700 shadow-2xl space-y-4 relative">
+    <div class="win-titlebar flex items-center justify-between pb-3 border-b border-dark-700 select-none">
+      <div class="flex items-center gap-2 pointer-events-none">
+        <i data-lucide="keyboard" class="w-4 h-4 text-emerald-400"></i>
+        <h3 class="font-bold text-sm text-white leading-tight">Trader Keyboard Shortcuts</h3>
+      </div>
+      <div class="flex items-center gap-1 win-controls">
+        <button type="button" class="win-btn win-btn-close" title="Close" onclick="closeShortcutsModal()">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="space-y-3 text-xs">
+      <div class="p-3 rounded-xl bg-dark-950 border border-dark-800 space-y-2.5">
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Global Navigation (1–8)</span>
+        <div class="grid grid-cols-2 gap-2 text-slate-300">
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Route Matrix</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-emerald-400 font-bold">1</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Market Trends</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-blue-400 font-bold">2</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>AI Insights</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-amber-400 font-bold">3</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Telco News</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-rose-400 font-bold">4</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Carriers</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-purple-400 font-bold">5</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Live Stream</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-emerald-400 font-bold">6</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Pipeline AI</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-purple-400 font-bold">7</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Dev Studio</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-sky-400 font-bold">8</kbd>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-xl bg-dark-950 border border-dark-800 space-y-2">
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Terminal Controls</span>
+        <div class="space-y-1.5 text-slate-300">
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Focus active view search bar</span>
+            <kbd class="px-2 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-amber-400 font-bold">/</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Close modal / Clear search focus</span>
+            <kbd class="px-2 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-slate-300 font-bold">Esc</kbd>
+          </div>
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-dark-900 border border-dark-800">
+            <span>Show keyboard shortcuts cheat sheet</span>
+            <kbd class="px-2 py-0.5 rounded bg-dark-950 border border-dark-700 font-mono text-[10px] text-emerald-400 font-bold">?</kbd>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Notification Container -->
 <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>

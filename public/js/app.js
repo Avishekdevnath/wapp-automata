@@ -388,6 +388,114 @@ async function fetchInitialBadgeCounts() {
 }
 window.fetchInitialBadgeCounts = fetchInitialBadgeCounts;
 
+// Trader Keyboard Shortcuts Engine (Zero-Mouse Trading Control)
+function openShortcutsModal() {
+  const modal = document.getElementById('shortcuts-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (window.initWindow) window.initWindow('shortcuts-modal');
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+window.openShortcutsModal = openShortcutsModal;
+
+function closeShortcutsModal() {
+  const modal = document.getElementById('shortcuts-modal');
+  if (modal) modal.classList.add('hidden');
+}
+window.closeShortcutsModal = closeShortcutsModal;
+
+function toggleShortcutsModal() {
+  const modal = document.getElementById('shortcuts-modal');
+  if (!modal) return;
+  if (modal.classList.contains('hidden')) {
+    openShortcutsModal();
+  } else {
+    closeShortcutsModal();
+  }
+}
+window.toggleShortcutsModal = toggleShortcutsModal;
+
+(function initTraderKeyboardShortcuts() {
+  const VIEW_MAP = {
+    '1': 'routes',
+    '2': 'trends',
+    '3': 'insights',
+    '4': 'news',
+    '5': 'vendors',
+    '6': 'terminal',
+    '7': 'pipeline',
+    '8': 'dev'
+  };
+
+  const SEARCH_INPUT_MAP = {
+    'routes': 'route-search-input',
+    'news': 'news-search-input',
+    'vendors': 'vendor-search-input',
+    'terminal': 'client-search-input',
+    'pipeline': 'pipe-search-input'
+  };
+
+  document.addEventListener('keydown', (e) => {
+    // 1. If currently typing inside any input, textarea, or select:
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (
+      activeEl.tagName === 'INPUT' ||
+      activeEl.tagName === 'TEXTAREA' ||
+      activeEl.tagName === 'SELECT' ||
+      activeEl.isContentEditable
+    );
+
+    // Escape while typing simply blurs/unfocuses the input
+    if (e.key === 'Escape' && isTyping) {
+      activeEl.blur();
+      return;
+    }
+
+    // Never hijack keystrokes while the user is actively filling out a field
+    if (isTyping) return;
+
+    // Do not trigger view changes if any dialog/modal is open
+    const openModal = document.querySelector('.win-modal-container:not(.hidden)');
+    if (openModal) return;
+
+    // 2. Press '/' anywhere to focus search input of active view
+    if (e.key === '/') {
+      e.preventDefault();
+      const current = window.currentActiveView || window.currentView || 'routes';
+      const inputId = SEARCH_INPUT_MAP[current] || 'route-search-input';
+      const searchEl = document.getElementById(inputId);
+      if (searchEl) {
+        searchEl.focus();
+        searchEl.select();
+      } else {
+        // Fallback to route matrix search
+        switchView('routes');
+        setTimeout(() => {
+          const fallback = document.getElementById('route-search-input');
+          if (fallback) { fallback.focus(); fallback.select(); }
+        }, 50);
+      }
+      return;
+    }
+
+    // 3. Press '1' through '8' to switch views instantly
+    if (VIEW_MAP[e.key]) {
+      e.preventDefault();
+      const targetView = VIEW_MAP[e.key];
+      switchView(targetView);
+      return;
+    }
+
+    // 4. Press '?' to toggle keyboard shortcuts cheat sheet
+    if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+      e.preventDefault();
+      toggleShortcutsModal();
+      return;
+    }
+  });
+})();
+
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();

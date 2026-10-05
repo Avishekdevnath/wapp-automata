@@ -20,6 +20,7 @@
     else if (id === 'modal-purge-stream' && typeof window.closePurgeStreamModal === 'function') window.closePurgeStreamModal();
     else if (id === 'modal-ai-settings' && typeof window.closeAiSettingsModal === 'function') window.closeAiSettingsModal();
     else if (id === 'modal-pipeline-inspect' && typeof window.closeInspectModal === 'function') window.closeInspectModal();
+    else if (id === 'shortcuts-modal' && typeof window.closeShortcutsModal === 'function') window.closeShortcutsModal();
   }
 
   function bringToFront(modalEl) {
