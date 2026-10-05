@@ -31,9 +31,9 @@ function switchView(viewName) {
   document.querySelectorAll('.sidebar-nav-btn').forEach(btn => {
     const target = btn.getAttribute('data-view');
     if (target === viewName) {
-      btn.className = 'sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm transition-all';
+      btn.className = 'sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-sm transition-all';
     } else {
-      btn.className = 'sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-dark-900 border border-transparent font-medium text-xs flex items-center justify-between transition-all';
+      btn.className = 'sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-dark-800 border border-transparent font-medium text-xs flex items-center justify-between transition-all';
     }
   });
 
@@ -206,6 +206,37 @@ function toggleSound() {
   }
 }
 
+// WhatsApp Enterprise Dual-Mode Theme Manager (Dark & Light)
+function toggleTheme() {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('wapp_theme', isDark ? 'dark' : 'light');
+  updateThemeIcon(isDark);
+  if (typeof showToast === 'function') {
+    showToast(isDark ? 'Dark Theme (WhatsApp Web)' : 'Light Theme (WhatsApp Clean)', 'info');
+  }
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.getElementById('icon-theme');
+  const btn = document.getElementById('btn-theme');
+  if (icon) {
+    icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+    icon.className = isDark ? 'w-4 h-4 text-amber-400' : 'w-4 h-4 text-emerald-600';
+  }
+  if (btn) {
+    btn.setAttribute('title', isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('wapp_theme');
+  const isDark = saved ? saved === 'dark' : true;
+  document.documentElement.classList.toggle('dark', isDark);
+  updateThemeIcon(isDark);
+}
+window.toggleTheme = toggleTheme;
+
 // Toast notification helper
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
@@ -236,6 +267,8 @@ function showToast(message, type = 'info') {
 
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+
   if (typeof checkAuth === 'function') {
     checkAuth();
   }

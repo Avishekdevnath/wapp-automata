@@ -59,6 +59,12 @@
         if (token) {
           document.documentElement.classList.add('is-authenticated');
         }
+        var theme = localStorage.getItem('wapp_theme') || 'dark';
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       } catch (e) {}
     })();
   </script>
@@ -285,6 +291,11 @@
             <!-- Sound Alert Toggle -->
             <button id="btn-sound" onclick="toggleSound()" class="p-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 hover:text-white transition-all text-xs" title="Toggle audio chime">
               <i id="icon-sound" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+            </button>
+
+            <!-- Theme Toggle (Dark / Light WhatsApp Theme) -->
+            <button id="btn-theme" onclick="toggleTheme()" class="p-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 hover:text-white transition-all text-xs" title="Switch Theme (Dark / Light)">
+              <i id="icon-theme" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
             </button>
 
             <!-- Logout Button -->
@@ -883,17 +894,17 @@
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts -->
-  <script src="/js/auth.js?v=16"></script>
-  <script src="/js/app.js?v=16"></script>
-  <script src="/js/route-matrix.js?v=16"></script>
-  <script src="/js/market-trends.js?v=16"></script>
-  <script src="/js/ai-insights.js?v=16"></script>
-  <script src="/js/telco-news.js?v=16"></script>
-  <script src="/js/vendor-dir.js?v=16"></script>
-  <script src="/js/client-inbox.js?v=16"></script>
-  <script src="/js/dev-studio.js?v=16"></script>
-  <script src="/js/device-manager.js?v=16"></script>
-  <script src="/js/storage-manager.js?v=16"></script>
-  <script src="/js/simulator.js?v=16"></script>
+  <script src="/js/auth.js?v=17"></script>
+  <script src="/js/app.js?v=17"></script>
+  <script src="/js/route-matrix.js?v=17"></script>
+  <script src="/js/market-trends.js?v=17"></script>
+  <script src="/js/ai-insights.js?v=17"></script>
+  <script src="/js/telco-news.js?v=17"></script>
+  <script src="/js/vendor-dir.js?v=17"></script>
+  <script src="/js/client-inbox.js?v=17"></script>
+  <script src="/js/dev-studio.js?v=17"></script>
+  <script src="/js/device-manager.js?v=17"></script>
+  <script src="/js/storage-manager.js?v=17"></script>
+  <script src="/js/simulator.js?v=17"></script>
 </body>
 </html>

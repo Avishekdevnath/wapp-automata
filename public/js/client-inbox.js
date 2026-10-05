@@ -89,19 +89,19 @@ function renderClientFeed() {
             <!-- Header Row -->
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-sm font-bold text-white tracking-tight">${esc(m.sender_name || 'Carrier Contact')}</span>
+                <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">${esc(m.sender_name || 'Carrier Contact')}</span>
                 ${m.sender_phone ? `
                   <span class="px-2 py-0.5 rounded-full bg-dark-950 border border-dark-700 text-slate-300 font-mono text-[11px]">
                     ${esc(m.sender_phone)}
                   </span>
                 ` : ''}
                 ${isGroup ? `
-                  <span class="px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-[11px] font-medium flex items-center gap-1">
+                  <span class="px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 dark:text-sky-300 text-[11px] font-medium flex items-center gap-1">
                     <i data-lucide="users" class="w-3 h-3"></i>
                     <span>${esc(m.chat_name || 'Group Chat')}</span>
                   </span>
                 ` : `
-                  <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[11px] font-medium flex items-center gap-1">
+                  <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 dark:text-purple-300 text-[11px] font-medium flex items-center gap-1">
                     <i data-lucide="user" class="w-3 h-3"></i>
                     <span>Direct Message</span>
                   </span>
@@ -112,7 +112,7 @@ function renderClientFeed() {
               <div class="flex items-center gap-2">
                 <span class="text-[11px] text-slate-400 font-mono">${esc(formattedTime)}</span>
                 ${knockUrl ? `
-                  <a href="${knockUrl}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold flex items-center gap-1.5 transition-all shadow-sm">
+                  <a href="${knockUrl}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center gap-1.5 transition-all shadow-sm">
                     <i data-lucide="send" class="w-3 h-3"></i>
                     <span>Knock</span>
                   </a>
@@ -122,7 +122,7 @@ function renderClientFeed() {
 
             <!-- Message Text Content -->
             ${m.text ? `
-              <div class="text-xs text-slate-200 bg-dark-950/90 p-3.5 rounded-xl border border-dark-800/80 leading-relaxed font-sans whitespace-pre-wrap break-words select-text">
+              <div class="wapp-chat-bubble text-xs p-3.5 rounded-2xl border leading-relaxed font-sans whitespace-pre-wrap break-words select-text">
                 ${esc(m.text)}
               </div>
             ` : ''}

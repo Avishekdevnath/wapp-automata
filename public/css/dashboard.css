@@ -1,43 +1,204 @@
-/* WappAutomata Dashboard Custom Styling */
-body {
-  background-color: #060911;
-  color: #f1f5f9;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+/* ==========================================================================
+   WappAutomata • Wholesale Telecom Trading Terminal
+   Design System: WhatsApp Enterprise SaaS Theme (Dual-Mode Dark & Light)
+   ========================================================================== */
+
+:root {
+  /* WhatsApp Light Theme Tokens */
+  --bg-app: #f0f2f5;                  /* Official WhatsApp Web light backdrop */
+  --bg-surface: #ffffff;              /* Clean white cards, tables & sidebar */
+  --bg-surface-subtle: #f8fafc;       /* Secondary neutral surface */
+  --bg-hover: #e9edef;                /* WhatsApp light hover */
+  --bg-active: #d9fdd3;               /* WhatsApp light green bubble highlight */
+  --border-color: #e2e8f0;            /* Crisp divider */
+  --border-subtle: #cbd5e1;
+  --text-main: #111b21;               /* High-contrast WhatsApp charcoal text */
+  --text-muted: #64748b;              /* Secondary slate metadata text */
+  --text-dim: #94a3b8;
+  --brand-green: #008069;             /* Official WhatsApp Business Deep Green */
+  --brand-teal: #00a884;              /* WhatsApp Teal accent */
+  --brand-lightgreen: #25d366;        /* WhatsApp Active status green */
+  --brand-bubble: #f8fafc;            /* Inbound chat bubble tint */
+  --brand-bubble-border: #e2e8f0;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --modal-bg: #ffffff;
+  --modal-border: #cbd5e1;
+  --input-bg: #f8fafc;
+  --input-border: #cbd5e1;
+  --input-text: #111b21;
 }
 
+.dark {
+  /* WhatsApp Dark Theme Tokens (WhatsApp Web Dark Mode) */
+  --bg-app: #0b141a;                  /* Official WhatsApp Web deep dark background */
+  --bg-surface: #111b21;              /* WhatsApp Web chat list & sidebar surface */
+  --bg-surface-subtle: #182229;       /* WhatsApp Web elevated surface */
+  --bg-hover: #202c33;                /* WhatsApp Web item hover & active state */
+  --bg-active: #005c4b;               /* WhatsApp Web dark emerald green active */
+  --border-color: #222d34;            /* WhatsApp Web divider */
+  --border-subtle: #2a3942;
+  --text-main: #e9edef;               /* WhatsApp Web crisp white text */
+  --text-muted: #8696a0;              /* WhatsApp Web muted gray */
+  --text-dim: #667781;
+  --brand-green: #00a884;             /* WhatsApp Web Teal/Green primary */
+  --brand-teal: #25d366;              /* WhatsApp bright neon green */
+  --brand-lightgreen: #25d366;
+  --brand-bubble: #202c33;            /* Inbound chat card bubble */
+  --brand-bubble-border: #222d34;
+  --card-bg: rgba(17, 27, 33, 0.95);
+  --card-border: rgba(34, 45, 52, 0.9);
+  --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --modal-bg: rgba(17, 27, 33, 0.98);
+  --modal-border: rgba(42, 57, 66, 0.95);
+  --input-bg: #202c33;
+  --input-border: #2a3942;
+  --input-text: #e9edef;
+}
+
+/* Base Body Styles */
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Theme Surface Adaptation */
+.bg-dark-950, [class*="bg-dark-950"] {
+  background-color: var(--bg-app) !important;
+}
+
+.bg-dark-900, [class*="bg-dark-900"] {
+  background-color: var(--bg-surface) !important;
+}
+
+.bg-dark-850, [class*="bg-dark-850"] {
+  background-color: var(--bg-surface-subtle) !important;
+}
+
+.bg-dark-800, [class*="bg-dark-800"] {
+  background-color: var(--bg-hover) !important;
+}
+
+.border-dark-700, [class*="border-dark-700"],
+.border-dark-800, [class*="border-dark-800"] {
+  border-color: var(--border-color) !important;
+}
+
+/* Light Theme High-Contrast Text Balancing */
+html:not(.dark) {
+  color: var(--text-main);
+}
+
+html:not(.dark) .text-white,
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-300 {
+  color: var(--text-main) !important;
+}
+
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-500 {
+  color: var(--text-muted) !important;
+}
+
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border-color: var(--input-border) !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: var(--text-dim) !important;
+}
+
+/* Preserve White Text on Solid Brand Buttons in Both Themes */
+.bg-emerald-600, .bg-emerald-500,
+.bg-sky-600, .bg-sky-500,
+.bg-rose-600, .bg-rose-500,
+.bg-amber-500,
+[type="submit"] {
+  color: #ffffff !important;
+}
+
+/* WhatsApp Cards & Glass Components */
+.glass-card {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  box-shadow: var(--card-shadow);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-modal {
+  background-color: var(--modal-bg) !important;
+  border: 1px solid var(--modal-border) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+/* WhatsApp Brand Accents */
+.text-emerald-400, .text-emerald-300 {
+  color: var(--brand-green) !important;
+}
+
+.bg-emerald-500\/10, .bg-emerald-500\/20 {
+  background-color: rgba(0, 168, 132, 0.12) !important;
+}
+
+.border-emerald-500\/30, .border-emerald-500\/40 {
+  border-color: rgba(0, 168, 132, 0.3) !important;
+}
+
+.bg-emerald-600 {
+  background-color: var(--brand-green) !important;
+}
+
+.bg-emerald-600:hover, .hover\:bg-emerald-500:hover {
+  background-color: var(--brand-teal) !important;
+}
+
+/* WhatsApp Message Bubble Styling */
+.wapp-chat-bubble {
+  background-color: var(--brand-bubble) !important;
+  border: 1px solid var(--brand-bubble-border) !important;
+  color: var(--text-main) !important;
+}
+
+/* Precision Scrollbars (Placed on right-most edge) */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #060911;
+  background-color: var(--bg-app);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #202c33;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #00a884;
 }
 
-.glass-card {
-  background: rgba(12, 18, 32, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(35, 51, 82, 0.7);
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.glass-modal {
-  background: rgba(12, 18, 32, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(35, 51, 82, 0.85);
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background-color: #008069;
 }
 
+/* Status Animations */
 @keyframes pulseGlow {
   0%, 100% {
     opacity: 1;
