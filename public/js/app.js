@@ -11,6 +11,67 @@ window.escapeHtml = function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 };
 
+window.formatDateTime = function formatDateTime(val) {
+  if (!val) return '—';
+  try {
+    const num = Number(val);
+    const d = !isNaN(num) && num > 0
+      ? new Date(num < 1e12 ? num * 1000 : num)
+      : new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    return d.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } catch {
+    return String(val);
+  }
+};
+
+// High-Performance Scoped Lucide Icon Batcher
+// Prevents re-parsing the entire DOM and destroying existing SVGs
+(function() {
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    const nativeCreateIcons = window.lucide.createIcons.bind(window.lucide);
+    let rafScheduled = false;
+    const targetContainers = new Set();
+
+    function flushIconUpdates() {
+      rafScheduled = false;
+      if (targetContainers.size > 0) {
+        targetContainers.forEach(container => {
+          if (container && container.nodeType === 1) {
+            nativeCreateIcons({ root: container });
+          }
+        });
+        targetContainers.clear();
+      } else {
+        const unrendered = document.querySelectorAll('i[data-lucide]');
+        if (unrendered.length > 0) {
+          nativeCreateIcons();
+        }
+      }
+    }
+
+    window.lucide.createIcons = function(options) {
+      if (options && options.root) {
+        targetContainers.add(options.root);
+      }
+      if (!rafScheduled) {
+        rafScheduled = true;
+        requestAnimationFrame(flushIconUpdates);
+      }
+    };
+
+    window.refreshIcons = function(container) {
+      window.lucide.createIcons(container ? { root: container } : undefined);
+    };
+  }
+})();
+
 // Multi-View Navigation & Hash Router
 function getViewFromHash() {
   const hash = (window.location.hash || '').replace(/^#\/?/, '').trim().toLowerCase();
@@ -342,38 +403,57 @@ document.addEventListener('DOMContentLoaded', () => {
   // Immediately populate badge numbers
   fetchInitialBadgeCounts();
 
-  // Start polling loops
-  fetchMessages();
-  setInterval(fetchMessages, 3500);
+  // Coordinated Background Polling Engine with Smart Tab Sleep
+  let heartbeatCycle = 0;
+  let isHeartbeatBusy = false;
 
-  if (typeof pollDeviceStatus === 'function') {
-    pollDeviceStatus();
-    setInterval(pollDeviceStatus, 5000);
-  }
+  async function coordinatedDashboardHeartbeat() {
+    // Pause network polling when tab is hidden to save 100% idle CPU
+    if (document.hidden) return;
+    if (isHeartbeatBusy) return;
+    isHeartbeatBusy = true;
 
-  if (typeof pollStorageStatus === 'function') {
-    pollStorageStatus();
-    setInterval(pollStorageStatus, 30000);
-  }
-});
+    try {
+      heartbeatCycle++;
 
-// Global Keyboard Shortcut: Escape to close active modal
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' || e.key === 'Esc') {
-    if (typeof closeRouteDetailModal === 'function' && !document.getElementById('route-detail-modal')?.classList.contains('hidden')) {
-      closeRouteDetailModal();
-    } else if (typeof closePostRouteModal === 'function' && !document.getElementById('modal-post-route')?.classList.contains('hidden')) {
-      closePostRouteModal();
-    } else if (typeof closeDeviceModal === 'function' && !document.getElementById('device-modal')?.classList.contains('hidden')) {
-      closeDeviceModal();
-    } else if (typeof closeStorageModal === 'function' && (!document.getElementById('storage-modal')?.classList.contains('hidden') || !document.getElementById('modal-storage')?.classList.contains('hidden'))) {
-      closeStorageModal();
-    } else if (typeof closeAiSettingsModal === 'function' && !document.getElementById('modal-ai-settings')?.classList.contains('hidden')) {
-      closeAiSettingsModal();
-    } else if (typeof closePurgeStreamModal === 'function' && !document.getElementById('modal-purge-stream')?.classList.contains('hidden')) {
-      closePurgeStreamModal();
-    } else if (typeof closePipelineInspectModal === 'function' && !document.getElementById('modal-pipeline-inspect')?.classList.contains('hidden')) {
-      closePipelineInspectModal();
+      // 1. Fetch live messages every cycle (~5s)
+      if (typeof fetchMessages === 'function') {
+        await fetchMessages();
+      }
+
+      // 2. Poll device session status every 2nd cycle (~10s) if device modal is closed
+      const deviceModal = document.getElementById('device-modal');
+      const isDeviceModalOpen = deviceModal && !deviceModal.classList.contains('hidden');
+      if (typeof pollDeviceStatus === 'function' && !isDeviceModalOpen && (heartbeatCycle % 2 === 0)) {
+        await pollDeviceStatus();
+      }
+
+      // 3. Poll storage status every 6th cycle (~30s)
+      if (typeof pollStorageStatus === 'function' && (heartbeatCycle % 6 === 0)) {
+        await pollStorageStatus();
+      }
+
+      // 4. If Pipeline view is currently active, sync pipeline metrics
+      if (window.currentActiveView === 'pipeline' && window.pipelineAutoRefresh !== false && typeof loadPipelineStatus === 'function') {
+        await loadPipelineStatus();
+      }
+    } catch (err) {
+      console.warn('[Heartbeat] Polling cycle error:', err);
+    } finally {
+      isHeartbeatBusy = false;
     }
   }
+
+  // Initial immediate fetch
+  coordinatedDashboardHeartbeat();
+
+  // Unified single polling timer
+  setInterval(coordinatedDashboardHeartbeat, 5000);
+
+  // Instantly sync when user switches back to this tab
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      coordinatedDashboardHeartbeat();
+    }
+  });
 });

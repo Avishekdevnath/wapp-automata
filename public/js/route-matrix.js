@@ -85,7 +85,22 @@ async function loadRouteMatrix() {
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    const routes = data.routes || [];
+    let routes = data.routes || [];
+
+    // --- De-clutter: Limit "Best Trusted Price" to Top 3 Pricing Tiers ---
+    const uniquePrices = [...new Set(routes
+      .filter(r => r.rate_per_min !== null)
+      .map(r => Number(r.rate_per_min))
+    )].sort((a, b) => a - b).slice(0, 3);
+
+    routes = routes.map(r => {
+      const price = Number(r.rate_per_min);
+      const rankIndex = uniquePrices.indexOf(price);
+      r.best_price_rank = rankIndex !== -1 ? rankIndex + 1 : 0;
+      r.is_best_trusted_price = rankIndex !== -1;
+      return r;
+    });
+    
     cachedRoutes = routes;
 
     const stats = data.stats || {
@@ -135,9 +150,12 @@ async function loadRouteMatrix() {
     // 4. Update Pagination Controls
     updateRoutePaginationUI(data.total !== undefined ? data.total : routes.length);
 
-    // 5. Render Table and Cards
-    renderRouteTable(routes);
-    renderRouteCards(routes);
+    // 5. Render active view mode only (prevents redundant DOM overhead)
+    if (routeViewMode === 'cards') {
+      renderRouteCards(routes);
+    } else {
+      renderRouteTable(routes);
+    }
 
     // Apply active view mode container visibility
     applyRouteViewMode();
@@ -167,9 +185,10 @@ function renderFraudBadge(r) {
     return `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="${flagsStr || 'Below market floor'}"><i data-lucide="shield-alert" class="w-3 h-3 text-amber-500"></i> Rate Notice (${score})</span>`;
   }
   if (level === 'MEDIUM') {
-    return `<span class="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30" title="${flagsStr || 'Standard commercial corridor'}"><i data-lucide="shield" class="w-3 h-3 text-sky-500"></i> Market Rate</span>`;
+    return `<span class="inline-flex items-center gap-1 text-[10px] font-medium text-sky-500/70" title="${flagsStr || 'Standard commercial corridor'}"><i data-lucide="shield" class="w-3.5 h-3.5"></i> Standard</span>`;
   }
-  return `<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" title="${flagsStr || 'Verified route terms'}"><i data-lucide="shield-check" class="w-3 h-3 text-emerald-500"></i> Verified Safe</span>`;
+  // Remove bulky redundant pill for SAFE routes to de-clutter UI
+  return `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500/70" title="${flagsStr || 'Verified route terms'}"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Verified</span>`;
 }
 
 /**
@@ -212,18 +231,32 @@ function renderRouteTable(routes) {
       ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' 
       : 'bg-slate-800 text-slate-400 border-slate-700';
 
-    let bestBadge = '';
-    if (r.is_best_trusted_price) {
-      bestBadge = '<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 block mt-0.5 w-fit"><i data-lucide="award" class="w-2.5 h-2.5"></i> Best Trusted Price</span>';
+    let diffColorClass = 'text-slate-400';
+    if (r.diff_vs_avg_text) {
+      if (r.diff_vs_avg_text.includes('-')) diffColorClass = 'text-emerald-400 font-bold';
+      else if (r.diff_vs_avg_text.includes('+')) diffColorClass = 'text-rose-400 font-bold';
     }
     const histDiff = r.diff_vs_avg_text 
-      ? `<span class="text-[10px] text-slate-400 font-mono block mt-0.5" title="Historical 30-day corridor comparison">${escapeHtml(r.diff_vs_avg_text)}</span>` 
+      ? `<span class="text-[10px] ${diffColorClass} font-mono block mt-0.5" title="Historical 30-day corridor comparison">${escapeHtml(r.diff_vs_avg_text)}</span>` 
       : '';
+
+    let rateClass = 'text-emerald-400';
+    let rateCellBg = '';
+    
+    if (r.best_price_rank === 1) {
+      rateClass = 'text-amber-400 drop-shadow-md';
+      rateCellBg = 'bg-amber-500/20 shadow-inner border-x border-amber-500/40';
+    } else if (r.best_price_rank === 2) {
+      rateClass = 'text-slate-300 drop-shadow-sm'; // Silver
+      rateCellBg = 'bg-slate-500/10 shadow-inner border-x border-slate-500/30';
+    } else if (r.best_price_rank === 3) {
+      rateClass = 'text-orange-400 drop-shadow-sm'; // Bronze
+      rateCellBg = 'bg-orange-500/10 shadow-inner border-x border-orange-500/30';
+    }
 
     const rateDisplay = r.rate_per_min !== null 
       ? `<div>
-          <span class="font-mono text-sm font-bold text-emerald-400">$${Number(r.rate_per_min).toFixed(4)}</span>
-          ${bestBadge}
+          <span class="font-mono text-sm font-bold ${rateClass}">$${Number(r.rate_per_min).toFixed(4)}</span>
           ${histDiff}
         </div>` 
       : '<span class="text-slate-500 italic text-[11px]">Ping for Rate</span>';
@@ -273,7 +306,7 @@ function renderRouteTable(routes) {
         </td>
 
         <!-- Price / Rate -->
-        <td class="py-3 px-4">
+        <td class="py-3 px-4 ${rateCellBg}">
           ${rateDisplay}
         </td>
 
@@ -346,13 +379,28 @@ function renderRouteCards(routes) {
       ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">🟢 WTS (Selling)</span>'
       : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">🟡 WTB (Buying)</span>';
 
-    let bestBadge = '';
-    if (r.is_best_trusted_price) {
-      bestBadge = '<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 block mt-0.5 w-fit"><i data-lucide="award" class="w-2.5 h-2.5"></i> Best Trusted Price</span>';
+    let diffColorClass = 'text-slate-400';
+    if (r.diff_vs_avg_text) {
+      if (r.diff_vs_avg_text.includes('-')) diffColorClass = 'text-emerald-400 font-bold';
+      else if (r.diff_vs_avg_text.includes('+')) diffColorClass = 'text-rose-400 font-bold';
     }
     const histDiff = r.diff_vs_avg_text 
-      ? `<span class="text-[10px] text-slate-400 font-mono block mt-0.5" title="Historical 30-day corridor comparison">${escapeHtml(r.diff_vs_avg_text)}</span>` 
+      ? `<span class="text-[10px] ${diffColorClass} font-mono block mt-0.5" title="Historical 30-day corridor comparison">${escapeHtml(r.diff_vs_avg_text)}</span>` 
       : '';
+
+    let priceCardClass = 'bg-dark-900 border border-dark-800';
+    let rateClass = 'text-emerald-400';
+    
+    if (r.best_price_rank === 1) {
+        priceCardClass = 'bg-amber-500/20 border border-amber-500/40 shadow-inner';
+        rateClass = 'text-amber-400 drop-shadow-md';
+    } else if (r.best_price_rank === 2) {
+        priceCardClass = 'bg-slate-500/10 border border-slate-500/30 shadow-inner';
+        rateClass = 'text-slate-300 drop-shadow-sm';
+    } else if (r.best_price_rank === 3) {
+        priceCardClass = 'bg-orange-500/10 border border-orange-500/30 shadow-inner';
+        rateClass = 'text-orange-400 drop-shadow-sm';
+    }
 
     const rateDisplay = r.rate_per_min !== null 
       ? `$${Number(r.rate_per_min).toFixed(4)}` 
@@ -383,14 +431,13 @@ function renderRouteCards(routes) {
         </div>
 
         <!-- Price & Pulse Highlight -->
-        <div class="p-3 rounded-xl bg-dark-900 border border-dark-800 flex items-center justify-between">
+        <div class="p-3 rounded-xl flex items-center justify-between transition-colors ${priceCardClass}">
           <div>
             <span class="text-[10px] uppercase font-semibold text-slate-400 block">Wholesale Rate</span>
             <div class="flex items-baseline gap-1 mt-0.5">
-              <span class="font-mono text-xl font-black text-emerald-400">${rateDisplay}</span>
+              <span class="font-mono text-xl font-black ${rateClass}">${rateDisplay}</span>
               <span class="text-[10px] text-slate-500">/min</span>
             </div>
-            ${bestBadge}
             ${histDiff}
           </div>
           <div class="text-right space-y-1">
@@ -455,7 +502,13 @@ function renderRouteCards(routes) {
 function setRouteViewMode(mode) {
   routeViewMode = mode;
   localStorage.setItem('wapp_route_view_mode', mode);
+  if (routeViewMode === 'cards') {
+    renderRouteCards(cachedRoutes);
+  } else {
+    renderRouteTable(cachedRoutes);
+  }
   applyRouteViewMode();
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function applyRouteViewMode() {
@@ -560,22 +613,28 @@ function openRouteDetailModal(routeId) {
   const elNotes = document.getElementById('modal-route-notes');
   const btnKnock = document.getElementById('btn-modal-knock');
 
-  const elNewsBox = document.getElementById('modal-route-news-box');
   if (elNewsBox) {
     if (route.active_news) {
       elNewsBox.classList.remove('hidden');
-      const isHigh = route.active_news.urgency === 'HIGH';
+      const isOutage = route.active_news.category === 'OUTAGE' || route.active_news.urgency === 'HIGH';
+      const cardType = isOutage ? 'incident-outage' : 'incident-warning';
+      const iconName = isOutage ? 'alert-octagon' : (route.active_news.category === 'REGULATION' ? 'scale' : 'wrench');
+      
       elNewsBox.innerHTML = `
-        <div class="p-3.5 rounded-2xl ${isHigh ? 'bg-rose-950/40 border border-rose-500/40 text-rose-300' : 'bg-amber-950/40 border border-amber-500/40 text-amber-300'} space-y-1.5 shadow-md">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-xs flex items-center gap-1.5">
-              <i data-lucide="${route.active_news.category === 'OUTAGE' ? 'alert-octagon' : (route.active_news.category === 'REGULATION' ? 'scale' : 'wrench')}" class="w-3.5 h-3.5"></i>
-              <span>Live WhatsApp Incident (${escapeHtml(route.active_news.category)} • ${escapeHtml(route.active_news.urgency)})</span>
+        <div class="modal-incident-card ${cardType} space-y-2 shadow-sm">
+          <div class="flex items-center justify-between gap-2">
+            <span class="incident-header-badge inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 shadow-sm">
+              <i data-lucide="${iconName}" class="w-3 h-3"></i>
+              <span>${escapeHtml(route.active_news.category)} • ${escapeHtml(route.active_news.urgency)}</span>
             </span>
-            <span class="text-[10px] font-mono opacity-75">${formatTimeAgo(route.active_news.created_at)}</span>
+            <span class="text-[11px] font-mono opacity-80 shrink-0 font-medium">${formatTimeAgo(route.active_news.created_at)}</span>
           </div>
-          <p class="text-xs text-white font-semibold leading-snug">${escapeHtml(route.active_news.headline)}</p>
-          ${route.active_news.raw_text ? `<p class="text-[11px] text-slate-300 font-mono leading-relaxed bg-dark-900/80 p-2 rounded-lg border border-dark-800">${escapeHtml(route.active_news.raw_text)}</p>` : ''}
+          <p class="incident-headline text-xs font-bold leading-snug">${escapeHtml(route.active_news.headline)}</p>
+          ${route.active_news.raw_text ? `
+            <div class="incident-quote-box p-3 rounded-xl text-xs leading-relaxed font-sans shadow-inner">
+              ${escapeHtml(route.active_news.raw_text)}
+            </div>
+          ` : ''}
         </div>
       `;
     } else {

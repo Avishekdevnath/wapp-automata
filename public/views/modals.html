@@ -11,12 +11,6 @@
         <h3 class="font-bold text-sm text-white leading-tight">WhatsApp Companion Device</h3>
       </div>
       <div class="flex items-center gap-1 win-controls">
-        <button type="button" class="win-btn win-btn-min" title="Minimize">
-          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-        </button>
-        <button type="button" class="win-btn win-btn-max" title="Maximize">
-          <i data-lucide="square" class="w-3.5 h-3.5"></i>
-        </button>
         <button type="button" class="win-btn win-btn-close" title="Close" onclick="closeDeviceModal()">
           <i data-lucide="x" class="w-3.5 h-3.5"></i>
         </button>
@@ -164,12 +158,6 @@
         <h3 class="font-bold text-sm text-white leading-tight">Storage & Cache Manager</h3>
       </div>
       <div class="flex items-center gap-1 win-controls">
-        <button type="button" class="win-btn win-btn-min" title="Minimize">
-          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-        </button>
-        <button type="button" class="win-btn win-btn-max" title="Maximize">
-          <i data-lucide="square" class="w-3.5 h-3.5"></i>
-        </button>
         <button type="button" class="win-btn win-btn-close" title="Close" onclick="closeStorageModal()">
           <i data-lucide="x" class="w-3.5 h-3.5"></i>
         </button>
@@ -193,13 +181,13 @@
       </div>
 
       <div class="grid grid-cols-2 gap-3 pt-2">
-        <button onclick="handlePurgeMedia(80)" class="py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium">Purge Oldest 80%</button>
-        <button onclick="handlePurgeMedia(100)" class="py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-medium">Purge 100% Media</button>
+        <button onclick="handlePurgeMedia(80)" class="btn-modal-action rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold inline-flex items-center justify-center transition-all">Purge Oldest 80%</button>
+        <button onclick="handlePurgeMedia(100)" class="btn-modal-action rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30 text-xs font-semibold inline-flex items-center justify-center transition-all">Purge 100% Media</button>
       </div>
     </div>
 
     <div class="flex items-center justify-end pt-2 border-t border-dark-800">
-      <button onclick="closeStorageModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium">Close</button>
+      <button onclick="closeStorageModal()" class="btn-modal-action rounded-lg bg-white dark:bg-dark-800 hover:bg-slate-50 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shadow-sm text-xs font-semibold">Close</button>
     </div>
     <!-- Window Resize Grip Handle -->
     <div class="win-resizer" title="Drag to resize window"></div>
@@ -208,7 +196,7 @@
 
 <!-- Route Detail Modal -->
 <div id="route-detail-modal" class="win-modal-container hidden" onclick="if (event.target === this) closeRouteDetailModal()">
-  <div class="glass-modal win-window max-w-xl w-full rounded-2xl border border-dark-700 shadow-2xl space-y-4 p-5 relative">
+  <div class="glass-modal win-window w-[640px] max-w-[calc(100vw-32px)] rounded-2xl border border-dark-700 shadow-2xl space-y-4 p-5 relative">
     <div class="win-titlebar flex items-center justify-between pb-3 border-b border-dark-700 select-none">
       <div class="flex items-center gap-2.5 pointer-events-none">
         <span id="modal-route-flag" class="text-2xl select-none leading-none">🌐</span>
@@ -218,12 +206,6 @@
         </div>
       </div>
       <div class="flex items-center gap-1 win-controls">
-        <button type="button" class="win-btn win-btn-min" title="Minimize">
-          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-        </button>
-        <button type="button" class="win-btn win-btn-max" title="Maximize">
-          <i data-lucide="square" class="w-3.5 h-3.5"></i>
-        </button>
         <button type="button" class="win-btn win-btn-close" title="Close" onclick="closeRouteDetailModal()">
           <i data-lucide="x" class="w-3.5 h-3.5"></i>
         </button>
@@ -282,31 +264,31 @@
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex items-center justify-between pt-3 border-t border-dark-800">
+    <div class="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 pt-3 border-t border-dark-800">
       <button 
         id="btn-copy-ticket"
         onclick="copyTradeTicket()"
-        class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-all"
+        class="btn-modal-action rounded-lg bg-white dark:bg-dark-800 hover:bg-slate-50 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-dark-700 shadow-sm shrink-0"
       >
-        <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-400"></i>
+        <i data-lucide="copy" class="w-4 h-4 text-slate-400"></i>
         <span>Copy Trade Ticket</span>
       </button>
 
-      <div class="flex items-center gap-2">
-        <button onclick="closeRouteDetailModal()" class="px-4 py-2 rounded-xl bg-dark-900 hover:bg-dark-800 text-slate-400 text-xs font-medium">Close</button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button onclick="closeRouteDetailModal()" class="btn-modal-action rounded-lg bg-white dark:bg-dark-800 hover:bg-slate-50 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shadow-sm shrink-0">Close</button>
         <button 
           id="btn-modal-pitch"
           onclick="pitchRouteFromModal()"
-          class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-purple-600/20 transition-all"
+          class="btn-modal-action rounded-lg bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-600/20 shrink-0"
         >
-          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
           <span>AI Pitch Deal</span>
         </button>
         <button 
           id="btn-modal-knock"
-          class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
+          class="btn-modal-action rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 shrink-0"
         >
-          <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
+          <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
           <span>Knock on WhatsApp</span>
         </button>
       </div>
@@ -328,12 +310,6 @@
         </div>
       </div>
       <div class="flex items-center gap-1 win-controls">
-        <button type="button" class="win-btn win-btn-min" title="Minimize">
-          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-        </button>
-        <button type="button" class="win-btn win-btn-max" title="Maximize">
-          <i data-lucide="square" class="w-3.5 h-3.5"></i>
-        </button>
         <button type="button" class="win-btn win-btn-close" title="Close" onclick="closePostRouteModal()">
           <i data-lucide="x" class="w-3.5 h-3.5"></i>
         </button>
@@ -414,9 +390,9 @@
         <label for="post-fas-free" class="text-xs text-slate-300 select-none cursor-pointer">100% FAS-Free Verified (No false answer billing)</label>
       </div>
 
-      <div class="flex items-center justify-end gap-2 pt-3 border-t border-dark-800">
-        <button type="button" onclick="closePostRouteModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium">Cancel</button>
-        <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/20">Post Route Now</button>
+      <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-dark-800">
+        <button type="button" onclick="closePostRouteModal()" class="btn-modal-action rounded-lg bg-white dark:bg-dark-800 hover:bg-slate-50 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shadow-sm text-xs font-semibold">Cancel</button>
+        <button type="submit" class="btn-modal-action rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/20">Post Route Now</button>
       </div>
     </form>
     <!-- Window Resize Grip Handle -->
@@ -433,12 +409,6 @@
         <h3 class="font-bold text-sm text-white leading-tight">Purge Raw Stream</h3>
       </div>
       <div class="flex items-center gap-1 win-controls">
-        <button type="button" class="win-btn win-btn-min" title="Minimize">
-          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-        </button>
-        <button type="button" class="win-btn win-btn-max" title="Maximize">
-          <i data-lucide="square" class="w-3.5 h-3.5"></i>
-        </button>
         <button type="button" class="win-btn win-btn-close" title="Close" onclick="closePurgeStreamModal()">
           <i data-lucide="x" class="w-3.5 h-3.5"></i>
         </button>
@@ -468,9 +438,9 @@
     </div>
 
     <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-dark-800">
-      <button onclick="closePurgeStreamModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium transition-all">Cancel</button>
-      <button onclick="confirmPurgeStream()" id="btn-confirm-purge-stream" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/25 flex items-center gap-1.5 transition-all">
-        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+      <button onclick="closePurgeStreamModal()" class="btn-modal-action rounded-lg bg-white dark:bg-dark-800 hover:bg-slate-50 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shadow-sm text-xs font-semibold transition-all">Cancel</button>
+      <button onclick="confirmPurgeStream()" id="btn-confirm-purge-stream" class="btn-modal-action rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/25 flex items-center gap-2 transition-all">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
         <span>Permanently Wipe Raw Stream</span>
       </button>
     </div>
@@ -493,12 +463,6 @@
         </div>
       </div>
       <div class="flex items-center gap-1 win-controls">
-        <button type="button" class="win-btn win-btn-min" title="Minimize">
-          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-        </button>
-        <button type="button" class="win-btn win-btn-max" title="Maximize">
-          <i data-lucide="square" class="w-3.5 h-3.5"></i>
-        </button>
         <button type="button" class="win-btn win-btn-close" title="Close" onclick="closeAiSettingsModal()">
           <i data-lucide="x" class="w-3.5 h-3.5"></i>
         </button>
@@ -591,14 +555,14 @@
       <div id="ai-test-feedback" class="hidden p-3 rounded-xl bg-dark-950 border border-dark-800 text-[11px]"></div>
 
       <div class="flex items-center justify-between pt-3 border-t border-dark-800">
-        <button type="button" onclick="handleAiTestConnection()" id="btn-test-ai" class="px-3.5 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-all">
-          <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-purple-400"></i>
+        <button type="button" onclick="handleAiTestConnection()" id="btn-test-ai" class="btn-modal-action rounded-lg bg-white dark:bg-dark-800 hover:bg-slate-50 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-dark-700 shadow-sm text-xs font-semibold flex items-center gap-2 transition-all">
+          <i data-lucide="flask-conical" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
           <span>Test Connection</span>
         </button>
 
         <div class="flex items-center gap-2">
-          <button type="button" onclick="closeAiSettingsModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium">Cancel</button>
-          <button type="submit" id="btn-save-ai" class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-md shadow-purple-600/20">Save Settings</button>
+          <button type="button" onclick="closeAiSettingsModal()" class="btn-modal-action rounded-lg bg-white dark:bg-dark-800 hover:bg-slate-50 dark:hover:bg-dark-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shadow-sm text-xs font-semibold">Cancel</button>
+          <button type="submit" id="btn-save-ai" class="btn-modal-action rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-md shadow-purple-600/20">Save Settings</button>
         </div>
       </div>
     </form>

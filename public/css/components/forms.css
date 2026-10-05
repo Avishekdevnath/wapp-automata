@@ -1,0 +1,45 @@
+/* ==========================================================================
+   WappAutomata • Forms & Inputs Design System
+   Component: Form Controls, Text Inputs, Selects, Radios & Checkboxes
+   ========================================================================== */
+
+/* Universal Input Field Styling in Light Mode */
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: var(--input-bg, #ffffff) !important;
+  color: var(--input-text, #0f172a) !important;
+  border: 1px solid var(--input-border, #cbd5e1) !important;
+  font-weight: 500 !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* High-Visibility Focus Rings */
+html:not(.dark) input:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus {
+  border-color: var(--brand-green, #008069) !important;
+  box-shadow: 0 0 0 3px rgba(0, 128, 105, 0.15) !important;
+  outline: none !important;
+}
+
+/* Crisp Text Placeholders */
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: var(--text-placeholder, #64748b) !important;
+}
+
+/* Password Eye Icon Button */
+button[onclick*="togglePasswordVisibility"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+html:not(.dark) button[onclick*="togglePasswordVisibility"] {
+  color: #64748b !important;
+}
+
+html:not(.dark) button[onclick*="togglePasswordVisibility"]:hover {
+  color: #0f172a !important;
+}

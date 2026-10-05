@@ -4,9 +4,13 @@
    Modular Architecture:
    - theme.css: Dark/Light custom properties and design tokens
    - base.css: Core typography, layout resets, scrollbars & animations
-   - typography.css: WCAG AAA contrast typography & badge colors
+   - typography.css: WCAG AAA contrast typography & text tokens
    - sidebar.css: Sidebar navigation, active links & indicators
-   - components.css: Glass cards, modals, form controls & buttons
+   - components/buttons.css: Action buttons, geometry standards & filters
+   - components/modals.css: Windows 11 Fluent Window Manager, chrome & dock
+   - components/alerts.css: Incident cards, outage alerts & notices
+   - components/forms.css: Inputs, selects, radios & checkboxes
+   - components/cards.css: Glass cards, spec tiles, chat bubbles & accents
    - tables.css: Precision tables, zebra rows & metric cards
    ========================================================================== */
 
@@ -14,5 +18,9 @@
 @import './base.css';
 @import './typography.css';
 @import './sidebar.css';
-@import './components.css';
+@import './components/buttons.css';
+@import './components/modals.css';
+@import './components/alerts.css';
+@import './components/forms.css';
+@import './components/cards.css';
 @import './tables.css';

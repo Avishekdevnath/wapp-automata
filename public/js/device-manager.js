@@ -140,12 +140,18 @@ function openDeviceModal() {
   const modal = document.getElementById('device-modal');
   if (modal) modal.classList.remove('hidden');
   pollSessionStatus();
+  if (devicePollingTimer) clearInterval(devicePollingTimer);
+  devicePollingTimer = setInterval(pollSessionStatus, 2500);
   if (window.lucide) lucide.createIcons();
 }
 
 function closeDeviceModal() {
   const modal = document.getElementById('device-modal');
   if (modal) modal.classList.add('hidden');
+  if (devicePollingTimer) {
+    clearInterval(devicePollingTimer);
+    devicePollingTimer = null;
+  }
 }
 
 async function triggerSessionReset() {
@@ -250,10 +256,8 @@ function copyPairingCode() {
   }).catch(() => {});
 }
 
-// Autonomous background polling: poll every 2.5 seconds continuously
-if (!devicePollingTimer) {
-  devicePollingTimer = setInterval(pollSessionStatus, 2500);
-}
+// Initial status check on script load
+pollSessionStatus();
 
 // Window exports & aliases
 window.openDeviceModal = openDeviceModal;

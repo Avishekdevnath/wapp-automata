@@ -246,7 +246,21 @@
                     <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">Intent</th>
                     <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">Route Type</th>
                     <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">Pulse</th>
-                    <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900">Rate ($/min)</th>
+                    <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900 group relative">
+                      <div class="flex items-center gap-1 cursor-help w-max">
+                        Rate ($/min)
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-amber-500"></i>
+                      </div>
+                      <!-- Tooltip -->
+                      <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block w-56 p-2 bg-dark-800 text-slate-200 text-[10px] rounded border border-dark-700 shadow-xl z-50 normal-case font-normal text-left">
+                        <span class="block font-bold text-amber-400 mb-1 text-center">Top 3 Trusted Prices</span>
+                        <ul class="space-y-1">
+                          <li><span class="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1"></span><strong class="text-amber-400">Gold:</strong> Absolute best rate</li>
+                          <li><span class="inline-block w-2 h-2 rounded-full bg-slate-300 mr-1"></span><strong class="text-slate-300">Silver:</strong> 2nd best rate</li>
+                          <li><span class="inline-block w-2 h-2 rounded-full bg-orange-400 mr-1"></span><strong class="text-orange-400">Bronze:</strong> 3rd best rate</li>
+                        </ul>
+                      </div>
+                    </th>
                     <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900">Quality & FAS</th>
                     <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900">Carrier / Vendor</th>
                     <th class="py-3 px-4 text-right bg-slate-100 dark:bg-dark-900">Quick Actions</th>

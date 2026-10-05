@@ -4,6 +4,10 @@
 let pipelineAutoRefresh = true;
 let pipelineRefreshTimer = null;
 let cachedPipelineEvents = [];
+let pipelineCurrentPage = 1;
+let pipelinePageSize = parseInt(localStorage.getItem('wapp_pipeline_page_size') || '10', 10);
+let pipelineSearchQuery = '';
+let pipelineStatusFilter = 'all';
 
 function esc(str) {
   if (window.escapeHtml) return window.escapeHtml(str);
@@ -52,28 +56,147 @@ async function loadPipelineStatus() {
 
     // 2. Render Live Feed Table
     cachedPipelineEvents = data.events || [];
-    renderPipelineFeed(cachedPipelineEvents);
+    renderPipelineFeed();
   } catch (err) {
     console.warn('[Pipeline Controller] Telemetry refresh failed:', err.message);
   }
 }
 
+function handlePipelineSearch(event) {
+  pipelineSearchQuery = (event.target.value || '').toLowerCase().trim();
+  pipelineCurrentPage = 1;
+  renderPipelineFeed();
+}
+
+function handlePipelineFilter() {
+  const statusEl = document.getElementById('pipeline-filter-status');
+  if (statusEl) pipelineStatusFilter = statusEl.value;
+  pipelineCurrentPage = 1;
+  renderPipelineFeed();
+}
+
+function setPipelinePageSize(size) {
+  pipelinePageSize = parseInt(size, 10);
+  localStorage.setItem('wapp_pipeline_page_size', String(pipelinePageSize));
+  pipelineCurrentPage = 1;
+  renderPipelineFeed();
+}
+
+function changePipelinePage(delta) {
+  pipelineCurrentPage += delta;
+  renderPipelineFeed();
+}
+
+function getFilteredPipelineEvents() {
+  let list = cachedPipelineEvents.slice();
+
+  // 1. Search Query
+  if (pipelineSearchQuery) {
+    list = list.filter(e => {
+      const haystack = [
+        e.sender_name, 
+        e.sender_phone, 
+        e.raw_text, 
+        e.status, 
+        e.intent,
+        ...(Array.isArray(e.routes) ? e.routes.map(r => `${r.destination} ${r.rate} ${r.profile}`) : [])
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(pipelineSearchQuery);
+    });
+  }
+
+  // 2. Status Filter
+  if (pipelineStatusFilter && pipelineStatusFilter !== 'all') {
+    if (pipelineStatusFilter === 'NON_BUSINESS') {
+      list = list.filter(e => e.status !== 'EXTRACTED' && e.status !== 'NEWS_ALERT');
+    } else {
+      list = list.filter(e => e.status === pipelineStatusFilter);
+    }
+  }
+
+  return list;
+}
+
+function updatePipelinePaginationUI(total) {
+  const startEl = document.getElementById('pipeline-page-start');
+  const endEl = document.getElementById('pipeline-page-end');
+  const totalEl = document.getElementById('pipeline-page-total');
+  const currEl = document.getElementById('pipeline-current-page');
+  const totalPagesEl = document.getElementById('pipeline-total-pages');
+  const prevBtn = document.getElementById('btn-pipeline-prev');
+  const nextBtn = document.getElementById('btn-pipeline-next');
+
+  if (pipelinePageSize <= 0) {
+    if (startEl) startEl.innerText = total > 0 ? 1 : 0;
+    if (endEl) endEl.innerText = total;
+    if (totalEl) totalEl.innerText = total;
+    if (currEl) currEl.innerText = 1;
+    if (totalPagesEl) totalPagesEl.innerText = 1;
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+
+  const maxPages = Math.max(1, Math.ceil(total / pipelinePageSize));
+  if (pipelineCurrentPage > maxPages) pipelineCurrentPage = maxPages;
+
+  const start = total === 0 ? 0 : (pipelineCurrentPage - 1) * pipelinePageSize + 1;
+  const end = Math.min(pipelineCurrentPage * pipelinePageSize, total);
+
+  if (startEl) startEl.innerText = start;
+  if (endEl) endEl.innerText = end;
+  if (totalEl) totalEl.innerText = total;
+  if (currEl) currEl.innerText = pipelineCurrentPage;
+  if (totalPagesEl) totalPagesEl.innerText = maxPages;
+
+  if (prevBtn) prevBtn.disabled = (pipelineCurrentPage <= 1);
+  if (nextBtn) nextBtn.disabled = (pipelineCurrentPage >= maxPages);
+
+  // Update button active state classes
+  document.querySelectorAll('.btn-pipeline-size').forEach(btn => {
+    const s = parseInt(btn.getAttribute('data-size'), 10);
+    if (s === pipelinePageSize) {
+      btn.className = 'btn-pipeline-size px-2 py-0.5 rounded-md bg-purple-600 text-white font-semibold transition-all font-mono';
+    } else {
+      btn.className = 'btn-pipeline-size px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition-all font-mono';
+    }
+  });
+}
+
 function renderPipelineFeed(events) {
+  if (Array.isArray(events)) {
+    cachedPipelineEvents = events;
+  }
+
   const tbody = document.getElementById('pipeline-feed-tbody');
   if (!tbody) return;
 
-  if (!events || events.length === 0) {
+  const filtered = getFilteredPipelineEvents();
+  const total = filtered.length;
+
+  updatePipelinePaginationUI(total);
+
+  if (total === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="5" class="py-8 text-center text-slate-500 text-xs">
-          Waiting for live WhatsApp messages to flow through the AI engine...
+          ${cachedPipelineEvents.length === 0 
+            ? 'Waiting for live WhatsApp messages to flow through the AI engine...' 
+            : 'No telemetry events match your search query or status filter.'}
         </td>
       </tr>
     `;
     return;
   }
 
-  tbody.innerHTML = events.map(evt => {
+  // Sliced page data
+  let pageData = filtered;
+  if (pipelinePageSize > 0) {
+    const startIdx = (pipelineCurrentPage - 1) * pipelinePageSize;
+    pageData = filtered.slice(startIdx, startIdx + pipelinePageSize);
+  }
+
+  tbody.innerHTML = pageData.map(evt => {
     let outcomeBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-slate-700">Non-Business Chat</span>';
     if (evt.status === 'EXTRACTED') {
       outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30">Extracted ${evt.routes_count} Route${evt.routes_count > 1 ? 's' : ''}</span>`;
@@ -222,18 +345,13 @@ async function runPipelineSandboxTest() {
   }
 }
 
-function togglePipelineAutoRefresh() {
-  pipelineAutoRefresh = !pipelineAutoRefresh;
-  const label = document.getElementById('label-pipeline-autorefresh');
-  if (label) label.innerText = `Auto-Refresh: ${pipelineAutoRefresh ? 'ON' : 'OFF'}`;
-}
+window.pipelineAutoRefresh = true;
 
-// Auto-polling interval
-setInterval(() => {
-  if (pipelineAutoRefresh && window.currentActiveView === 'pipeline') {
-    loadPipelineStatus();
-  }
-}, 3000);
+function togglePipelineAutoRefresh() {
+  window.pipelineAutoRefresh = !window.pipelineAutoRefresh;
+  const label = document.getElementById('label-pipeline-autorefresh');
+  if (label) label.innerText = `Auto-Refresh: ${window.pipelineAutoRefresh ? 'ON' : 'OFF'}`;
+}
 
 // Attach globally to window for onclick handlers
 window.loadPipelineStatus = loadPipelineStatus;
@@ -243,3 +361,7 @@ window.closePipelineInspectModal = closePipelineInspectModal;
 window.loadPipelineSample = loadPipelineSample;
 window.runPipelineSandboxTest = runPipelineSandboxTest;
 window.togglePipelineAutoRefresh = togglePipelineAutoRefresh;
+window.handlePipelineSearch = handlePipelineSearch;
+window.handlePipelineFilter = handlePipelineFilter;
+window.setPipelinePageSize = setPipelinePageSize;
+window.changePipelinePage = changePipelinePage;

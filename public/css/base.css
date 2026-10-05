@@ -31,6 +31,17 @@ body {
   border-color: var(--border-color) !important;
 }
 
+/* Light Mode Nested Container Surfaces (Zero Dark Cement Clutter) */
+html:not(.dark) .glass-card .bg-dark-900,
+html:not(.dark) .glass-card .bg-dark-950,
+html:not(.dark) .glass-modal .bg-dark-900,
+html:not(.dark) .glass-modal .bg-dark-950,
+html:not(.dark) .win-window .bg-dark-900,
+html:not(.dark) .win-window .bg-dark-950 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
 /* Precision Scrollbars (Placed on right-most edge) */
 ::-webkit-scrollbar {
   width: 7px;

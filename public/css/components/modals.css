@@ -1,0 +1,141 @@
+/* ==========================================================================
+   WappAutomata • High-Performance Modern Modal Design System
+   Component: Clean Centered Desktop Modals (Linear / Stripe Standard)
+   ========================================================================== */
+
+/* Fullscreen Modal Backdrop Container */
+.win-modal-container {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.65);
+  overflow-y: auto;
+  opacity: 1;
+  transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-overflow-scrolling: touch;
+}
+
+html:not(.dark) .win-modal-container {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.win-modal-container.hidden {
+  display: none !important;
+}
+
+/* Modal Window Frame (Pure Solid Surfaces, 0% GPU Blur Overhead) */
+.glass-modal,
+.win-window {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  margin: auto !important;
+  transform: none !important;
+  width: 100%;
+  max-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1rem !important;
+  background-color: #0f172a !important; /* solid slate-900 */
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75),
+              0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  user-select: auto;
+  animation: modalPop 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+html:not(.dark) .glass-modal,
+html:not(.dark) .win-window {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important; /* slate-200 */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12),
+              0 8px 10px -6px rgba(0, 0, 0, 0.08),
+              0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@keyframes modalPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Titlebar Header */
+.win-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+  cursor: default !important;
+  user-select: auto;
+}
+
+html:not(.dark) .win-titlebar {
+  border-bottom: 1px solid #e2e8f0 !important;
+  background: #f8fafc;
+}
+
+/* Window Control Buttons */
+.win-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-left: auto;
+}
+
+/* Eliminate Minimize / Maximize / Resizer Elements */
+.win-btn-min,
+.win-btn-max,
+.win-resizer,
+#win-taskbar-dock,
+.win-dock-pill {
+  display: none !important;
+}
+
+/* Close Button (Single Clean Accessible Control) */
+.win-btn-close {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  color: #94a3b8; /* slate-400 */
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.win-btn-close:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important; /* red-500 */
+}
+
+html:not(.dark) .win-btn-close:hover {
+  background: #fee2e2 !important; /* red-100 */
+  color: #dc2626 !important; /* red-600 */
+}
+
+/* Inner Modal Scroll Container */
+.modal-scrollable-body {
+  overflow-y: auto;
+  max-height: calc(85vh - 120px);
+  -webkit-overflow-scrolling: touch;
+}
