@@ -8,7 +8,13 @@
 
   let topZIndex = 100;
 
-  function closeModalByElement(modalEl) {
+  function resolveModal(target) {
+    if (!target) return null;
+    return typeof target === 'string' ? document.getElementById(target) : target;
+  }
+
+  function closeModalByElement(modalTarget) {
+    const modalEl = resolveModal(modalTarget);
     if (!modalEl) return;
     modalEl.classList.add('hidden');
 
@@ -23,14 +29,16 @@
     else if (id === 'shortcuts-modal' && typeof window.closeShortcutsModal === 'function') window.closeShortcutsModal();
   }
 
-  function bringToFront(modalEl) {
+  function bringToFront(modalTarget) {
+    const modalEl = resolveModal(modalTarget);
     if (!modalEl) return;
     topZIndex += 2;
     modalEl.style.zIndex = topZIndex;
   }
 
-  function registerModal(modalEl) {
-    if (!modalEl || modalEl.dataset.modalBound === 'true') return;
+  function registerModal(modalTarget) {
+    const modalEl = resolveModal(modalTarget);
+    if (!modalEl || modalEl.dataset?.modalBound === 'true') return;
     modalEl.dataset.modalBound = 'true';
 
     // Backdrop click dismisses modal
@@ -62,7 +70,8 @@
   });
 
   // Drop-in backwards-compatible initWindow
-  function initWindow(modalEl) {
+  function initWindow(modalTarget) {
+    const modalEl = resolveModal(modalTarget);
     if (!modalEl) return;
     registerModal(modalEl);
     bringToFront(modalEl);

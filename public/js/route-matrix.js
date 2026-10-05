@@ -653,6 +653,7 @@ function openRouteDetailModal(routeId) {
   const elPhone = document.getElementById('modal-route-phone');
   const elNotes = document.getElementById('modal-route-notes');
   const btnKnock = document.getElementById('btn-modal-knock');
+  const elNewsBox = document.getElementById('modal-route-news-box');
 
   if (elNewsBox) {
     if (route.active_news) {
