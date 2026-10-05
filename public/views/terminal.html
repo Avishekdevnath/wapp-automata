@@ -1,7 +1,7 @@
 <!-- VIEW 6: LIVE WHATSAPP MESSAGE STREAM (Zero-Loss) -->
 <div id="view-terminal" class="space-y-4 hidden">
-  <!-- Top Stream Header & Metrics Card -->
-  <div class="glass-card rounded-2xl p-4 sm:p-5 border border-dark-700/80 shadow-xl space-y-4">
+  <!-- Top Stream Header & Metrics Card (Sticky pinned to top) -->
+  <div class="sticky top-0 z-20 glass-card rounded-2xl p-4 sm:p-5 border border-dark-700/80 shadow-2xl space-y-4 backdrop-blur-xl bg-dark-950/95">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div class="space-y-1">
         <div class="flex items-center gap-2.5">
@@ -25,6 +25,11 @@
         <button onclick="exportMessagesCsv()" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 text-xs text-slate-300 hover:text-white flex items-center gap-1.5 transition-all">
           <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
           <span>Export CSV</span>
+        </button>
+        <!-- Purge Stream Button -->
+        <button onclick="openPurgeStreamModal()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-xs text-rose-400 hover:text-rose-300 border border-rose-500/30 flex items-center gap-1.5 transition-all" title="Permanently delete raw WhatsApp message stream (preserves analyzed routes & vendors)">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Purge Stream</span>
         </button>
       </div>
     </div>
@@ -81,5 +86,40 @@
   <!-- Live Messages Feed Container -->
   <div id="client-messages-container" class="space-y-3">
     <!-- Dynamically injected via client-inbox.js -->
+  </div>
+
+  <!-- STREAM PAGINATION TOOLBAR -->
+  <div id="stream-pagination-bar" class="glass-card rounded-2xl p-4 border border-dark-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-lg">
+    <!-- Left: Showing Count -->
+    <div class="flex items-center gap-2 text-slate-400">
+      <span id="stream-page-info">Showing <strong id="stream-page-start" class="text-white">1</strong> to <strong id="stream-page-end" class="text-white">25</strong> of <strong id="stream-page-total" class="text-emerald-400 font-bold">0</strong> messages</span>
+    </div>
+
+    <!-- Middle: Rows Per Page Selector -->
+    <div class="flex items-center gap-2">
+      <span class="text-slate-400 text-[11px]">Messages per page:</span>
+      <div class="inline-flex items-center p-0.5 rounded-xl bg-dark-900 border border-dark-700">
+        <button onclick="setStreamPageSize(10)" data-size="10" class="btn-stream-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono">10</button>
+        <button onclick="setStreamPageSize(25)" data-size="25" class="btn-stream-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono">25</button>
+        <button onclick="setStreamPageSize(50)" data-size="50" class="btn-stream-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono">50</button>
+        <button onclick="setStreamPageSize(100)" data-size="100" class="btn-stream-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono">100</button>
+        <button onclick="setStreamPageSize(0)" data-size="0" class="btn-stream-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono">All</button>
+      </div>
+    </div>
+
+    <!-- Right: Page Navigation -->
+    <div class="flex items-center gap-2">
+      <button onclick="changeStreamPage(-1)" id="btn-stream-prev" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 hover:border-slate-500 text-slate-300 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all">
+        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+        <span>Previous</span>
+      </button>
+      <div class="px-3 py-1.5 rounded-xl bg-dark-950 border border-dark-800 font-mono text-[11px] text-slate-300">
+        Page <span id="stream-current-page" class="text-emerald-400 font-bold">1</span> of <span id="stream-total-pages" class="text-slate-400">1</span>
+      </div>
+      <button onclick="changeStreamPage(1)" id="btn-stream-next" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 hover:border-slate-500 text-slate-300 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all">
+        <span>Next</span>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
   </div>
 </div>

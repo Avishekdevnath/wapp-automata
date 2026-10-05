@@ -2,6 +2,9 @@
  * Client Inbox Module: Live WhatsApp Messages Stream (Zero Loss)
  */
 window.streamAutoScroll = true;
+let streamPage = 1;
+let streamPageSize = parseInt(localStorage.getItem('wapp_stream_page_size') || '25', 10);
+let streamTotalCount = 0;
 
 function renderClientFeed() {
   const container = document.getElementById('client-messages-container') || document.getElementById('client-messages-feed');
@@ -44,6 +47,9 @@ function renderClientFeed() {
     return haystack.includes(searchQuery);
   });
 
+  streamTotalCount = filtered.length;
+  updateStreamPaginationUI(streamTotalCount);
+
   if (filtered.length === 0) {
     container.innerHTML = `
       <div class="glass-card rounded-2xl p-12 text-center border border-dashed border-dark-700">
@@ -58,14 +64,29 @@ function renderClientFeed() {
     return;
   }
 
+  // Sliced page messages
+  let pageMessages = filtered;
+  if (streamPageSize > 0) {
+    const startIdx = (streamPage - 1) * streamPageSize;
+    pageMessages = filtered.slice(startIdx, startIdx + streamPageSize);
+  }
+
   const esc = typeof escapeHtml === 'function' ? escapeHtml : (s) => String(s || '');
 
-  container.innerHTML = filtered.map(m => {
+  container.innerHTML = pageMessages.map(m => {
     const initials = typeof getInitials === 'function' ? getInitials(m.sender_name || m.sender_phone) : 'WA';
     const avatarGradient = typeof getAvatarColor === 'function' ? getAvatarColor(m.sender_phone || m.sender_name) : 'from-emerald-500 to-teal-700';
     const isGroup = m.chat_type === 'group';
     const formattedTime = typeof formatDateTime === 'function' ? formatDateTime(m.occurred_at || m.timestamp) : (m.timestamp || '');
     const cleanPhone = (m.sender_phone || '').replace(/[^0-9]/g, '');
+
+    const avatarUrl = m.sender_avatar_url || m.avatar_url;
+    const avatarHtml = avatarUrl
+      ? `<div class="relative w-10 h-10 shrink-0">
+          <img src="${esc(avatarUrl)}" alt="${esc(initials)}" class="w-10 h-10 rounded-2xl object-cover shadow-md border border-dark-700/80" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr ${avatarGradient} items-center justify-center text-white font-bold text-xs shadow-md" style="display:none;">${esc(initials)}</div>
+         </div>`
+      : `<div class="w-10 h-10 rounded-2xl bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0">${esc(initials)}</div>`;
 
     const mediaType = m.raw_envelope?.message?.media?.type ||
       (m.raw_envelope?.message?.raw_payload?.message?.imageMessage ? 'image' :
@@ -81,9 +102,7 @@ function renderClientFeed() {
     return `
       <div class="glass-card rounded-2xl p-4 sm:p-5 border border-dark-700/70 hover:border-emerald-500/30 transition-all shadow-md group">
         <div class="flex items-start gap-3.5">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0">
-            ${esc(initials)}
-          </div>
+          ${avatarHtml}
 
           <div class="flex-1 min-w-0 space-y-2.5">
             <!-- Header Row -->
@@ -98,92 +117,57 @@ function renderClientFeed() {
                 ${isGroup ? `
                   <span class="px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 dark:text-sky-300 text-[11px] font-medium flex items-center gap-1">
                     <i data-lucide="users" class="w-3 h-3"></i>
-                    <span>${esc(m.chat_name || 'Group Chat')}</span>
+                    <span class="truncate max-w-[200px]">${esc(m.chat_name || 'Group Chat')}</span>
                   </span>
                 ` : `
-                  <span class="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 dark:text-purple-300 text-[11px] font-medium flex items-center gap-1">
-                    <i data-lucide="user" class="w-3 h-3"></i>
-                    <span>Direct Message</span>
-                  </span>
+                  <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 dark:text-emerald-300 text-[11px] font-medium">Direct DM</span>
                 `}
               </div>
 
-              <!-- Right: Timestamp & Actions -->
-              <div class="flex items-center gap-2">
-                <span class="text-[11px] text-slate-400 font-mono">${esc(formattedTime)}</span>
+              <div class="flex items-center gap-2 text-slate-400 text-xs">
+                <span>${esc(formattedTime)}</span>
                 ${knockUrl ? `
-                  <a href="${knockUrl}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center gap-1.5 transition-all shadow-sm">
-                    <i data-lucide="send" class="w-3 h-3"></i>
+                  <a href="${knockUrl}" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] flex items-center gap-1 shadow-sm transition-all" title="Message on WhatsApp">
+                    <i data-lucide="message-circle" class="w-3 h-3"></i>
                     <span>Knock</span>
                   </a>
                 ` : ''}
               </div>
             </div>
 
-            <!-- Message Text Content -->
-            ${m.text ? `
-              <div class="wapp-chat-bubble text-xs p-3.5 rounded-2xl border leading-relaxed font-sans whitespace-pre-wrap break-words select-text">
-                ${esc(m.text)}
-              </div>
-            ` : ''}
+            <!-- Message Body -->
+            <div class="p-3.5 rounded-xl bg-dark-950/70 border border-dark-800/80 text-xs text-slate-200 font-mono leading-relaxed whitespace-pre-wrap break-words selection:bg-emerald-500 selection:text-white">
+              ${esc(m.text || '')}
+            </div>
 
-            <!-- Media Preview Block -->
+            <!-- Media Preview if Available -->
             ${m.has_media ? `
-              <div class="mt-2">
-                ${(mediaType === 'image' || mediaType === 'sticker') ? `
-                  <div class="rounded-2xl overflow-hidden border border-dark-700/80 bg-dark-950 max-w-sm shadow-xl">
-                    <a href="/api/media/${m.id}" target="_blank" title="Click to view full image" class="block group/img relative cursor-pointer">
-                      <img 
-                        src="/api/media/${m.id}" 
-                        alt="WhatsApp Media" 
-                        loading="lazy" 
-                        class="w-full max-h-80 object-cover rounded-xl transition-all group-hover/img:scale-[1.01]"
-                        onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'p-3 text-xs text-slate-400 flex items-center gap-2\\'><i data-lucide=\\'image-off\\' class=\\'w-4 h-4 text-slate-500\\'></i><span>Image preview unavailable</span></div>'; if (window.lucide) lucide.createIcons();"
-                      />
-                      <div class="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-dark-950/90 text-[10px] text-slate-200 border border-dark-700/80 flex items-center gap-1.5 backdrop-blur-md opacity-0 group-hover/img:opacity-100 transition-opacity">
-                        <i data-lucide="maximize-2" class="w-3 h-3 text-emerald-400"></i>
-                        <span>Full Resolution</span>
-                      </div>
-                    </a>
-                  </div>
-                ` : mediaType === 'audio' ? `
-                  <div class="p-3 rounded-2xl border border-dark-700/80 bg-dark-950/90 max-w-sm flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                      <i data-lucide="mic" class="w-4 h-4"></i>
-                    </div>
-                    <audio controls src="/api/media/${m.id}" class="w-full h-8"></audio>
-                  </div>
-                ` : mediaType === 'video' ? `
-                  <div class="rounded-2xl overflow-hidden border border-dark-700/80 bg-dark-950 max-w-sm shadow-xl">
-                    <video controls src="/api/media/${m.id}" class="w-full max-h-80 rounded-xl bg-black"></video>
-                  </div>
-                ` : `
-                  <div class="p-3 rounded-2xl border border-dark-700/80 bg-dark-950 max-w-sm flex items-center justify-between gap-3 shadow-md">
-                    <div class="flex items-center gap-2.5 text-xs text-slate-200 truncate min-w-0">
-                      <i data-lucide="file-text" class="w-5 h-5 text-emerald-400 shrink-0"></i>
-                      <span class="truncate font-medium">${esc(m.raw_envelope?.message?.media?.fileName || 'Document File')}</span>
-                    </div>
-                    <a href="/api/media/${m.id}" download class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-medium shrink-0 flex items-center gap-1.5 transition-colors shadow-sm">
-                      <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                      <span>Download</span>
-                    </a>
-                  </div>
-                `}
+              <div class="flex items-center gap-2 pt-1">
+                <span class="px-2 py-1 rounded-lg bg-dark-900 border border-dark-700 text-[11px] text-slate-300 flex items-center gap-1.5">
+                  <i data-lucide="${mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'paperclip'}" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span class="capitalize">${mediaType || 'Media'} attached</span>
+                </span>
+                ${m.media_id ? `
+                  <a href="/api/media/${m.media_id}" target="_blank" class="text-xs text-emerald-400 hover:underline flex items-center gap-1">
+                    <span>View Media</span>
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                  </a>
+                ` : ''}
               </div>
             ` : ''}
 
-            <!-- Footer: Message ID & Raw Payload Toggle -->
-            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-              <span class="font-mono">ID: ${esc(m.id)}</span>
-              <button onclick="toggleRawEnvelope('${m.id}')" class="text-slate-400 hover:text-emerald-400 flex items-center gap-1 transition-colors">
+            <!-- Bottom Metadata & Raw Inspector -->
+            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+              <span class="font-mono">ID: ${esc(m.id || '--')}</span>
+              <button onclick="toggleRawEnvelope('${m.id}')" class="hover:text-slate-300 flex items-center gap-1 transition-colors">
                 <i data-lucide="code" class="w-3 h-3"></i>
-                <span>Raw Payload</span>
+                <span>Raw Envelope</span>
               </button>
             </div>
 
-            <!-- Collapsible Raw JSON Envelope -->
-            <div id="raw-env-${m.id}" class="hidden pt-2">
-              <pre class="bg-dark-950 p-3 rounded-xl text-[10px] text-slate-400 font-mono overflow-x-auto border border-dark-800/80 max-h-60 leading-normal">${esc(JSON.stringify(m.raw_envelope || m, null, 2))}</pre>
+            <!-- Expandable Raw Envelope JSON -->
+            <div id="raw-env-${m.id}" class="hidden p-3 rounded-xl bg-dark-950 border border-dark-800 text-[10px] text-slate-400 font-mono overflow-x-auto max-h-60">
+              <pre>${esc(JSON.stringify(m.raw_envelope || m, null, 2))}</pre>
             </div>
           </div>
         </div>
@@ -193,9 +177,9 @@ function renderClientFeed() {
 
   if (window.lucide) lucide.createIcons();
 
-  // Auto-scroll to top of stream if enabled and new message arrived
-  if (window.streamAutoScroll) {
-    const scrollEl = document.getElementById('app-main-content');
+  // Auto-scroll to top if enabled and first page
+  if (window.streamAutoScroll && streamPage === 1) {
+    const scrollEl = document.getElementById('main-content-scroll');
     if (scrollEl && scrollEl.scrollTop > 60) {
       scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -240,8 +224,146 @@ function exportMessagesCsv() {
   URL.revokeObjectURL(url);
 }
 
+function exportMessagesJson() {
+  const msgs = window.messagesCache || [];
+  if (!msgs.length) {
+    if (typeof showToast === 'function') showToast('No messages in buffer to export', 'info');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(msgs, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.download = `whatsapp_messages_stream_${new Date().toISOString().slice(0, 10)}.json`;
+  a.href = url;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Stream Pagination Handlers
+ */
+function setStreamPageSize(size) {
+  streamPageSize = parseInt(size, 10);
+  streamPage = 1;
+  localStorage.setItem('wapp_stream_page_size', streamPageSize);
+  document.querySelectorAll('.btn-stream-size').forEach(btn => {
+    if (parseInt(btn.getAttribute('data-size'), 10) === streamPageSize) {
+      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono';
+    } else {
+      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono';
+    }
+  });
+  renderClientFeed();
+}
+
+function changeStreamPage(delta) {
+  if (streamPageSize <= 0) return;
+  const maxPages = Math.max(1, Math.ceil(streamTotalCount / streamPageSize));
+  const newPage = streamPage + delta;
+  if (newPage >= 1 && newPage <= maxPages) {
+    streamPage = newPage;
+    renderClientFeed();
+  }
+}
+
+function updateStreamPaginationUI(total) {
+  const startEl = document.getElementById('stream-page-start');
+  const endEl = document.getElementById('stream-page-end');
+  const totalEl = document.getElementById('stream-page-total');
+  const currEl = document.getElementById('stream-current-page');
+  const totalPagesEl = document.getElementById('stream-total-pages');
+  const prevBtn = document.getElementById('btn-stream-prev');
+  const nextBtn = document.getElementById('btn-stream-next');
+
+  if (streamPageSize <= 0) {
+    if (startEl) startEl.innerText = total > 0 ? 1 : 0;
+    if (endEl) endEl.innerText = total;
+    if (totalEl) totalEl.innerText = total;
+    if (currEl) currEl.innerText = 1;
+    if (totalPagesEl) totalPagesEl.innerText = 1;
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+
+  const maxPages = Math.max(1, Math.ceil(total / streamPageSize));
+  if (streamPage > maxPages) streamPage = maxPages;
+
+  const start = total === 0 ? 0 : (streamPage - 1) * streamPageSize + 1;
+  const end = Math.min(streamPage * streamPageSize, total);
+
+  if (startEl) startEl.innerText = start;
+  if (endEl) endEl.innerText = end;
+  if (totalEl) totalEl.innerText = total;
+  if (currEl) currEl.innerText = streamPage;
+  if (totalPagesEl) totalPagesEl.innerText = maxPages;
+
+  if (prevBtn) prevBtn.disabled = (streamPage <= 1);
+  if (nextBtn) nextBtn.disabled = (streamPage >= maxPages);
+
+  document.querySelectorAll('.btn-stream-size').forEach(btn => {
+    const s = parseInt(btn.getAttribute('data-size'), 10);
+    if (s === streamPageSize) {
+      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono';
+    } else {
+      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono';
+    }
+  });
+}
+
+/**
+ * Permanent Stream Purge Handlers
+ */
+function openPurgeStreamModal() {
+  const modal = document.getElementById('modal-purge-stream');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closePurgeStreamModal() {
+  const modal = document.getElementById('modal-purge-stream');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function confirmPurgeStream() {
+  try {
+    const btn = document.getElementById('btn-confirm-purge-stream');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Purging...</span>';
+    }
+
+    const res = await fetch('/api/messages/purge', { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    window.messagesCache = [];
+    closePurgeStreamModal();
+    renderClientFeed();
+
+    if (typeof showToast === 'function') {
+      showToast('Raw WhatsApp stream wiped. All business routes & vendor contacts preserved!', 'success');
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') {
+      showToast(`Failed to purge stream: ${err.message}`, 'error');
+    }
+  } finally {
+    const btn = document.getElementById('btn-confirm-purge-stream');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i><span>Permanently Wipe Raw Stream</span>';
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
 // Global exports
 window.renderClientFeed = renderClientFeed;
 window.toggleRawEnvelope = toggleRawEnvelope;
 window.toggleStreamAutoScroll = toggleStreamAutoScroll;
 window.exportMessagesCsv = exportMessagesCsv;
+window.exportMessagesJson = exportMessagesJson;
+window.setStreamPageSize = setStreamPageSize;
+window.changeStreamPage = changeStreamPage;
+window.openPurgeStreamModal = openPurgeStreamModal;
+window.closePurgeStreamModal = closePurgeStreamModal;
+window.confirmPurgeStream = confirmPurgeStream;

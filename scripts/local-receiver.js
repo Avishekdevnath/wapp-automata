@@ -9,6 +9,7 @@ const { processWebhookDelivery } = require('./server/webhook-receiver');
 const { handleRoutesGet, handleRoutesPost, handleRoutesSeed, handleRoutesExport } = require('./server/routes-api');
 const { handleTrendsGet, handleNewsGet, handleVendorsGet, handleInsightsGet } = require('./server/market-api');
 const { handleSystemApi } = require('./server/system-api');
+const { handleAiSettingsApi } = require('./server/ai-settings');
 const { serveStaticFile } = require('./server/static');
 const { backfillHistoricalTelecomData } = require('./server/db');
 const { recentMessages } = require('./server/store');
@@ -76,6 +77,12 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/news') return handleNewsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/vendors') return handleVendorsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/insights') return handleInsightsGet(req, res);
+
+    // AI Engine Settings APIs
+    if (pathname.startsWith('/api/settings/ai')) {
+      const handledAi = handleAiSettingsApi(req, res, pathname);
+      if (handledAi) return;
+    }
 
     // System, Session, Storage, Forwarder & Media APIs
     const handled = handleSystemApi(req, res, pathname, parsedUrl);

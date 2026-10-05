@@ -51,8 +51,15 @@ function getTradingDb() {
         phone TEXT PRIMARY KEY,
         name TEXT,
         company TEXT,
+        avatar_url TEXT,
         total_offers INTEGER DEFAULT 1,
         last_seen_at INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS vendor_avatars (
+        phone TEXT PRIMARY KEY,
+        avatar_url TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
       );
     `);
     tradingDb = db;

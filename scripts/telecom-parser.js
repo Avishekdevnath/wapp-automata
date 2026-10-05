@@ -214,16 +214,48 @@ function parseTelecomMessage(rawText, senderPhone = '', senderName = '') {
 }
 
 /**
- * Optional AI-Powered extraction using Google Gemini Flash or OpenAI
+ * AI-Powered extraction using DeepSeek, OpenAI, Grok, or Local Regex
  */
+let getSettingFn = (k, def = '') => process.env[k] || def;
+try {
+  const settingsModule = require('./server/ai-settings');
+  if (settingsModule && settingsModule.getSetting) {
+    getSettingFn = settingsModule.getSetting;
+  }
+} catch (_) {}
+
+const AI_ENDPOINTS = {
+  deepseek: {
+    url: 'https://api.deepseek.com/chat/completions',
+    defaultModel: 'deepseek-chat',
+    keyEnv: 'DEEPSEEK_API_KEY'
+  },
+  openai: {
+    url: 'https://api.openai.com/v1/chat/completions',
+    defaultModel: 'gpt-4o-mini',
+    keyEnv: 'OPENAI_API_KEY'
+  },
+  grok: {
+    url: 'https://api.x.ai/v1/chat/completions',
+    defaultModel: 'grok-beta',
+    keyEnv: 'GROK_API_KEY'
+  }
+};
+
 async function extractTelecomWithAI(rawText, senderPhone = '', senderName = '') {
-  const apiKey = process.env.AI_API_KEY || process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    // Fall back to local heuristic parser
+  const provider = (getSettingFn('AI_PROVIDER', process.env.AI_PROVIDER || 'deepseek')).toLowerCase();
+  
+  if (provider === 'local') {
     return parseTelecomMessage(rawText, senderPhone, senderName);
   }
 
-  const isGemini = process.env.GEMINI_API_KEY || !process.env.OPENAI_API_KEY;
+  const endpointCfg = AI_ENDPOINTS[provider] || AI_ENDPOINTS.deepseek;
+  const apiKey = getSettingFn(endpointCfg.keyEnv, process.env[endpointCfg.keyEnv] || process.env.AI_API_KEY || '');
+
+  if (!apiKey) {
+    // Fall back to local regex parser
+    return parseTelecomMessage(rawText, senderPhone, senderName);
+  }
 
   const prompt = `You are a Wholesale Telecom Route Analyst. Extract structured data from this WhatsApp message into JSON.
 Format required:
@@ -253,66 +285,47 @@ Format required:
 Return ONLY pure JSON. No markdown ticks.`;
 
   try {
-    let resultText = '';
-    if (isGemini) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${prompt}\n\nMessage:\n${rawText}` }] }],
-          generationConfig: { responseMimeType: 'application/json' }
-        }),
-        signal: AbortSignal.timeout(8000)
-      });
-      if (res.ok) {
-        const json = await res.json();
-        resultText = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      }
-    } else {
-      const url = 'https://api.openai.com/v1/chat/completions';
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: prompt },
-            { role: 'user', content: rawText }
-          ],
-          response_format: { type: 'json_object' }
-        }),
-        signal: AbortSignal.timeout(8000)
-      });
-      if (res.ok) {
-        const json = await res.json();
-        resultText = json.choices?.[0]?.message?.content || '';
-      }
-    }
+    const res = await fetch(endpointCfg.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: endpointCfg.defaultModel,
+        messages: [
+          { role: 'system', content: prompt },
+          { role: 'user', content: rawText }
+        ],
+        response_format: { type: 'json_object' }
+      }),
+      signal: AbortSignal.timeout(8000)
+    });
 
-    if (resultText) {
-      const parsed = JSON.parse(resultText);
-      if (Array.isArray(parsed.routes)) {
-        parsed.routes = parsed.routes.map(r => ({
-          ...r,
-          fas_free: r.fas_free ? 1 : 0,
-          intent: parsed.intent || 'WTS',
-          vendor_name: parsed.vendor_name || senderName || 'Vendor',
-          vendor_phone: senderPhone,
-          company_name: parsed.company || null,
-          raw_text: rawText.slice(0, 100)
-        }));
+    if (res.ok) {
+      const json = await res.json();
+      const resultText = json.choices?.[0]?.message?.content || '';
+      if (resultText) {
+        const parsed = JSON.parse(resultText);
+        if (Array.isArray(parsed.routes)) {
+          parsed.routes = parsed.routes.map(r => ({
+            ...r,
+            fas_free: r.fas_free ? 1 : 0,
+            intent: parsed.intent || 'WTS',
+            vendor_name: parsed.vendor_name || senderName || 'Vendor',
+            vendor_phone: senderPhone,
+            company_name: parsed.company || null,
+            raw_text: rawText.slice(0, 100)
+          }));
+        }
+        return parsed;
       }
-      return parsed;
     }
   } catch (err) {
-    console.warn('[Telecom Parser] AI extraction failed or timed out, falling back to local regex:', err.message);
+    console.warn(`[Telecom Parser] ${provider} extraction notice, using local regex:`, err.message);
   }
 
-  // Fallback
+  // Fallback to local heuristic parser
   return parseTelecomMessage(rawText, senderPhone, senderName);
 }
 
@@ -321,3 +334,4 @@ module.exports = {
   extractTelecomWithAI,
   COUNTRY_MAP
 };
+

@@ -10,6 +10,7 @@ const { getSessionState } = require('./auth');
 const { getStorageStats, purgeMediaFiles, dismissStorageWarning } = require('./media');
 const { processWebhookDelivery } = require('./webhook-receiver');
 const { forwardWebhookToClient } = require('./forwarder');
+const { getTradingDb } = require('./db');
 
 const MIME_TYPES = {
   '.jpg': 'image/jpeg',
@@ -149,11 +150,29 @@ function handleSystemApi(req, res, pathname, parsedUrl) {
     }));
   }
 
-  if (req.method === 'POST' && pathname === '/api/clear') {
+  if (req.method === 'POST' && (pathname === '/api/messages/purge' || pathname === '/api/clear')) {
     recentMessages.length = 0;
     saveMessagesToDisk(recentMessages);
+
+    let purgedCount = 0;
+    const db = getTradingDb();
+    if (db) {
+      try {
+        const info = db.prepare('DELETE FROM messages').run();
+        purgedCount = info.changes;
+        try { db.pragma('incremental_vacuum(100)'); } catch (_) {}
+      } catch (err) {
+        console.warn('[Purge Stream] SQLite messages table wipe notice:', err.message);
+      }
+    }
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ status: 'ok', cleared: true }));
+    return res.end(JSON.stringify({ 
+      status: 'ok', 
+      cleared: true, 
+      purgedCount,
+      message: 'Raw WhatsApp message stream permanently wiped. Parsed routes and vendors preserved.' 
+    }));
   }
 
   if (req.method === 'GET' && pathname === '/api/storage/status') {

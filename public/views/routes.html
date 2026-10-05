@@ -67,8 +67,8 @@
             </div>
           </div>
 
-          <!-- Trading Intent Tabs & Action Toolbar -->
-          <div class="glass-card rounded-2xl p-4 border border-dark-700/80 space-y-3">
+          <!-- Trading Intent Tabs & Action Toolbar (Sticky pinned to top) -->
+          <div class="sticky top-0 z-20 glass-card rounded-2xl p-4 border border-dark-700/80 space-y-3 backdrop-blur-xl bg-dark-950/95 shadow-2xl">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <!-- Intent Tabs (All, Selling WTS, Buying WTB) -->
               <div class="inline-flex items-center p-1 rounded-xl bg-dark-900 border border-dark-700">
@@ -262,6 +262,40 @@
           <div id="route-matrix-cards-container" class="hidden">
             <div id="route-matrix-cards-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               <!-- Injected via route-matrix.js -->
+            </div>
+          </div>
+
+          <!-- ROUTE MATRIX PAGINATION TOOLBAR -->
+          <div id="route-pagination-bar" class="glass-card rounded-2xl p-4 border border-dark-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-lg">
+            <!-- Left: Showing Count -->
+            <div class="flex items-center gap-2 text-slate-400">
+              <span id="route-page-info">Showing <strong id="route-page-start" class="text-white">1</strong> to <strong id="route-page-end" class="text-white">25</strong> of <strong id="route-page-total" class="text-emerald-400 font-bold">0</strong> routes</span>
+            </div>
+
+            <!-- Middle: Rows Per Page Selector -->
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 text-[11px]">Rows per page:</span>
+              <div class="inline-flex items-center p-0.5 rounded-xl bg-dark-900 border border-dark-700">
+                <button onclick="setRoutePageSize(10)" data-size="10" class="btn-route-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono">10</button>
+                <button onclick="setRoutePageSize(25)" data-size="25" class="btn-route-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono">25</button>
+                <button onclick="setRoutePageSize(50)" data-size="50" class="btn-route-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono">50</button>
+                <button onclick="setRoutePageSize(100)" data-size="100" class="btn-route-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono">100</button>
+              </div>
+            </div>
+
+            <!-- Right: Page Navigation -->
+            <div class="flex items-center gap-2">
+              <button onclick="changeRoutePage(-1)" id="btn-route-prev" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 hover:border-slate-500 text-slate-300 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all">
+                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                <span>Previous</span>
+              </button>
+              <div class="px-3 py-1.5 rounded-xl bg-dark-950 border border-dark-800 font-mono text-[11px] text-slate-300">
+                Page <span id="route-current-page" class="text-emerald-400 font-bold">1</span> of <span id="route-total-pages" class="text-slate-400">1</span>
+              </div>
+              <button onclick="changeRoutePage(1)" id="btn-route-next" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 hover:border-slate-500 text-slate-300 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all">
+                <span>Next</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </button>
             </div>
           </div>
 

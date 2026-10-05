@@ -7,6 +7,10 @@
  * - In-app Route Posting & Benchmark Auto-Seeding
  */
 
+let routePage = 1;
+let routePageSize = parseInt(localStorage.getItem('wapp_route_page_size') || '25', 10);
+let routeTotalCount = 0;
+
 let currentRouteFilters = {
   q: '',
   country: '',
@@ -14,7 +18,7 @@ let currentRouteFilters = {
   pulse: '',
   intent: '',
   sort: 'price_asc',
-  limit: 100,
+  limit: routePageSize,
   offset: 0
 };
 
@@ -59,6 +63,9 @@ async function loadRouteMatrix() {
   const cardsGrid = document.getElementById('route-matrix-cards-grid');
   const countBadge = document.getElementById('route-count-badge');
   const totalCountEl = document.getElementById('route-total-count');
+
+  currentRouteFilters.limit = routePageSize;
+  currentRouteFilters.offset = (routePage - 1) * routePageSize;
 
   const params = new URLSearchParams();
   if (currentRouteFilters.q) params.set('q', currentRouteFilters.q);
@@ -120,10 +127,10 @@ async function loadRouteMatrix() {
     if (wtbCountBadge) wtbCountBadge.innerText = stats.wtbCount || 0;
 
     // 3. Update Sidebar & Table Header Badges
-    if (countBadge) countBadge.innerText = stats.total || routes.length;
-    if (totalCountEl) totalCountEl.innerText = `${data.total || routes.length} Active Routes`;
+    // 4. Update Pagination Controls
+    updateRoutePaginationUI(data.total !== undefined ? data.total : routes.length);
 
-    // 4. Render Table and Cards
+    // 5. Render Table and Cards
     renderRouteTable(routes);
     renderRouteCards(routes);
 
@@ -415,6 +422,7 @@ function applyRouteViewMode() {
  */
 function handleIntentTab(intent) {
   currentRouteFilters.intent = intent;
+  routePage = 1;
   currentRouteFilters.offset = 0;
 
   // Update tabs active state
@@ -437,6 +445,7 @@ function handleIntentTab(intent) {
  */
 function handleSortChange(sortVal) {
   currentRouteFilters.sort = sortVal;
+  routePage = 1;
   currentRouteFilters.offset = 0;
   loadRouteMatrix();
 }
@@ -636,26 +645,96 @@ async function triggerSeedBenchmark() {
  */
 function handleRouteSearch(e) {
   currentRouteFilters.q = (e.target.value || '').trim();
+  routePage = 1;
   currentRouteFilters.offset = 0;
   loadRouteMatrix();
 }
 
 function handleCountryFilter(country) {
   currentRouteFilters.country = country;
+  routePage = 1;
   currentRouteFilters.offset = 0;
   loadRouteMatrix();
 }
 
 function handleTypeFilter(type) {
   currentRouteFilters.type = type;
+  routePage = 1;
   currentRouteFilters.offset = 0;
   loadRouteMatrix();
 }
 
 function handlePulseFilter(pulse) {
   currentRouteFilters.pulse = pulse;
+  routePage = 1;
   currentRouteFilters.offset = 0;
   loadRouteMatrix();
+}
+
+/**
+ * Route Matrix Pagination Handlers
+ */
+function setRoutePageSize(size) {
+  routePageSize = parseInt(size, 10);
+  routePage = 1;
+  localStorage.setItem('wapp_route_page_size', routePageSize);
+  document.querySelectorAll('.btn-route-size').forEach(btn => {
+    if (parseInt(btn.getAttribute('data-size'), 10) === routePageSize) {
+      btn.className = 'btn-route-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono';
+    } else {
+      btn.className = 'btn-route-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono';
+    }
+  });
+  loadRouteMatrix();
+}
+
+function changeRoutePage(delta) {
+  const maxPages = Math.max(1, Math.ceil(routeTotalCount / routePageSize));
+  const newPage = routePage + delta;
+  if (newPage >= 1 && newPage <= maxPages) {
+    routePage = newPage;
+    loadRouteMatrix();
+  }
+}
+
+function updateRoutePaginationUI(total) {
+  routeTotalCount = total;
+  const maxPages = Math.max(1, Math.ceil(total / routePageSize));
+  if (routePage > maxPages) routePage = maxPages;
+
+  const start = total === 0 ? 0 : (routePage - 1) * routePageSize + 1;
+  const end = Math.min(routePage * routePageSize, total);
+
+  const startEl = document.getElementById('route-page-start');
+  const endEl = document.getElementById('route-page-end');
+  const totalEl = document.getElementById('route-page-total');
+  const currEl = document.getElementById('route-current-page');
+  const totalPagesEl = document.getElementById('route-total-pages');
+  const prevBtn = document.getElementById('btn-route-prev');
+  const nextBtn = document.getElementById('btn-route-next');
+  const countBadge = document.getElementById('route-count-badge');
+  const totalCountEl = document.getElementById('route-total-count');
+
+  if (startEl) startEl.innerText = start;
+  if (endEl) endEl.innerText = end;
+  if (totalEl) totalEl.innerText = total;
+  if (currEl) currEl.innerText = routePage;
+  if (totalPagesEl) totalPagesEl.innerText = maxPages;
+  if (countBadge) countBadge.innerText = total;
+  if (totalCountEl) totalCountEl.innerText = `${total} Active Routes`;
+
+  if (prevBtn) prevBtn.disabled = (routePage <= 1);
+  if (nextBtn) nextBtn.disabled = (routePage >= maxPages);
+
+  // Sync button active style
+  document.querySelectorAll('.btn-route-size').forEach(btn => {
+    const s = parseInt(btn.getAttribute('data-size'), 10);
+    if (s === routePageSize) {
+      btn.className = 'btn-route-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono';
+    } else {
+      btn.className = 'btn-route-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono';
+    }
+  });
 }
 
 function exportRoutesCSV() {
@@ -700,3 +779,6 @@ window.handleCountryFilter = handleCountryFilter;
 window.handleTypeFilter = handleTypeFilter;
 window.handlePulseFilter = handlePulseFilter;
 window.exportRoutesCSV = exportRoutesCSV;
+window.setRoutePageSize = setRoutePageSize;
+window.changeRoutePage = changeRoutePage;
+
