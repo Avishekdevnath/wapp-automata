@@ -6,10 +6,27 @@ window.messagesCache = [];
 window.currentView = localStorage.getItem('wapp_active_view') || 'routes';
 window.soundEnabled = true;
 
-// Multi-View Navigation Router
-function switchView(viewName) {
+// Multi-View Navigation & Hash Router
+function getViewFromHash() {
+  const hash = (window.location.hash || '').replace(/^#\/?/, '').trim().toLowerCase();
+  const validViews = ['routes', 'trends', 'insights', 'news', 'vendors', 'terminal', 'dev'];
+  if (validViews.includes(hash)) return hash;
+  if (hash === 'stream') return 'terminal';
+  return null;
+}
+
+function switchView(viewName, updateHash = true) {
+  if (!viewName) viewName = 'routes';
   window.currentView = viewName;
   localStorage.setItem('wapp_active_view', viewName);
+
+  if (updateHash && window.location.hash !== `#/${viewName}`) {
+    if (window.history.pushState) {
+      window.history.pushState(null, '', `#/${viewName}`);
+    } else {
+      window.location.hash = `#/${viewName}`;
+    }
+  }
 
   const views = [
     'view-routes',
@@ -27,14 +44,11 @@ function switchView(viewName) {
     if (el) el.classList.toggle('hidden', v !== `view-${viewName}`);
   });
 
-  // Update sidebar active buttons
+  // Update sidebar active buttons with .active class
   document.querySelectorAll('.sidebar-nav-btn').forEach(btn => {
     const target = btn.getAttribute('data-view');
-    if (target === viewName) {
-      btn.className = 'sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-sm transition-all';
-    } else {
-      btn.className = 'sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-dark-800 border border-transparent font-medium text-xs flex items-center justify-between transition-all';
-    }
+    const isActive = (target === viewName);
+    btn.classList.toggle('active', isActive);
   });
 
   // Update top title
@@ -268,6 +282,52 @@ function showToast(message, type = 'info') {
   }, 3500);
 }
 
+// Hashchange event listener for browser navigation (Back / Forward buttons)
+window.addEventListener('hashchange', () => {
+  const hashView = getViewFromHash();
+  if (hashView && hashView !== window.currentView) {
+    switchView(hashView, false);
+  }
+});
+
+async function fetchInitialBadgeCounts() {
+  try {
+    const token = localStorage.getItem('wapp_token') || sessionStorage.getItem('wapp_token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    // 1. Routes Count
+    fetch('/api/routes', { headers })
+      .then(r => r.ok && r.json())
+      .then(d => {
+        if (d && d.total !== undefined) {
+          const el = document.getElementById('route-count-badge');
+          if (el) el.innerText = d.total;
+        }
+      }).catch(() => {});
+
+    // 2. News Count
+    fetch('/api/news', { headers })
+      .then(r => r.ok && r.json())
+      .then(d => {
+        if (d && Array.isArray(d.news)) {
+          const el = document.getElementById('news-count-badge');
+          if (el) el.innerText = d.news.length;
+        }
+      }).catch(() => {});
+
+    // 3. Vendors Count
+    fetch('/api/vendors', { headers })
+      .then(r => r.ok && r.json())
+      .then(d => {
+        if (d && Array.isArray(d.vendors)) {
+          const el = document.getElementById('vendor-count-badge');
+          if (el) el.innerText = d.vendors.length;
+        }
+      }).catch(() => {});
+  } catch {}
+}
+window.fetchInitialBadgeCounts = fetchInitialBadgeCounts;
+
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
@@ -276,8 +336,12 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
   }
 
-  // Load initial view
-  switchView(window.currentView || 'routes');
+  // Load initial view from URL hash or localStorage or fallback to 'routes'
+  const initialView = getViewFromHash() || localStorage.getItem('wapp_active_view') || 'routes';
+  switchView(initialView, true);
+
+  // Immediately populate badge numbers
+  fetchInitialBadgeCounts();
 
   // Start polling loops
   fetchMessages();

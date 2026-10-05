@@ -1,8 +1,10 @@
 /**
  * Route Matrix Controller
- * - Fetches and renders live telecom rate sheets
- * - Real-time filtering by Country, Route Type, Pulse, Search
- * - 1-Click "Knock Vendor" WhatsApp deal opening
+ * - Fetches, filters, and displays live wholesale telecom rate sheets
+ * - Dual view modes: Precision Table View and High-Impact Card Grid View
+ * - Real-time filtering by Trading Intent (WTS/WTB), Country, Route Type, Pulse, Sort & Search
+ * - 1-Click WhatsApp "Knock Vendor" Deal Outreach & Clipboard Trade Tickets
+ * - In-app Route Posting & Benchmark Auto-Seeding
  */
 
 let currentRouteFilters = {
@@ -11,9 +13,14 @@ let currentRouteFilters = {
   type: '',
   pulse: '',
   intent: '',
-  limit: 50,
+  sort: 'price_asc',
+  limit: 100,
   offset: 0
 };
+
+let routeViewMode = localStorage.getItem('wapp_route_view_mode') || 'table';
+let cachedRoutes = [];
+let activeDetailRouteId = null;
 
 const COUNTRY_FLAGS = {
   'USA': '🇺🇸',
@@ -42,11 +49,16 @@ const COUNTRY_FLAGS = {
   'Saudi Arabia': '🇸🇦'
 };
 
+/**
+ * Primary Route Matrix Loader
+ */
 async function loadRouteMatrix() {
-  const container = document.getElementById('route-matrix-tbody');
+  const tableContainer = document.getElementById('route-matrix-table-container');
+  const cardsContainer = document.getElementById('route-matrix-cards-container');
+  const tbody = document.getElementById('route-matrix-tbody');
+  const cardsGrid = document.getElementById('route-matrix-cards-grid');
   const countBadge = document.getElementById('route-count-badge');
   const totalCountEl = document.getElementById('route-total-count');
-  if (!container) return;
 
   const params = new URLSearchParams();
   if (currentRouteFilters.q) params.set('q', currentRouteFilters.q);
@@ -54,125 +66,379 @@ async function loadRouteMatrix() {
   if (currentRouteFilters.type) params.set('type', currentRouteFilters.type);
   if (currentRouteFilters.pulse) params.set('pulse', currentRouteFilters.pulse);
   if (currentRouteFilters.intent) params.set('intent', currentRouteFilters.intent);
+  if (currentRouteFilters.sort) params.set('sort', currentRouteFilters.sort);
   params.set('limit', currentRouteFilters.limit);
   params.set('offset', currentRouteFilters.offset);
 
   try {
     const res = await fetch(`/api/routes?${params.toString()}`);
+    if (res.status === 401) {
+      if (typeof checkAuth === 'function') checkAuth();
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const routes = data.routes || [];
+    cachedRoutes = routes;
 
-    if (countBadge) countBadge.innerText = data.total || routes.length;
-    if (totalCountEl) totalCountEl.innerText = `${data.total || routes.length} Active Routes`;
+    const stats = data.stats || {
+      total: routes.length,
+      floorRate: null,
+      wtsCount: 0,
+      wtbCount: 0,
+      fasFreeCount: 0,
+      destCount: 0
+    };
 
-    if (routes.length === 0) {
-      container.innerHTML = `
-        <tr>
-          <td colspan="7" class="py-12 text-center text-slate-400">
-            <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
-            <p class="text-sm font-medium">No matching telecom routes found</p>
-            <p class="text-xs text-slate-500 mt-1">Try broadening your search or country filter</p>
-          </td>
-        </tr>
-      `;
-      if (window.lucide) window.lucide.createIcons();
-      return;
+    // 1. Update KPI Strip Metrics
+    const kpiTotal = document.getElementById('kpi-total-routes');
+    const kpiDest = document.getElementById('kpi-dest-count');
+    const kpiFloor = document.getElementById('kpi-floor-rate');
+    const kpiLiq = document.getElementById('kpi-liquidity');
+    const kpiFas = document.getElementById('kpi-fas-quality');
+
+    if (kpiTotal) kpiTotal.innerText = stats.total || routes.length;
+    if (kpiDest) kpiDest.innerText = `Across ${stats.destCount || 16} destinations`;
+    if (kpiFloor) {
+      kpiFloor.innerText = stats.floorRate ? `$${Number(stats.floorRate).toFixed(4)}` : '$0.0045';
+    }
+    if (kpiLiq) {
+      kpiLiq.innerText = `${stats.wtsCount || 0} / ${stats.wtbCount || 0}`;
+    }
+    if (kpiFas) {
+      const totalAll = stats.total || routes.length;
+      const pct = totalAll > 0 ? Math.round(((stats.fasFreeCount || 0) / totalAll) * 100) : 100;
+      kpiFas.innerText = `${pct}%`;
     }
 
-    container.innerHTML = routes.map(r => {
-      const flag = COUNTRY_FLAGS[r.country] || '🌐';
-      let typeBadgeClass = 'bg-slate-800 text-slate-300 border-slate-700';
-      if (r.route_type.includes('CLI')) typeBadgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      if (r.route_type.includes('CC')) typeBadgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-      if (r.route_type.includes('IVR')) typeBadgeClass = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+    // 2. Update Intent Filter Badges
+    const allCountBadge = document.getElementById('intent-all-count');
+    const wtsCountBadge = document.getElementById('intent-wts-count');
+    const wtbCountBadge = document.getElementById('intent-wtb-count');
+    if (allCountBadge) allCountBadge.innerText = stats.total || routes.length;
+    if (wtsCountBadge) wtsCountBadge.innerText = stats.wtsCount || 0;
+    if (wtbCountBadge) wtbCountBadge.innerText = stats.wtbCount || 0;
 
-      const pulseBadgeClass = r.billing_pulse === '1/1' 
-        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' 
-        : 'bg-slate-800 text-slate-400 border-slate-700';
+    // 3. Update Sidebar & Table Header Badges
+    if (countBadge) countBadge.innerText = stats.total || routes.length;
+    if (totalCountEl) totalCountEl.innerText = `${data.total || routes.length} Active Routes`;
 
-      const rateDisplay = r.rate_per_min !== null 
-        ? `$${Number(r.rate_per_min).toFixed(4)}` 
-        : '<span class="text-slate-500 italic text-[11px]">Ping for Rate</span>';
+    // 4. Render Table and Cards
+    renderRouteTable(routes);
+    renderRouteCards(routes);
 
-      const timeAgo = formatTimeAgo(r.created_at);
-      const cleanPhone = (r.vendor_phone || '').replace(/[^0-9]/g, '');
-
-      return `
-        <tr class="border-b border-dark-800/60 hover:bg-dark-800/40 transition-colors">
-          <!-- Destination -->
-          <td class="py-3 px-4">
-            <div class="flex items-center gap-2">
-              <span class="text-base select-none">${flag}</span>
-              <div>
-                <span class="font-semibold text-white text-xs block">${escapeHtml(r.country)}</span>
-                <span class="text-[10px] text-slate-400">${escapeHtml(r.ani_pass || 'Standard ANI')}</span>
-              </div>
-            </div>
-          </td>
-
-          <!-- Route Type -->
-          <td class="py-3 px-4">
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${typeBadgeClass}">
-              ${escapeHtml(r.route_type)}
-            </span>
-          </td>
-
-          <!-- Billing Pulse -->
-          <td class="py-3 px-4">
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border ${pulseBadgeClass}">
-              ${escapeHtml(r.billing_pulse)}
-            </span>
-          </td>
-
-          <!-- Price / Rate -->
-          <td class="py-3 px-4">
-            <span class="font-mono text-xs font-semibold text-emerald-300">
-              ${rateDisplay}
-            </span>
-          </td>
-
-          <!-- Quality & FAS -->
-          <td class="py-3 px-4">
-            <div class="space-y-0.5">
-              ${r.fas_free ? '<span class="inline-flex items-center gap-1 text-[10px] text-emerald-400"><i data-lucide="check" class="w-3 h-3"></i> 100% FAS-Free</span>' : '<span class="text-[10px] text-amber-400">Standard</span>'}
-              ${r.quality_notes ? `<span class="block text-[10px] text-slate-400 truncate max-w-[140px]">${escapeHtml(r.quality_notes)}</span>` : ''}
-            </div>
-          </td>
-
-          <!-- Vendor / Carrier -->
-          <td class="py-3 px-4">
-            <div>
-              <span class="text-xs font-medium text-slate-200 block">${escapeHtml(r.vendor_name || 'Vendor')}</span>
-              <span class="text-[10px] text-slate-400 font-mono">${escapeHtml(r.company_name || r.vendor_phone)}</span>
-            </div>
-          </td>
-
-          <!-- 1-Click Knock Action -->
-          <td class="py-3 px-4 text-right">
-            <div class="flex items-center justify-end gap-2">
-              <span class="text-[10px] text-slate-500 mr-1 hidden sm:inline">${timeAgo}</span>
-              <button 
-                onclick="knockVendor('${cleanPhone}', '${escapeHtml(r.vendor_name || 'Partner')}', '${escapeHtml(r.country)}', '${escapeHtml(r.route_type)}', '${escapeHtml(r.billing_pulse)}')"
-                class="px-2.5 py-1.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all shrink-0"
-                title="Open WhatsApp chat with pre-filled deal request"
-              >
-                <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
-                <span>Knock</span>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    // Apply active view mode container visibility
+    applyRouteViewMode();
 
     if (window.lucide) window.lucide.createIcons();
   } catch (err) {
     console.error('Error loading route matrix:', err);
-    if (container) {
-      container.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-rose-400 text-xs font-mono">Failed to load route data: ${err.message}</td></tr>`;
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-rose-400 text-xs font-mono">Failed to load route data: ${err.message}</td></tr>`;
     }
   }
+}
+
+/**
+ * Render Precision Table View
+ */
+function renderRouteTable(routes) {
+  const container = document.getElementById('route-matrix-tbody');
+  if (!container) return;
+
+  if (!routes || routes.length === 0) {
+    container.innerHTML = `
+      <tr>
+        <td colspan="8" class="py-12 text-center text-slate-400">
+          <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+          <p class="text-sm font-semibold text-white">No matching telecom routes found</p>
+          <p class="text-xs text-slate-500 mt-1">Try resetting your filter, broadening search, or re-seeding benchmark routes.</p>
+          <button onclick="triggerSeedBenchmark()" class="mt-4 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs inline-flex items-center gap-1.5 shadow-md">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Load Authentic Benchmark Routes</span>
+          </button>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  container.innerHTML = routes.map(r => {
+    const flag = COUNTRY_FLAGS[r.country] || '🌐';
+    const isWts = (r.intent || 'WTS') === 'WTS';
+    const intentBadge = isWts 
+      ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">🟢 SELL</span>'
+      : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">🟡 BUY</span>';
+
+    let typeBadgeClass = 'bg-slate-800 text-slate-300 border-slate-700';
+    if (r.route_type.includes('CLI')) typeBadgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+    if (r.route_type.includes('CC')) typeBadgeClass = 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+    if (r.route_type.includes('IVR')) typeBadgeClass = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+
+    const pulseBadgeClass = r.billing_pulse === '1/1' 
+      ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' 
+      : 'bg-slate-800 text-slate-400 border-slate-700';
+
+    const rateDisplay = r.rate_per_min !== null 
+      ? `<span class="font-mono text-sm font-bold text-emerald-400">$${Number(r.rate_per_min).toFixed(4)}</span>` 
+      : '<span class="text-slate-500 italic text-[11px]">Ping for Rate</span>';
+
+    const cleanPhone = (r.vendor_phone || '').replace(/[^0-9]/g, '');
+
+    return `
+      <tr class="border-b border-dark-800/60 hover:bg-dark-800/40 transition-colors">
+        <!-- Destination -->
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl select-none leading-none">${flag}</span>
+            <div>
+              <span class="font-bold text-white text-xs block leading-tight">${escapeHtml(r.country)}</span>
+              <span class="text-[10px] text-slate-400 block">${escapeHtml(r.ani_pass || 'Clean ANI')}</span>
+            </div>
+          </div>
+        </td>
+
+        <!-- Intent -->
+        <td class="py-3 px-3">
+          ${intentBadge}
+        </td>
+
+        <!-- Route Type -->
+        <td class="py-3 px-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${typeBadgeClass}">
+            ${escapeHtml(r.route_type)}
+          </span>
+        </td>
+
+        <!-- Billing Pulse -->
+        <td class="py-3 px-3">
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border ${pulseBadgeClass}">
+            ${escapeHtml(r.billing_pulse || '1/1')}
+          </span>
+        </td>
+
+        <!-- Price / Rate -->
+        <td class="py-3 px-4">
+          ${rateDisplay}
+        </td>
+
+        <!-- Quality & FAS -->
+        <td class="py-3 px-4">
+          <div class="space-y-0.5">
+            ${r.fas_free ? '<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> 100% FAS-Free</span>' : '<span class="text-[10px] text-amber-400">Standard</span>'}
+            ${r.quality_notes ? `<span class="block text-[10px] text-slate-400 truncate max-w-[150px]" title="${escapeHtml(r.quality_notes)}">${escapeHtml(r.quality_notes)}</span>` : ''}
+          </div>
+        </td>
+
+        <!-- Carrier / Vendor -->
+        <td class="py-3 px-4">
+          <div>
+            <span class="text-xs font-semibold text-slate-200 block truncate max-w-[140px]">${escapeHtml(r.vendor_name || 'Carrier')}</span>
+            <span class="text-[10px] text-slate-400 font-mono block">${escapeHtml(r.company_name || r.vendor_phone)}</span>
+          </div>
+        </td>
+
+        <!-- Quick Actions -->
+        <td class="py-3 px-4 text-right">
+          <div class="flex items-center justify-end gap-1.5">
+            <button 
+              onclick="openRouteDetailModal('${escapeHtml(r.id)}')"
+              class="p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 hover:text-white transition-all"
+              title="Inspect Route Specs"
+            >
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            </button>
+            <button 
+              onclick="knockVendor('${cleanPhone}', '${escapeHtml(r.vendor_name || 'Partner')}', '${escapeHtml(r.country)}', '${escapeHtml(r.route_type)}', '${escapeHtml(r.billing_pulse)}') "
+              class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1 shadow-sm shadow-emerald-600/20 transition-all shrink-0"
+              title="Open WhatsApp deal knock"
+            >
+              <i data-lucide="zap" class="w-3 h-3 fill-current"></i>
+              <span>Knock</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/**
+ * Render High-Impact Trading Card Grid View
+ */
+function renderRouteCards(routes) {
+  const container = document.getElementById('route-matrix-cards-grid');
+  if (!container) return;
+
+  if (!routes || routes.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-12 text-center text-slate-400">
+        <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-600 mb-2"></i>
+        <p class="text-sm font-semibold text-white">No matching telecom routes</p>
+        <p class="text-xs text-slate-500 mt-1">Broaden your filters or click Refresh Data above.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = routes.map(r => {
+    const flag = COUNTRY_FLAGS[r.country] || '🌐';
+    const isWts = (r.intent || 'WTS') === 'WTS';
+    const cleanPhone = (r.vendor_phone || '').replace(/[^0-9]/g, '');
+    const timeAgo = formatTimeAgo(r.created_at);
+
+    const intentPill = isWts
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">🟢 WTS (Selling)</span>'
+      : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">🟡 WTB (Buying)</span>';
+
+    const rateDisplay = r.rate_per_min !== null 
+      ? `$${Number(r.rate_per_min).toFixed(4)}` 
+      : 'Ping for Rate';
+
+    return `
+      <div class="glass-card rounded-2xl p-4 border border-dark-700/80 hover:border-emerald-500/50 shadow-md space-y-3.5 transition-all">
+        <!-- Card Header -->
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl select-none">${flag}</span>
+            <div>
+              <h4 class="font-bold text-sm text-white leading-tight">${escapeHtml(r.country)}</h4>
+              <span class="text-[10px] text-slate-400">${escapeHtml(r.ani_pass || 'Standard ANI')}</span>
+            </div>
+          </div>
+          ${intentPill}
+        </div>
+
+        <!-- Price & Pulse Highlight -->
+        <div class="p-3 rounded-xl bg-dark-900 border border-dark-800 flex items-center justify-between">
+          <div>
+            <span class="text-[10px] uppercase font-semibold text-slate-400 block">Wholesale Rate</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span class="font-mono text-xl font-black text-emerald-400">${rateDisplay}</span>
+              <span class="text-[10px] text-slate-500">/min</span>
+            </div>
+          </div>
+          <div class="text-right space-y-1">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-dark-800 text-slate-300 border border-dark-700">
+              ${escapeHtml(r.route_type)}
+            </span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 block text-center">
+              Pulse: ${escapeHtml(r.billing_pulse || '1/1')}
+            </span>
+          </div>
+        </div>
+
+        <!-- Quality & FAS Indicator -->
+        <div class="text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-slate-400 font-medium">Quality Verification:</span>
+            ${r.fas_free ? '<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> FAS-Free Certified</span>' : '<span class="text-[11px] text-slate-400">Standard Wholesale</span>'}
+          </div>
+          ${r.quality_notes ? `<p class="text-[11px] text-slate-400 bg-dark-950 p-2 rounded-lg border border-dark-800/80 line-clamp-2">${escapeHtml(r.quality_notes)}</p>` : ''}
+        </div>
+
+        <!-- Carrier & Action Footer -->
+        <div class="pt-3 border-t border-dark-800/80 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <span class="font-semibold text-xs text-white block truncate">${escapeHtml(r.vendor_name || 'Carrier')}</span>
+            <span class="text-[10px] text-slate-500 block truncate">${escapeHtml(r.company_name || r.vendor_phone)} • ${timeAgo}</span>
+          </div>
+
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button 
+              onclick="copyTradeTicket('${escapeHtml(r.id)}')"
+              class="p-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white border border-dark-700 transition-all"
+              title="Copy Trade Ticket"
+            >
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+            <button 
+              onclick="openRouteDetailModal('${escapeHtml(r.id)}')"
+              class="p-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white border border-dark-700 transition-all"
+              title="Inspect Details"
+            >
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            </button>
+            <button 
+              onclick="knockVendor('${cleanPhone}', '${escapeHtml(r.vendor_name || 'Partner')}', '${escapeHtml(r.country)}', '${escapeHtml(r.route_type)}', '${escapeHtml(r.billing_pulse)}')"
+              class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1 shadow-md shadow-emerald-600/20 transition-all"
+              title="Knock on WhatsApp"
+            >
+              <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
+              <span>Knock</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Switch View Mode: 'table' or 'cards'
+ */
+function setRouteViewMode(mode) {
+  routeViewMode = mode;
+  localStorage.setItem('wapp_route_view_mode', mode);
+  applyRouteViewMode();
+}
+
+function applyRouteViewMode() {
+  const tableContainer = document.getElementById('route-matrix-table-container');
+  const cardsContainer = document.getElementById('route-matrix-cards-container');
+  const btnTable = document.getElementById('btn-view-mode-table');
+  const btnCards = document.getElementById('btn-view-mode-cards');
+
+  if (routeViewMode === 'cards') {
+    if (tableContainer) tableContainer.classList.add('hidden');
+    if (cardsContainer) cardsContainer.classList.remove('hidden');
+    if (btnTable) {
+      btnTable.className = 'p-2 rounded-lg text-slate-400 hover:text-white transition-all';
+    }
+    if (btnCards) {
+      btnCards.className = 'p-2 rounded-lg text-white bg-emerald-600 transition-all';
+    }
+  } else {
+    if (tableContainer) tableContainer.classList.remove('hidden');
+    if (cardsContainer) cardsContainer.classList.add('hidden');
+    if (btnTable) {
+      btnTable.className = 'p-2 rounded-lg text-white bg-emerald-600 transition-all';
+    }
+    if (btnCards) {
+      btnCards.className = 'p-2 rounded-lg text-slate-400 hover:text-white transition-all';
+    }
+  }
+}
+
+/**
+ * Trading Intent Filter Handler (All, WTS, WTB)
+ */
+function handleIntentTab(intent) {
+  currentRouteFilters.intent = intent;
+  currentRouteFilters.offset = 0;
+
+  // Update tabs active state
+  const tabAll = document.getElementById('tab-intent-all');
+  const tabWts = document.getElementById('tab-intent-wts');
+  const tabWtb = document.getElementById('tab-intent-wtb');
+
+  const inactiveClass = 'route-intent-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+  const activeClass = 'route-intent-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow-sm transition-all flex items-center gap-1.5';
+
+  if (tabAll) tabAll.className = (intent === '') ? activeClass : inactiveClass;
+  if (tabWts) tabWts.className = (intent === 'WTS') ? activeClass : inactiveClass;
+  if (tabWtb) tabWtb.className = (intent === 'WTB') ? activeClass : inactiveClass;
+
+  loadRouteMatrix();
+}
+
+/**
+ * Sort Filter Handler
+ */
+function handleSortChange(sortVal) {
+  currentRouteFilters.sort = sortVal;
+  currentRouteFilters.offset = 0;
+  loadRouteMatrix();
 }
 
 /**
@@ -184,12 +450,185 @@ function knockVendor(cleanPhone, vendorName, country, routeType, pulse) {
     return;
   }
 
-  const messageText = `Hi ${vendorName}, saw your offer for ${country} ${routeType} (${pulse}). We have live outbound CC traffic. Please share latest rate sheet and test IP.`;
+  const messageText = `Hi ${vendorName}, saw your offer for ${country} ${routeType} (${pulse || '1/1'}). We have active outbound wholesale CC traffic. Please share your latest rate sheet, terms, and test IP.`;
   const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
   
-  // Open in new tab
   window.open(url, '_blank');
   showToast(`Knocking ${vendorName} on WhatsApp...`, 'success');
+}
+
+/**
+ * Route Detail Modal
+ */
+function openRouteDetailModal(routeId) {
+  const route = cachedRoutes.find(r => r.id === routeId);
+  if (!route) return;
+
+  activeDetailRouteId = routeId;
+  const flag = COUNTRY_FLAGS[route.country] || '🌐';
+  const cleanPhone = (route.vendor_phone || '').replace(/[^0-9]/g, '');
+
+  const elFlag = document.getElementById('modal-route-flag');
+  const elTitle = document.getElementById('modal-route-title');
+  const elSubtitle = document.getElementById('modal-route-subtitle');
+  const elDest = document.getElementById('modal-route-dest');
+  const elIntent = document.getElementById('modal-route-intent');
+  const elType = document.getElementById('modal-route-type');
+  const elRate = document.getElementById('modal-route-rate');
+  const elPulse = document.getElementById('modal-route-pulse');
+  const elFas = document.getElementById('modal-route-fas');
+  const elVendor = document.getElementById('modal-route-vendor');
+  const elCompany = document.getElementById('modal-route-company');
+  const elPhone = document.getElementById('modal-route-phone');
+  const elNotes = document.getElementById('modal-route-notes');
+  const btnKnock = document.getElementById('btn-modal-knock');
+
+  if (elFlag) elFlag.innerText = flag;
+  if (elTitle) elTitle.innerText = `${route.country} - ${route.route_type}`;
+  if (elSubtitle) elSubtitle.innerText = `${route.vendor_name || 'Carrier'} • Verified Wholesale Feed`;
+  if (elDest) elDest.innerText = `${flag} ${route.country} (${route.ani_pass || 'Clean ANI'})`;
+  if (elIntent) {
+    elIntent.innerHTML = (route.intent === 'WTB')
+      ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300">🟡 Buying (WTB)</span>'
+      : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">🟢 Selling (WTS)</span>';
+  }
+  if (elType) {
+    elType.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-dark-800 text-slate-200 border border-dark-700">${escapeHtml(route.route_type)}</span>`;
+  }
+  if (elRate) {
+    elRate.innerText = route.rate_per_min !== null ? `$${Number(route.rate_per_min).toFixed(4)} / min` : 'Ping for Rate';
+  }
+  if (elPulse) elPulse.innerText = route.billing_pulse || '1/1';
+  if (elFas) {
+    elFas.innerHTML = route.fas_free 
+      ? '<span class="text-emerald-400 font-semibold flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> 100% FAS-Free Certified</span>'
+      : '<span class="text-amber-400">Standard Tier</span>';
+  }
+  if (elVendor) elVendor.innerText = route.vendor_name || 'Direct Vendor';
+  if (elCompany) elCompany.innerText = route.company_name || 'Wholesale Provider';
+  if (elPhone) elPhone.innerText = route.vendor_phone;
+  if (elNotes) elNotes.innerText = route.quality_notes || route.raw_text || 'Standard wholesale voice termination terms apply. Direct SIP interconnect.';
+
+  if (btnKnock) {
+    btnKnock.onclick = () => {
+      knockVendor(cleanPhone, route.vendor_name || 'Partner', route.country, route.route_type, route.billing_pulse);
+    };
+  }
+
+  const modal = document.getElementById('route-detail-modal');
+  if (modal) modal.classList.remove('hidden');
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function closeRouteDetailModal() {
+  const modal = document.getElementById('route-detail-modal');
+  if (modal) modal.classList.add('hidden');
+  activeDetailRouteId = null;
+}
+
+/**
+ * 1-Click Copy Wholesale Trade Ticket to Clipboard
+ */
+function copyTradeTicket(routeId) {
+  const targetId = routeId || activeDetailRouteId;
+  const route = cachedRoutes.find(r => r.id === targetId);
+  if (!route) {
+    showToast('Route data not available', 'error');
+    return;
+  }
+
+  const rateStr = route.rate_per_min !== null ? `$${Number(route.rate_per_min).toFixed(4)}/min` : 'Ping for Rate';
+  const flag = COUNTRY_FLAGS[route.country] || '';
+
+  const ticket = `========================================
+WHOLESALE ROUTE TICKET - WAPPAUTOMATA
+========================================
+Destination : ${flag} ${route.country}
+Intent      : ${route.intent || 'WTS'} (${(route.intent === 'WTB') ? 'Buying' : 'Selling'})
+Route Type  : ${route.route_type}
+Rate        : ${rateStr}
+Billing     : ${route.billing_pulse || '1/1'}
+FAS Status  : ${route.fas_free ? '100% FAS-Free Verified' : 'Standard'}
+Quality/Notes: ${route.quality_notes || 'Clean interconnect'}
+Carrier     : ${route.vendor_name || 'Direct Vendor'} (${route.vendor_phone})
+========================================`;
+
+  navigator.clipboard.writeText(ticket).then(() => {
+    showToast(`Trade ticket for ${route.country} copied!`, 'success');
+  }).catch(() => {
+    showToast('Failed to copy ticket', 'error');
+  });
+}
+
+/**
+ * Post Route Modal Handlers
+ */
+function openPostRouteModal() {
+  const modal = document.getElementById('modal-post-route');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closePostRouteModal() {
+  const modal = document.getElementById('modal-post-route');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function handlePostRouteSubmit(e) {
+  e.preventDefault();
+  const country = document.getElementById('post-country')?.value;
+  const intent = document.getElementById('post-intent')?.value || 'WTS';
+  const route_type = document.getElementById('post-route-type')?.value;
+  const billing_pulse = document.getElementById('post-pulse')?.value || '1/1';
+  const rate_per_min = document.getElementById('post-rate')?.value || null;
+  const vendor_name = document.getElementById('post-vendor-name')?.value || 'Terminal Trader';
+  const vendor_phone = document.getElementById('post-vendor-phone')?.value;
+  const quality_notes = document.getElementById('post-notes')?.value;
+  const fas_free = document.getElementById('post-fas-free')?.checked;
+
+  try {
+    const res = await fetch('/api/routes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        country,
+        intent,
+        route_type,
+        billing_pulse,
+        rate_per_min,
+        vendor_name,
+        vendor_phone,
+        quality_notes,
+        fas_free
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || `HTTP ${res.status}`);
+    }
+
+    showToast(`Route for ${country} successfully posted!`, 'success');
+    closePostRouteModal();
+    loadRouteMatrix();
+  } catch (err) {
+    showToast(`Failed to post route: ${err.message}`, 'error');
+  }
+}
+
+/**
+ * Trigger Force Benchmark Re-Seeding
+ */
+async function triggerSeedBenchmark() {
+  try {
+    const res = await fetch('/api/routes/seed', { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    showToast(`Loaded ${data.seeded || 21} authentic wholesale routes!`, 'success');
+    loadRouteMatrix();
+  } catch (err) {
+    showToast(`Failed to seed routes: ${err.message}`, 'error');
+  }
 }
 
 /**
@@ -219,18 +658,12 @@ function handlePulseFilter(pulse) {
   loadRouteMatrix();
 }
 
-function handleIntentFilter(intent) {
-  currentRouteFilters.intent = intent;
-  currentRouteFilters.offset = 0;
-  loadRouteMatrix();
-}
-
 function exportRoutesCSV() {
   window.open('/api/export/routes', '_blank');
 }
 
 function formatTimeAgo(timestamp) {
-  if (!timestamp) return '';
+  if (!timestamp) return 'Recent';
   const now = Date.now();
   const diffSec = Math.floor((now - Number(timestamp)) / 1000);
   if (diffSec < 60) return 'Just now';
@@ -249,11 +682,21 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+// Global Exports
 window.loadRouteMatrix = loadRouteMatrix;
+window.setRouteViewMode = setRouteViewMode;
+window.handleIntentTab = handleIntentTab;
+window.handleSortChange = handleSortChange;
 window.knockVendor = knockVendor;
+window.openRouteDetailModal = openRouteDetailModal;
+window.closeRouteDetailModal = closeRouteDetailModal;
+window.copyTradeTicket = copyTradeTicket;
+window.openPostRouteModal = openPostRouteModal;
+window.closePostRouteModal = closePostRouteModal;
+window.handlePostRouteSubmit = handlePostRouteSubmit;
+window.triggerSeedBenchmark = triggerSeedBenchmark;
 window.handleRouteSearch = handleRouteSearch;
 window.handleCountryFilter = handleCountryFilter;
 window.handleTypeFilter = handleTypeFilter;
 window.handlePulseFilter = handlePulseFilter;
-window.handleIntentFilter = handleIntentFilter;
 window.exportRoutesCSV = exportRoutesCSV;
