@@ -67,8 +67,8 @@
             </div>
           </div>
 
-          <!-- Trading Intent Tabs & Action Toolbar (Sticky pinned to top) -->
-          <div class="sticky top-0 z-20 glass-card rounded-2xl p-4 border border-dark-700/80 space-y-3 backdrop-blur-xl bg-dark-950/95 shadow-2xl">
+          <!-- Trading Intent Tabs & Action Toolbar -->
+          <div class="glass-card rounded-2xl p-4 border border-dark-700/80 space-y-3 shadow-sm">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <!-- Intent Tabs (All, Selling WTS, Buying WTB) -->
               <div class="inline-flex items-center p-1 rounded-xl bg-dark-900 border border-dark-700">
@@ -229,7 +229,7 @@
           </div>
 
           <!-- CONTAINER 1: Rate Sheet Table View -->
-          <div id="route-matrix-table-container" class="glass-card rounded-2xl border border-dark-700/80 overflow-hidden shadow-xl">
+          <div id="route-matrix-table-container" class="glass-card rounded-2xl border border-dark-700/80 overflow-hidden shadow-sm">
             <div class="px-5 py-3 border-b border-dark-700/80 flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <span id="route-total-count" class="font-bold text-xs text-white">21 Active Routes</span>
@@ -237,18 +237,18 @@
               </div>
               <span class="text-[11px] text-slate-500">Live wholesale carrier feed • Auto-updating</span>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto overflow-y-auto max-h-[640px]">
               <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="border-b border-dark-700 text-[11px] font-semibold text-slate-400 uppercase tracking-wider bg-dark-900/60">
-                    <th class="py-3 px-4">Destination</th>
-                    <th class="py-3 px-3">Intent</th>
-                    <th class="py-3 px-3">Route Type</th>
-                    <th class="py-3 px-3">Pulse</th>
-                    <th class="py-3 px-4">Rate ($/min)</th>
-                    <th class="py-3 px-4">Quality & FAS</th>
-                    <th class="py-3 px-4">Carrier / Vendor</th>
-                    <th class="py-3 px-4 text-right">Quick Actions</th>
+                <thead class="sticky top-0 z-10 border-b border-dark-700">
+                  <tr class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider bg-dark-900/90">
+                    <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900">Destination</th>
+                    <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">Intent</th>
+                    <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">Route Type</th>
+                    <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">Pulse</th>
+                    <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900">Rate ($/min)</th>
+                    <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900">Quality & FAS</th>
+                    <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900">Carrier / Vendor</th>
+                    <th class="py-3 px-4 text-right bg-slate-100 dark:bg-dark-900">Quick Actions</th>
                   </tr>
                 </thead>
                 <tbody id="route-matrix-tbody" class="divide-y divide-dark-800/60 text-xs">

@@ -2,24 +2,48 @@
    WappAutomata • Tables, Rate Grids & Metrics
    ========================================================================== */
 
-/* Table Headings & Table Rows */
-html:not(.dark) thead tr {
-  background-color: #f1f5f9 !important;
-  border-bottom: 2px solid #cbd5e1 !important;
+/* Sticky Table Header Pinning */
+thead.sticky,
+.table-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-html:not(.dark) th {
-  color: #1e293b !important;
+/* Light Mode Table Styling */
+html:not(.dark) thead tr,
+html:not(.dark) thead th {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
   font-weight: 700 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
 }
 
 html:not(.dark) td {
   color: #0f172a !important;
   border-bottom: 1px solid #e2e8f0 !important;
+  background-color: #ffffff;
 }
 
 html:not(.dark) tbody tr:hover td {
-  background-color: #f8fafc !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Dark Mode Table Styling */
+.dark thead tr,
+.dark thead th {
+  background-color: #0c1220 !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #233352 !important;
+}
+
+.dark td {
+  border-bottom: 1px solid rgba(35, 51, 82, 0.5) !important;
+}
+
+.dark tbody tr:hover td {
+  background-color: rgba(24, 36, 60, 0.4) !important;
 }
 
 /* Metric Counter Cards in Light Mode */
