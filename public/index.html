@@ -40,6 +40,21 @@
       }
     }
   </script>
+  <!-- Instant Session Restoration (Prevents login flicker on reload) -->
+  <style>
+    html.is-authenticated #auth-overlay { display: none !important; }
+    html.is-authenticated #main-app { display: flex !important; }
+  </style>
+  <script>
+    (function() {
+      try {
+        var token = localStorage.getItem('wapp_token') || sessionStorage.getItem('wapp_token');
+        if (token) {
+          document.documentElement.classList.add('is-authenticated');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body class="min-h-screen bg-dark-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
 
@@ -74,6 +89,20 @@
               class="w-full bg-dark-900 border border-dark-700 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
             />
           </div>
+        </div>
+
+        <!-- Keep Logged In Option -->
+        <div class="flex items-center justify-between text-xs text-slate-400 py-0.5">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input 
+              type="checkbox" 
+              id="auth-remember" 
+              checked 
+              class="w-4 h-4 rounded border-dark-700 bg-dark-900 text-emerald-500 focus:ring-emerald-500/20 accent-emerald-500 cursor-pointer"
+            />
+            <span class="text-slate-300 font-medium text-xs">Stay logged in</span>
+          </label>
+          <span class="text-[11px] text-slate-500">Persistent across reloads</span>
         </div>
 
         <p id="auth-error-msg" class="text-xs text-rose-400 font-medium hidden text-center"></p>
@@ -846,17 +875,17 @@
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
 
   <!-- Modular Scripts -->
-  <script src="/js/app.js?v=13"></script>
-  <script src="/js/auth.js?v=13"></script>
-  <script src="/js/route-matrix.js?v=13"></script>
-  <script src="/js/market-trends.js?v=13"></script>
-  <script src="/js/ai-insights.js?v=13"></script>
-  <script src="/js/telco-news.js?v=13"></script>
-  <script src="/js/vendor-dir.js?v=13"></script>
-  <script src="/js/client-inbox.js?v=13"></script>
-  <script src="/js/dev-studio.js?v=13"></script>
-  <script src="/js/device-manager.js?v=13"></script>
-  <script src="/js/storage-manager.js?v=13"></script>
-  <script src="/js/simulator.js?v=13"></script>
+  <script src="/js/auth.js?v=16"></script>
+  <script src="/js/app.js?v=16"></script>
+  <script src="/js/route-matrix.js?v=16"></script>
+  <script src="/js/market-trends.js?v=16"></script>
+  <script src="/js/ai-insights.js?v=16"></script>
+  <script src="/js/telco-news.js?v=16"></script>
+  <script src="/js/vendor-dir.js?v=16"></script>
+  <script src="/js/client-inbox.js?v=16"></script>
+  <script src="/js/dev-studio.js?v=16"></script>
+  <script src="/js/device-manager.js?v=16"></script>
+  <script src="/js/storage-manager.js?v=16"></script>
+  <script src="/js/simulator.js?v=16"></script>
 </body>
 </html>
