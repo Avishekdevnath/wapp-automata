@@ -207,6 +207,26 @@
                     <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
+
+                <!-- Table Density Switcher (Compact vs Comfortable) -->
+                <div id="route-density-controls" class="inline-flex items-center p-0.5 rounded-xl bg-dark-900 border border-dark-700 shrink-0" title="Table Density">
+                  <button 
+                    id="btn-route-density-compact"
+                    onclick="setRouteTableDensity('compact')" 
+                    class="p-2 rounded-lg text-white bg-emerald-600 transition-all"
+                    title="Compact Mode (High Density - 30+ visible rows)"
+                  >
+                    <i data-lucide="align-justify" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button 
+                    id="btn-route-density-comfortable"
+                    onclick="setRouteTableDensity('comfortable')" 
+                    class="p-2 rounded-lg text-slate-400 hover:text-white transition-all"
+                    title="Comfortable Mode"
+                  >
+                    <i data-lucide="menu" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
               </div>
 
             </div>
@@ -239,7 +259,7 @@
               <span class="text-[11px] text-slate-500">Live wholesale carrier feed • Auto-updating</span>
             </div>
             <div class="overflow-x-auto overflow-y-auto max-h-[640px]">
-              <table class="w-full text-left border-collapse">
+              <table id="route-matrix-table" class="w-full text-left border-collapse table-density-compact">
                 <thead class="sticky top-0 z-10 border-b border-dark-700">
                   <tr class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider bg-dark-900/90">
                     <th class="py-3 px-4 bg-slate-100 dark:bg-dark-900">Destination</th>

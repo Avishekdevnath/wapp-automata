@@ -159,6 +159,7 @@ async function loadRouteMatrix() {
 
     // Apply active view mode container visibility
     applyRouteViewMode();
+    applyRouteTableDensity();
 
     if (window.lucide) window.lucide.createIcons();
   } catch (err) {
@@ -517,9 +518,11 @@ function applyRouteViewMode() {
   const btnTable = document.getElementById('btn-view-mode-table');
   const btnCards = document.getElementById('btn-view-mode-cards');
 
+  const densityControls = document.getElementById('route-density-controls');
   if (routeViewMode === 'cards') {
     if (tableContainer) tableContainer.classList.add('hidden');
     if (cardsContainer) cardsContainer.classList.remove('hidden');
+    if (densityControls) densityControls.classList.add('hidden');
     if (btnTable) {
       btnTable.className = 'p-2 rounded-lg text-slate-400 hover:text-white transition-all';
     }
@@ -529,11 +532,49 @@ function applyRouteViewMode() {
   } else {
     if (tableContainer) tableContainer.classList.remove('hidden');
     if (cardsContainer) cardsContainer.classList.add('hidden');
+    if (densityControls) densityControls.classList.remove('hidden');
     if (btnTable) {
       btnTable.className = 'p-2 rounded-lg text-white bg-emerald-600 transition-all';
     }
     if (btnCards) {
       btnCards.className = 'p-2 rounded-lg text-slate-400 hover:text-white transition-all';
+    }
+  }
+}
+
+/**
+ * Switch Table Density: 'compact' or 'comfortable'
+ */
+let routeTableDensity = localStorage.getItem('wapp_route_density') || 'compact';
+
+function setRouteTableDensity(density) {
+  routeTableDensity = density;
+  localStorage.setItem('wapp_route_density', density);
+  applyRouteTableDensity();
+}
+
+function applyRouteTableDensity() {
+  const table = document.getElementById('route-matrix-table');
+  const btnCompact = document.getElementById('btn-route-density-compact');
+  const btnComfortable = document.getElementById('btn-route-density-comfortable');
+
+  if (table) {
+    if (routeTableDensity === 'compact') {
+      table.classList.add('table-density-compact');
+      table.classList.remove('table-density-comfortable');
+    } else {
+      table.classList.remove('table-density-compact');
+      table.classList.add('table-density-comfortable');
+    }
+  }
+
+  if (btnCompact && btnComfortable) {
+    if (routeTableDensity === 'compact') {
+      btnCompact.className = 'p-2 rounded-lg text-white bg-emerald-600 transition-all';
+      btnComfortable.className = 'p-2 rounded-lg text-slate-400 hover:text-white transition-all';
+    } else {
+      btnComfortable.className = 'p-2 rounded-lg text-white bg-emerald-600 transition-all';
+      btnCompact.className = 'p-2 rounded-lg text-slate-400 hover:text-white transition-all';
     }
   }
 }
@@ -978,4 +1019,5 @@ window.handlePulseFilter = handlePulseFilter;
 window.exportRoutesCSV = exportRoutesCSV;
 window.setRoutePageSize = setRoutePageSize;
 window.changeRoutePage = changeRoutePage;
+window.setRouteTableDensity = setRouteTableDensity;
 

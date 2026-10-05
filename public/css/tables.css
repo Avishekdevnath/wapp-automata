@@ -60,3 +60,61 @@ html:not(.dark) .grid .bg-dark-950\/80 span:first-child {
 html:not(.dark) .grid .bg-dark-950\/80 span:last-child {
   color: #0f172a !important;
 }
+
+/* ==========================================================================
+   Table Density Modes (Compact vs Comfortable)
+   ========================================================================== */
+
+/* Compact Mode (Bloomberg/VoIP High Density ~30-40 rows visible) */
+table.table-density-compact th,
+.table-density-compact th {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  padding-left: 0.6rem !important;
+  padding-right: 0.6rem !important;
+  font-size: 0.68rem !important;
+  line-height: 1rem !important;
+}
+
+table.table-density-compact td,
+.table-density-compact td {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+  padding-left: 0.6rem !important;
+  padding-right: 0.6rem !important;
+  font-size: 0.72rem !important;
+  line-height: 1.1rem !important;
+}
+
+table.table-density-compact td .text-xl,
+.table-density-compact td .text-xl {
+  font-size: 1.05rem !important;
+}
+
+table.table-density-compact td .text-xs,
+.table-density-compact td .text-xs {
+  font-size: 0.72rem !important;
+}
+
+table.table-density-compact td button,
+.table-density-compact td button {
+  padding: 0.2rem 0.45rem !important;
+  font-size: 0.68rem !important;
+}
+
+/* Comfortable Mode (Default spacious view) */
+table.table-density-comfortable th,
+.table-density-comfortable th {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+table.table-density-comfortable td,
+.table-density-comfortable td {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}

@@ -14,6 +14,28 @@
 
       <!-- Action Controls -->
       <div class="flex items-center gap-2 shrink-0">
+        <!-- Stream Density Controls (Compact vs Comfortable) -->
+        <div class="inline-flex items-center p-0.5 rounded-xl bg-dark-900 border border-dark-700 shrink-0" title="Toggle Message Density">
+          <button 
+            id="btn-stream-density-compact"
+            onclick="setStreamDensity('compact')" 
+            class="p-1.5 px-2.5 rounded-lg text-white bg-emerald-600 transition-all text-xs flex items-center gap-1 font-semibold"
+            title="Compact Mode (High Density Feed)"
+          >
+            <i data-lucide="align-justify" class="w-3.5 h-3.5"></i>
+            <span class="hidden md:inline">Compact</span>
+          </button>
+          <button 
+            id="btn-stream-density-comfortable"
+            onclick="setStreamDensity('comfortable')" 
+            class="p-1.5 px-2.5 rounded-lg text-slate-400 hover:text-white transition-all text-xs flex items-center gap-1"
+            title="Spacious Mode"
+          >
+            <i data-lucide="menu" class="w-3.5 h-3.5"></i>
+            <span class="hidden md:inline">Spacious</span>
+          </button>
+        </div>
+
         <button onclick="toggleStreamAutoScroll()" id="btn-stream-autoscroll" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 text-xs text-emerald-400 hover:text-white flex items-center gap-1.5 transition-all">
           <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
           <span id="label-stream-autoscroll">Auto-Scroll: ON</span>
@@ -84,7 +106,7 @@
   </div>
 
   <!-- Live Messages Feed Container -->
-  <div id="client-messages-container" class="space-y-3">
+  <div id="client-messages-container" class="space-y-2 density-compact">
     <!-- Dynamically injected via client-inbox.js -->
   </div>
 

@@ -82,11 +82,11 @@ function renderClientFeed() {
 
     const avatarUrl = m.sender_avatar_url || m.avatar_url;
     const avatarHtml = avatarUrl
-      ? `<div class="relative w-10 h-10 shrink-0">
-          <img src="${esc(avatarUrl)}" alt="${esc(initials)}" class="w-10 h-10 rounded-2xl object-cover shadow-md border border-dark-700/80" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr ${avatarGradient} items-center justify-center text-white font-bold text-xs shadow-md" style="display:none;">${esc(initials)}</div>
+      ? `<div class="msg-avatar relative w-7 h-7 sm:w-8 sm:h-8 shrink-0">
+          <img src="${esc(avatarUrl)}" alt="${esc(initials)}" class="w-full h-full rounded-lg object-cover shadow-sm border border-dark-700/80" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div class="w-full h-full rounded-lg bg-gradient-to-tr ${avatarGradient} items-center justify-center text-white font-bold text-[10px] shadow-sm" style="display:none;">${esc(initials)}</div>
          </div>`
-      : `<div class="w-10 h-10 rounded-2xl bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0">${esc(initials)}</div>`;
+      : `<div class="msg-avatar w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0">${esc(initials)}</div>`;
 
     const mediaType = m.raw_envelope?.message?.media?.type ||
       (m.raw_envelope?.message?.raw_payload?.message?.imageMessage ? 'image' :
@@ -100,34 +100,34 @@ function renderClientFeed() {
       : null;
 
     return `
-      <div class="glass-card rounded-2xl p-4 sm:p-5 border border-dark-700/70 hover:border-emerald-500/30 transition-all shadow-md group">
-        <div class="flex items-start gap-3.5">
+      <div class="glass-card rounded-xl p-2.5 sm:p-3 border border-dark-700/70 hover:border-emerald-500/30 transition-all shadow-sm group">
+        <div class="flex items-start gap-2.5 sm:gap-3">
           ${avatarHtml}
 
-          <div class="flex-1 min-w-0 space-y-2.5">
+          <div class="flex-1 min-w-0 space-y-1.5">
             <!-- Header Row -->
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">${esc(m.sender_name || 'Carrier Contact')}</span>
+            <div class="msg-header flex flex-wrap items-center justify-between gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tracking-tight leading-none">${esc(m.sender_name || 'Carrier Contact')}</span>
                 ${m.sender_phone ? `
-                  <span class="px-2 py-0.5 rounded-full bg-dark-950 border border-dark-700 text-slate-300 font-mono text-[11px]">
+                  <span class="msg-badge px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 text-slate-300 font-mono text-[10px]">
                     ${esc(m.sender_phone)}
                   </span>
                 ` : ''}
                 ${isGroup ? `
-                  <span class="px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 dark:text-sky-300 text-[11px] font-medium flex items-center gap-1">
-                    <i data-lucide="users" class="w-3 h-3"></i>
-                    <span class="truncate max-w-[200px]">${esc(m.chat_name || 'Group Chat')}</span>
+                  <span class="msg-badge px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 dark:text-sky-300 text-[10px] font-medium flex items-center gap-1">
+                    <i data-lucide="users" class="w-2.5 h-2.5"></i>
+                    <span class="truncate max-w-[180px]">${esc(m.chat_name || 'Group Chat')}</span>
                   </span>
                 ` : `
-                  <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 dark:text-emerald-300 text-[11px] font-medium">Direct DM</span>
+                  <span class="msg-badge px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 dark:text-emerald-300 text-[10px] font-medium">Direct DM</span>
                 `}
               </div>
 
-              <div class="flex items-center gap-2 text-slate-400 text-xs">
+              <div class="flex items-center gap-2 text-slate-400 text-[11px]">
                 <span>${esc(formattedTime)}</span>
                 ${knockUrl ? `
-                  <a href="${knockUrl}" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] flex items-center gap-1 shadow-sm transition-all" title="Message on WhatsApp">
+                  <a href="${knockUrl}" target="_blank" class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] flex items-center gap-1 shadow-sm transition-all" title="Message on WhatsApp">
                     <i data-lucide="message-circle" class="w-3 h-3"></i>
                     <span>Knock</span>
                   </a>
@@ -136,28 +136,28 @@ function renderClientFeed() {
             </div>
 
             <!-- Message Body -->
-            <div class="p-3.5 rounded-xl bg-dark-950/70 border border-dark-800/80 text-xs text-slate-200 font-mono leading-relaxed whitespace-pre-wrap break-words selection:bg-emerald-500 selection:text-white">
+            <div class="msg-body p-2 px-2.5 rounded-lg bg-dark-950/70 border border-dark-800/80 text-xs text-slate-200 font-mono leading-relaxed whitespace-pre-wrap break-words selection:bg-emerald-500 selection:text-white">
               ${esc(m.text || '')}
             </div>
 
             <!-- Media Preview if Available -->
             ${m.has_media ? `
-              <div class="flex items-center gap-2 pt-1">
-                <span class="px-2 py-1 rounded-lg bg-dark-900 border border-dark-700 text-[11px] text-slate-300 flex items-center gap-1.5">
-                  <i data-lucide="${mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'paperclip'}" class="w-3.5 h-3.5 text-emerald-400"></i>
-                  <span class="capitalize">${mediaType || 'Media'} attached</span>
+              <div class="flex items-center gap-2 pt-0.5">
+                <span class="px-2 py-0.5 rounded bg-dark-900 border border-dark-700 text-[10px] text-slate-300 flex items-center gap-1">
+                  <i data-lucide="${mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'paperclip'}" class="w-3 h-3 text-emerald-400"></i>
+                  <span class="capitalize">${mediaType || 'Media'}</span>
                 </span>
                 ${m.media_id ? `
-                  <a href="/api/media/${m.media_id}" target="_blank" class="text-xs text-emerald-400 hover:underline flex items-center gap-1">
+                  <a href="/api/media/${m.media_id}" target="_blank" class="text-[11px] text-emerald-400 hover:underline flex items-center gap-1">
                     <span>View Media</span>
-                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                    <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
                   </a>
                 ` : ''}
               </div>
             ` : ''}
 
             <!-- Bottom Metadata & Raw Inspector -->
-            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+            <div class="msg-footer flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
               <span class="font-mono">ID: ${esc(m.id || '--')}</span>
               <button onclick="toggleRawEnvelope('${m.id}')" class="hover:text-slate-300 flex items-center gap-1 transition-colors">
                 <i data-lucide="code" class="w-3 h-3"></i>
@@ -166,7 +166,7 @@ function renderClientFeed() {
             </div>
 
             <!-- Expandable Raw Envelope JSON -->
-            <div id="raw-env-${m.id}" class="hidden p-3 rounded-xl bg-dark-950 border border-dark-800 text-[10px] text-slate-400 font-mono overflow-x-auto max-h-60">
+            <div id="raw-env-${m.id}" class="hidden p-2 rounded-lg bg-dark-950 border border-dark-800 text-[10px] text-slate-400 font-mono overflow-x-auto max-h-60">
               <pre>${esc(JSON.stringify(m.raw_envelope || m, null, 2))}</pre>
             </div>
           </div>
@@ -175,6 +175,7 @@ function renderClientFeed() {
     `;
   }).join('');
 
+  applyStreamDensity();
   if (window.lucide) lucide.createIcons();
 
   // Auto-scroll to top if enabled and first page
@@ -237,6 +238,43 @@ function exportMessagesJson() {
   a.href = url;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Stream Density Handlers (Compact vs Comfortable)
+ */
+let streamDensity = localStorage.getItem('wapp_stream_density') || 'compact';
+
+function setStreamDensity(mode) {
+  streamDensity = mode;
+  localStorage.setItem('wapp_stream_density', mode);
+  applyStreamDensity();
+}
+
+function applyStreamDensity() {
+  const container = document.getElementById('client-messages-container');
+  const btnCompact = document.getElementById('btn-stream-density-compact');
+  const btnComfortable = document.getElementById('btn-stream-density-comfortable');
+
+  if (container) {
+    if (streamDensity === 'compact') {
+      container.classList.add('density-compact');
+      container.classList.remove('density-comfortable');
+    } else {
+      container.classList.remove('density-compact');
+      container.classList.add('density-comfortable');
+    }
+  }
+
+  if (btnCompact && btnComfortable) {
+    if (streamDensity === 'compact') {
+      btnCompact.className = 'p-1.5 px-2.5 rounded-lg text-white bg-emerald-600 transition-all text-xs flex items-center gap-1 font-semibold';
+      btnComfortable.className = 'p-1.5 px-2.5 rounded-lg text-slate-400 hover:text-white transition-all text-xs flex items-center gap-1';
+    } else {
+      btnComfortable.className = 'p-1.5 px-2.5 rounded-lg text-white bg-emerald-600 transition-all text-xs flex items-center gap-1 font-semibold';
+      btnCompact.className = 'p-1.5 px-2.5 rounded-lg text-slate-400 hover:text-white transition-all text-xs flex items-center gap-1';
+    }
+  }
 }
 
 /**
@@ -372,3 +410,4 @@ window.changeStreamPage = changeStreamPage;
 window.openPurgeStreamModal = openPurgeStreamModal;
 window.closePurgeStreamModal = closePurgeStreamModal;
 window.confirmPurgeStream = confirmPurgeStream;
+window.setStreamDensity = setStreamDensity;
