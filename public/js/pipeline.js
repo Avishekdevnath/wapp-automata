@@ -5,10 +5,11 @@ let pipelineAutoRefresh = true;
 let pipelineRefreshTimer = null;
 let cachedPipelineEvents = [];
 
-const escapeHtml = window.escapeHtml || function(str) {
+function esc(str) {
+  if (window.escapeHtml) return window.escapeHtml(str);
   if (typeof str !== 'string') return String(str || '');
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-};
+}
 
 const PIPELINE_SAMPLES = {
   rate_sheet: `🔥 DIRECT ROUTE AVAILABLE 🔥\nColombia CC CLI 1/1 pulse\nClean 86xx / 1xx ANI passing, 100% FAS free\nAggressive rate: $0.0062 / min\nPing Carlos Morales — LatAm Telecom Bogota`,
@@ -64,24 +65,24 @@ function renderPipelineFeed(events) {
   }
 
   tbody.innerHTML = events.map(evt => {
-    let outcomeBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400">Non-Business Chat</span>';
+    let outcomeBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border border-slate-300 dark:border-slate-700">Non-Business Chat</span>';
     if (evt.status === 'EXTRACTED') {
-      outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Extracted ${evt.routes_count} Route${evt.routes_count > 1 ? 's' : ''}</span>`;
+      outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30">Extracted ${evt.routes_count} Route${evt.routes_count > 1 ? 's' : ''}</span>`;
     } else if (evt.status === 'NEWS_ALERT') {
-      outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">News / Outage</span>`;
+      outcomeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30">News / Outage</span>`;
     }
 
     return `
-      <tr class="hover:bg-dark-800/40 transition-colors">
-        <td class="py-3 px-3.5 font-mono text-[11px] text-slate-400 whitespace-nowrap">${escapeHtml(evt.timeStr || '')}</td>
+      <tr class="hover:bg-slate-100 dark:hover:bg-dark-800/40 transition-colors">
+        <td class="py-3 px-3.5 font-mono text-[11px] text-slate-400 whitespace-nowrap">${esc(evt.timeStr || '')}</td>
         <td class="py-3 px-3">
-          <span class="font-semibold text-slate-200 block truncate max-w-[140px]">${escapeHtml(evt.sender_name || 'Anonymous')}</span>
-          <span class="text-[10px] text-slate-500 font-mono block">${escapeHtml(evt.sender_phone || '')}</span>
+          <span class="font-semibold text-slate-700 dark:text-slate-200 block truncate max-w-[140px]">${esc(evt.sender_name || 'Anonymous')}</span>
+          <span class="text-[10px] text-slate-500 font-mono block">${esc(evt.sender_phone || '')}</span>
         </td>
         <td class="py-3 px-3">${outcomeBadge}</td>
-        <td class="py-3 px-3 font-mono text-[11px] text-purple-300">${evt.latency_ms || 0}ms</td>
+        <td class="py-3 px-3 font-mono text-[11px] text-purple-400 dark:text-purple-300 font-semibold">${evt.latency_ms || 0}ms</td>
         <td class="py-3 px-3 text-right">
-          <button onclick="openPipelineInspect('${escapeHtml(evt.id)}')" class="p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-300 hover:text-white transition-all" title="Inspect Trace">
+          <button onclick="openPipelineInspect('${esc(evt.id)}')" class="p-1.5 rounded-lg bg-slate-200 dark:bg-dark-800 hover:bg-slate-300 dark:hover:bg-dark-700 border border-slate-300 dark:border-dark-700 text-slate-700 dark:text-slate-300 hover:text-black dark:hover:text-white transition-all" title="Inspect Trace">
             <i data-lucide="eye" class="w-3.5 h-3.5"></i>
           </button>
         </td>
@@ -122,6 +123,7 @@ function loadPipelineSample(sampleKey) {
   const input = document.getElementById('pipeline-sandbox-input');
   if (input && PIPELINE_SAMPLES[sampleKey]) {
     input.value = PIPELINE_SAMPLES[sampleKey];
+    input.focus();
   }
 }
 
@@ -131,30 +133,78 @@ async function runPipelineSandboxTest() {
   const latencyLabel = document.getElementById('pipeline-sandbox-latency');
   const outputBox = document.getElementById('pipeline-sandbox-output-box');
   const jsonEl = document.getElementById('pipeline-sandbox-json');
+  const badgeEl = document.getElementById('pipeline-sandbox-badge');
 
-  if (!input || !input.value.trim()) return;
+  const text = input ? input.value.trim() : '';
+  if (!text) {
+    if (input) input.focus();
+    return;
+  }
 
-  if (btn) btn.disabled = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin mr-1">↻</span><span>Analyzing with AI...</span>';
+  }
   if (latencyLabel) latencyLabel.innerText = 'Extracting...';
 
   try {
+    const token = (typeof getSavedToken === 'function' ? getSavedToken() : null) || localStorage.getItem('wapp_token') || sessionStorage.getItem('wapp_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch('/api/pipeline/test', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: input.value.trim() })
+      headers,
+      body: JSON.stringify({ text })
     });
+
+    if (res.status === 401) {
+      throw new Error('Unauthorized: Session expired. Please re-login to the dashboard.');
+    }
+
     const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `HTTP ${res.status}: Failed to extract telecom data`);
+    }
 
     if (outputBox) outputBox.classList.remove('hidden');
     if (jsonEl) jsonEl.innerText = JSON.stringify(data.parsed || data, null, 2);
     if (latencyLabel) latencyLabel.innerText = `${data.latency_ms || 0}ms (${(data.provider || 'local').toUpperCase()})`;
-    
-    // Refresh the pipeline feed to show this new trace
+
+    // Dynamic extraction outcome badge
+    if (badgeEl && data.parsed) {
+      const p = data.parsed;
+      if (p.isTelecom && Array.isArray(p.routes) && p.routes.length > 0) {
+        badgeEl.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+        badgeEl.innerText = `Extracted: ${p.routes.length} Active Route${p.routes.length > 1 ? 's' : ''}`;
+      } else if (p.news) {
+        badgeEl.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30';
+        badgeEl.innerText = 'Market Alert / Telco News';
+      } else if (p.isTelecom) {
+        badgeEl.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30';
+        badgeEl.innerText = 'Telecom Message (0 Routes)';
+      } else {
+        badgeEl.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+        badgeEl.innerText = 'Filtered: Non-Telecom Noise (0 Routes)';
+      }
+    }
+
+    // Refresh telemetry and live trace feed
     loadPipelineStatus();
   } catch (err) {
+    if (outputBox) outputBox.classList.remove('hidden');
+    if (badgeEl) {
+      badgeEl.className = 'px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30';
+      badgeEl.innerText = 'Extraction Error';
+    }
     if (jsonEl) jsonEl.innerText = `Error: ${err.message}`;
+    if (latencyLabel) latencyLabel.innerText = 'Failed';
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i><span>Test AI Extraction</span>';
+      if (window.lucide) window.lucide.createIcons();
+    }
   }
 }
 
@@ -170,3 +220,12 @@ setInterval(() => {
     loadPipelineStatus();
   }
 }, 3000);
+
+// Attach globally to window for onclick handlers
+window.loadPipelineStatus = loadPipelineStatus;
+window.renderPipelineFeed = renderPipelineFeed;
+window.openPipelineInspect = openPipelineInspect;
+window.closePipelineInspectModal = closePipelineInspectModal;
+window.loadPipelineSample = loadPipelineSample;
+window.runPipelineSandboxTest = runPipelineSandboxTest;
+window.togglePipelineAutoRefresh = togglePipelineAutoRefresh;

@@ -46,7 +46,7 @@ html:not(.dark) textarea::placeholder {
 }
 
 /* Action Buttons & Secondary Controls in Light Mode */
-html:not(.dark) button:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-sky-600):not(.bg-rose-600):not(.bg-amber-600):not([type="submit"]):not(.filter-type):not(.filter-pulse):not(.btn-trends-period):not(.sidebar-nav-btn):not(.route-intent-tab),
+html:not(.dark) button:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-sky-600):not(.bg-rose-600):not(.bg-amber-600):not(.bg-purple-600):not(.bg-purple-500):not([type="submit"]):not(.filter-type):not(.filter-pulse):not(.btn-trends-period):not(.sidebar-nav-btn):not(.route-intent-tab),
 html:not(.dark) a.bg-dark-900 {
   background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
@@ -54,7 +54,7 @@ html:not(.dark) a.bg-dark-900 {
   font-weight: 600 !important;
 }
 
-html:not(.dark) button:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-sky-600):not(.bg-rose-600):not(.bg-amber-600):not([type="submit"]):not(.filter-type):not(.filter-pulse):not(.btn-trends-period):not(.sidebar-nav-btn):not(.route-intent-tab):hover,
+html:not(.dark) button:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-sky-600):not(.bg-rose-600):not(.bg-amber-600):not(.bg-purple-600):not(.bg-purple-500):not([type="submit"]):not(.filter-type):not(.filter-pulse):not(.btn-trends-period):not(.sidebar-nav-btn):not(.route-intent-tab):hover,
 html:not(.dark) a.bg-dark-900:hover {
   background-color: #f1f5f9 !important;
   border-color: #94a3b8 !important;

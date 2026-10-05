@@ -162,17 +162,6 @@ async function fetchMessages() {
   }
 }
 
-function exportMessagesJson() {
-  const blob = new Blob([JSON.stringify(window.messagesCache, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.download = 'wapp-messages-' + Date.now() + '.json';
-  a.href = url;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Exported messages JSON', 'success');
-}
-
 async function clearMessagesFeed() {
   if (!confirm('Clear all displayed messages from this session feed?')) return;
   try {
