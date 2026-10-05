@@ -69,6 +69,10 @@ function switchView(viewName) {
   // Close mobile sidebar if open
   closeMobileSidebar();
 
+  // Reset scroll position of content view to top
+  const scrollEl = document.getElementById('app-main-content');
+  if (scrollEl) scrollEl.scrollTop = 0;
+
   if (window.lucide) lucide.createIcons();
 }
 

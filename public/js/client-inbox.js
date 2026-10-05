@@ -194,8 +194,11 @@ function renderClientFeed() {
   if (window.lucide) lucide.createIcons();
 
   // Auto-scroll to top of stream if enabled and new message arrived
-  if (window.streamAutoScroll && container) {
-    // Keep user's scroll position or smooth scroll
+  if (window.streamAutoScroll) {
+    const scrollEl = document.getElementById('app-main-content');
+    if (scrollEl && scrollEl.scrollTop > 60) {
+      scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 }
 

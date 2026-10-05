@@ -42,8 +42,15 @@
   </script>
   <!-- Instant Session Restoration (Prevents login flicker on reload) -->
   <style>
+    html, body {
+      height: 100%;
+      height: 100vh;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
     html.is-authenticated #auth-overlay { display: none !important; }
-    html.is-authenticated #main-app { display: flex !important; }
+    html.is-authenticated #main-app { display: flex !important; height: 100vh !important; max-height: 100vh !important; overflow: hidden !important; }
   </style>
   <script>
     (function() {
@@ -56,7 +63,7 @@
     })();
   </script>
 </head>
-<body class="min-h-screen bg-dark-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+<body class="h-screen h-[100dvh] overflow-hidden bg-dark-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
 
   <!-- ========================================== -->
   <!-- 1. AUTHENTICATION GATE (Password Overlay)  -->
@@ -120,13 +127,13 @@
   <!-- ========================================== -->
   <!-- 2. MAIN APPLICATION (Post-Authentication) -->
   <!-- ========================================== -->
-  <div id="main-app" class="flex-1 flex overflow-hidden hidden">
+  <div id="main-app" class="flex-1 h-screen h-[100dvh] w-full flex overflow-hidden hidden">
 
     <!-- Mobile Sidebar Backdrop -->
     <div id="sidebar-backdrop" onclick="closeMobileSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden hidden"></div>
 
     <!-- RESPONSIVE SIDEBAR -->
-    <aside id="app-sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 bg-dark-900 border-r border-dark-700/80 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+    <aside id="app-sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 h-full bg-dark-900 border-r border-dark-700/80 flex flex-col justify-between shrink-0 overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
       
       <!-- Top Branding -->
       <div>
@@ -249,10 +256,10 @@
     </aside>
 
     <!-- MAIN WORKSPACE -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
 
-      <!-- Top Header Navigation -->
-      <header class="sticky top-0 z-20 border-b border-dark-700/80 bg-dark-950/90 backdrop-blur-xl">
+      <!-- Top Header Navigation (Fixed at top) -->
+      <header class="shrink-0 z-20 border-b border-dark-700/80 bg-dark-950/90 backdrop-blur-xl">
         <div class="px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
           
           <!-- Left: Mobile toggle & Title -->
@@ -289,8 +296,8 @@
         </div>
       </header>
 
-      <!-- VIEW CONTAINER -->
-      <main class="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto">
+      <!-- VIEW CONTAINER (Dedicated Single Scroll Container) -->
+      <main id="app-main-content" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto">
 
         <!-- Prominent Unlinked WhatsApp Account Alert Banner -->
         <div id="unlinked-account-banner" class="glass-card rounded-2xl p-4 sm:p-5 border border-amber-500/40 bg-amber-950/20 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
