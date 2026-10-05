@@ -44,7 +44,7 @@ function switchView(viewName) {
     'insights': { title: 'AI Insights & Arbitrage', sub: 'Automated deal matching between buy requests and supply offers' },
     'news': { title: 'Telco News & Outage Alerts', sub: 'Real-time carrier maintenance, regulatory blocks, and FAS fraud warnings' },
     'vendors': { title: 'Carrier & Vendor Directory', sub: 'Registered telecom wholesale providers and account managers' },
-    'terminal': { title: 'Live WhatsApp Communications', sub: 'Real-time raw message stream from connected WhatsApp groups' },
+    'terminal': { title: 'Live WhatsApp Messages Stream', sub: 'Continuous 24/7 capture of all incoming group broadcasts, rate sheets, and carrier DMs' },
     'dev': { title: 'Developer Studio & API Lab', sub: 'Webhook payload inspection, HMAC validation, and traffic simulator' }
   };
 
@@ -108,6 +108,10 @@ async function fetchMessages() {
     
     const previousLength = window.messagesCache.length;
     window.messagesCache = data;
+
+    // Update Stream badge in sidebar
+    const streamBadge = document.getElementById('stream-count-badge');
+    if (streamBadge) streamBadge.innerText = data.length;
 
     if (previousLength > 0 && data.length > previousLength) {
       playChime();
