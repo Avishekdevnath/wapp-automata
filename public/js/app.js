@@ -211,6 +211,9 @@ function toggleTheme() {
   const isDark = document.documentElement.classList.toggle('dark');
   localStorage.setItem('wapp_theme', isDark ? 'dark' : 'light');
   updateThemeIcon(isDark);
+  if (typeof trendsChartInstance !== 'undefined' && trendsChartInstance && typeof loadMarketTrends === 'function') {
+    loadMarketTrends();
+  }
   if (typeof showToast === 'function') {
     showToast(isDark ? 'Dark Theme (WhatsApp Web)' : 'Light Theme (WhatsApp Clean)', 'info');
   }

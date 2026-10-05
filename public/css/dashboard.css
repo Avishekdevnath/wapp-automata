@@ -1,37 +1,43 @@
 /* ==========================================================================
    WappAutomata • Wholesale Telecom Trading Terminal
    Design System: WhatsApp Enterprise SaaS Theme (Dual-Mode Dark & Light)
+   WCAG AAA Compliant Contrast Hierarchy
    ========================================================================== */
 
 :root {
   /* WhatsApp Light Theme Tokens */
-  --bg-app: #f0f2f5;                  /* Official WhatsApp Web light backdrop */
-  --bg-surface: #ffffff;              /* Clean white cards, tables & sidebar */
-  --bg-surface-subtle: #f8fafc;       /* Secondary neutral surface */
-  --bg-hover: #e9edef;                /* WhatsApp light hover */
-  --bg-active: #d9fdd3;               /* WhatsApp light green bubble highlight */
-  --border-color: #e2e8f0;            /* Crisp divider */
-  --border-subtle: #cbd5e1;
-  --text-main: #111b21;               /* High-contrast WhatsApp charcoal text */
-  --text-muted: #64748b;              /* Secondary slate metadata text */
-  --text-dim: #94a3b8;
+  --bg-app: #f1f5f9;                  /* Slate 100 neutral shell */
+  --bg-surface: #ffffff;              /* Pure white cards & navigation */
+  --bg-surface-subtle: #f8fafc;       /* Slate 50 subtle elevation */
+  --bg-hover: #e2e8f0;                /* Slate 200 interactive hover */
+  --bg-active: #dcfce7;               /* Emerald 100 active state */
+  --border-color: #cbd5e1;            /* Slate 300 - Crisp, visible borders */
+  --border-subtle: #e2e8f0;
+  
+  /* High-Contrast Typography */
+  --text-main: #0f172a;               /* Slate 900 - Deep, rich, high contrast */
+  --text-muted: #334155;              /* Slate 700 - Sharp secondary text */
+  --text-dim: #475569;                /* Slate 600 - High-contrast labels */
+  --text-placeholder: #64748b;        /* Slate 500 - Legible placeholder */
+  
+  /* WhatsApp Brand Green Tokens */
   --brand-green: #008069;             /* Official WhatsApp Business Deep Green */
   --brand-teal: #00a884;              /* WhatsApp Teal accent */
-  --brand-lightgreen: #25d366;        /* WhatsApp Active status green */
-  --brand-bubble: #f8fafc;            /* Inbound chat bubble tint */
-  --brand-bubble-border: #e2e8f0;
+  --brand-lightgreen: #16a34a;        /* Vibrant green badge */
+  --brand-bubble: #f8fafc;            /* Inbound chat bubble surface */
+  --brand-bubble-border: #cbd5e1;     /* Inbound chat bubble border */
   --card-bg: #ffffff;
-  --card-border: #e2e8f0;
-  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --card-border: #cbd5e1;
+  --card-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.08);
   --modal-bg: #ffffff;
   --modal-border: #cbd5e1;
-  --input-bg: #f8fafc;
+  --input-bg: #ffffff;
   --input-border: #cbd5e1;
-  --input-text: #111b21;
+  --input-text: #0f172a;
 }
 
 .dark {
-  /* WhatsApp Dark Theme Tokens (WhatsApp Web Dark Mode) */
+  /* WhatsApp Dark Theme Tokens (WhatsApp Web Official) */
   --bg-app: #0b141a;                  /* Official WhatsApp Web deep dark background */
   --bg-surface: #111b21;              /* WhatsApp Web chat list & sidebar surface */
   --bg-surface-subtle: #182229;       /* WhatsApp Web elevated surface */
@@ -42,6 +48,7 @@
   --text-main: #e9edef;               /* WhatsApp Web crisp white text */
   --text-muted: #8696a0;              /* WhatsApp Web muted gray */
   --text-dim: #667781;
+  --text-placeholder: #64748b;
   --brand-green: #00a884;             /* WhatsApp Web Teal/Green primary */
   --brand-teal: #25d366;              /* WhatsApp bright neon green */
   --brand-lightgreen: #25d366;
@@ -87,43 +94,304 @@ body {
   border-color: var(--border-color) !important;
 }
 
-/* Light Theme High-Contrast Text Balancing */
+/* ==========================================================================
+   Light Mode Rules & High-Contrast Typography (WCAG AAA)
+   ========================================================================== */
+
 html:not(.dark) {
   color: var(--text-main);
 }
 
-html:not(.dark) .text-white,
+/* Headings & Main Text in Light Mode */
+html:not(.dark) h1, 
+html:not(.dark) h2, 
+html:not(.dark) h3, 
+html:not(.dark) h4, 
+html:not(.dark) h5,
+html:not(.dark) h6,
+html:not(.dark) .font-bold,
+html:not(.dark) .font-semibold {
+  color: var(--text-main) !important;
+}
+
+/* Standard Slate Typography in Light Mode */
 html:not(.dark) .text-slate-100,
 html:not(.dark) .text-slate-200,
 html:not(.dark) .text-slate-300 {
   color: var(--text-main) !important;
 }
 
-html:not(.dark) .text-slate-400,
-html:not(.dark) .text-slate-500 {
+/* Exclude solid action buttons/badges from having text-white overridden */
+html:not(.dark) .text-white:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-blue-600):not(.bg-blue-500):not(.bg-sky-600):not(.bg-sky-500):not(.bg-rose-600):not(.bg-rose-500):not(.bg-amber-600):not(.bg-amber-500):not(.btn-primary):not([type="submit"]):not(.filter-type.bg-emerald-600):not(.filter-pulse.bg-emerald-600):not(.btn-trends-period.bg-emerald-600) {
+  color: var(--text-main) !important;
+}
+
+/* Secondary & Metadata Text in Light Mode */
+html:not(.dark) .text-slate-400 {
   color: var(--text-muted) !important;
 }
 
+/* Labels, Pulse & Timestamps in Light Mode */
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-slate-600 {
+  color: var(--text-dim) !important;
+  font-weight: 600 !important;
+}
+
+/* High Contrast Colored Text Utilities in Light Mode (Prevent washed-out pastels) */
+html:not(.dark) .text-emerald-400,
+html:not(.dark) .text-emerald-300 {
+  color: #047857 !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-blue-400,
+html:not(.dark) .text-blue-300 {
+  color: #1d4ed8 !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-sky-400,
+html:not(.dark) .text-sky-300 {
+  color: #0284c7 !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-purple-400,
+html:not(.dark) .text-purple-300 {
+  color: #7e22ce !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-amber-400,
+html:not(.dark) .text-amber-300,
+html:not(.dark) .text-yellow-400 {
+  color: #b45309 !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-rose-400,
+html:not(.dark) .text-rose-300,
+html:not(.dark) .text-red-400 {
+  color: #be123c !important;
+  font-weight: 600;
+}
+
+/* Colored Badge Backgrounds & Borders in Light Mode */
+html:not(.dark) .bg-emerald-500\/10,
+html:not(.dark) .bg-emerald-500\/20 {
+  background-color: #dcfce7 !important;
+  border-color: #86efac !important;
+  color: #166534 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-blue-500\/10,
+html:not(.dark) .bg-blue-500\/20 {
+  background-color: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-sky-500\/10,
+html:not(.dark) .bg-sky-500\/20 {
+  background-color: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  color: #0369a1 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-purple-500\/10,
+html:not(.dark) .bg-purple-500\/20 {
+  background-color: #f3e8ff !important;
+  border-color: #d8b4fe !important;
+  color: #6b21a8 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-amber-500\/10,
+html:not(.dark) .bg-amber-500\/20 {
+  background-color: #fef3c7 !important;
+  border-color: #fcd34d !important;
+  color: #92400e !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-rose-500\/10,
+html:not(.dark) .bg-rose-500\/20 {
+  background-color: #ffe4e6 !important;
+  border-color: #fecdd3 !important;
+  color: #9f1239 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-dark-800 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+/* Input Fields, Textareas, Selects */
 html:not(.dark) input,
 html:not(.dark) textarea,
 html:not(.dark) select {
   background-color: var(--input-bg) !important;
   color: var(--input-text) !important;
-  border-color: var(--input-border) !important;
+  border: 1px solid var(--input-border) !important;
+  font-weight: 500 !important;
+}
+
+html:not(.dark) input:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus {
+  border-color: var(--brand-green) !important;
+  box-shadow: 0 0 0 3px rgba(0, 128, 105, 0.15) !important;
 }
 
 html:not(.dark) input::placeholder,
 html:not(.dark) textarea::placeholder {
-  color: var(--text-dim) !important;
+  color: var(--text-placeholder) !important;
 }
 
-/* Preserve White Text on Solid Brand Buttons in Both Themes */
-.bg-emerald-600, .bg-emerald-500,
-.bg-sky-600, .bg-sky-500,
-.bg-rose-600, .bg-rose-500,
-.bg-amber-500,
-[type="submit"] {
+/* Table Headings & Table Rows */
+html:not(.dark) thead tr {
+  background-color: #f1f5f9 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+html:not(.dark) th {
+  color: #1e293b !important;
+  font-weight: 700 !important;
+}
+
+html:not(.dark) td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+html:not(.dark) tbody tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* Action Buttons & Secondary Controls in Light Mode */
+html:not(.dark) button:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-sky-600):not(.bg-rose-600):not(.bg-amber-600):not([type="submit"]):not(.filter-type):not(.filter-pulse):not(.btn-trends-period),
+html:not(.dark) a.bg-dark-900 {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) button:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-sky-600):not(.bg-rose-600):not(.bg-amber-600):not([type="submit"]):not(.filter-type):not(.filter-pulse):not(.btn-trends-period):hover,
+html:not(.dark) a.bg-dark-900:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #000000 !important;
+}
+
+/* Filter Pills (CLI, CC CLI, IVR, 1/1, 60/1) in Light Mode */
+html:not(.dark) .filter-type:not(.bg-emerald-600),
+html:not(.dark) .filter-pulse:not(.bg-emerald-600),
+html:not(.dark) .btn-trends-period:not(.bg-emerald-600) {
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .filter-type:not(.bg-emerald-600):hover,
+html:not(.dark) .filter-pulse:not(.bg-emerald-600):hover,
+html:not(.dark) .btn-trends-period:not(.bg-emerald-600):hover {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+/* Active Filter Buttons in Both Themes (Always crisp white text!) */
+.bg-emerald-600,
+button.bg-emerald-600,
+.filter-type.bg-emerald-600,
+.filter-pulse.bg-emerald-600,
+.btn-trends-period.bg-emerald-600,
+.bg-emerald-600 *,
+.bg-emerald-500,
+.bg-emerald-500 *,
+.bg-sky-600,
+.bg-sky-600 *,
+.bg-rose-600,
+.bg-rose-600 *,
+.bg-amber-600,
+.bg-amber-600 *,
+.btn-primary,
+[type="submit"],
+html:not(.dark) .bg-emerald-600,
+html:not(.dark) button.bg-emerald-600,
+html:not(.dark) .filter-type.bg-emerald-600,
+html:not(.dark) .filter-pulse.bg-emerald-600,
+html:not(.dark) .btn-trends-period.bg-emerald-600,
+html:not(.dark) .bg-emerald-600 *,
+html:not(.dark) .bg-emerald-500,
+html:not(.dark) .bg-emerald-500 *,
+html:not(.dark) .bg-sky-600,
+html:not(.dark) .bg-sky-600 *,
+html:not(.dark) .bg-rose-600,
+html:not(.dark) .bg-rose-600 *,
+html:not(.dark) .bg-amber-600,
+html:not(.dark) .bg-amber-600 *,
+html:not(.dark) .btn-primary,
+html:not(.dark) [type="submit"] {
   color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-emerald-600,
+html:not(.dark) button.bg-emerald-600,
+html:not(.dark) .filter-type.bg-emerald-600,
+html:not(.dark) .filter-pulse.bg-emerald-600,
+html:not(.dark) .btn-trends-period.bg-emerald-600,
+html:not(.dark) .btn-primary,
+html:not(.dark) [type="submit"] {
+  background-color: var(--brand-green) !important;
+  border-color: var(--brand-green) !important;
+}
+
+/* Metric Counter Cards in Light Mode */
+html:not(.dark) .grid .bg-dark-950\/80 {
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+html:not(.dark) .grid .bg-dark-950\/80 span:first-child {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .grid .bg-dark-950\/80 span:last-child {
+  color: #0f172a !important;
+}
+
+/* Sidebar Active/Inactive Styling in Light Mode */
+html:not(.dark) #app-sidebar {
+  background-color: #ffffff !important;
+  border-right: 1px solid #cbd5e1 !important;
+}
+
+html:not(.dark) .sidebar-nav-btn:not(.bg-emerald-500\/10) {
+  color: #334155 !important;
+}
+
+html:not(.dark) .sidebar-nav-btn:not(.bg-emerald-500\/10):hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .sidebar-nav-btn.bg-emerald-500\/10 {
+  background-color: #dcfce7 !important;
+  border-color: #86efac !important;
+  color: #008069 !important;
+  font-weight: 700 !important;
 }
 
 /* WhatsApp Cards & Glass Components */
@@ -140,25 +408,25 @@ html:not(.dark) textarea::placeholder {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
 }
 
-/* WhatsApp Brand Accents */
-.text-emerald-400, .text-emerald-300 {
-  color: var(--brand-green) !important;
+html:not(.dark) .glass-modal {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
 }
 
-.bg-emerald-500\/10, .bg-emerald-500\/20 {
-  background-color: rgba(0, 168, 132, 0.12) !important;
+/* Unlinked Account Banner in Light Mode */
+html:not(.dark) #unlinked-account-banner {
+  background-color: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+  color: #78350f !important;
 }
 
-.border-emerald-500\/30, .border-emerald-500\/40 {
-  border-color: rgba(0, 168, 132, 0.3) !important;
+html:not(.dark) #unlinked-account-banner h4 {
+  color: #92400e !important;
 }
 
-.bg-emerald-600 {
-  background-color: var(--brand-green) !important;
-}
-
-.bg-emerald-600:hover, .hover\:bg-emerald-500:hover {
-  background-color: var(--brand-teal) !important;
+html:not(.dark) #unlinked-account-banner p {
+  color: #78350f !important;
 }
 
 /* WhatsApp Message Bubble Styling */
@@ -166,6 +434,16 @@ html:not(.dark) textarea::placeholder {
   background-color: var(--brand-bubble) !important;
   border: 1px solid var(--brand-bubble-border) !important;
   color: var(--text-main) !important;
+}
+
+html:not(.dark) #client-messages-container .glass-card {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.08) !important;
+}
+
+html:not(.dark) #client-messages-container .glass-card:hover {
+  border-color: #008069 !important;
 }
 
 /* Precision Scrollbars (Placed on right-most edge) */

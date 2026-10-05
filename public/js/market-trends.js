@@ -65,6 +65,12 @@ async function loadMarketTrends() {
       return;
     }
 
+    const isDark = document.documentElement.classList.contains('dark');
+    const chartLabelColor = isDark ? '#94a3b8' : '#1e293b';
+    const chartTickColor = isDark ? '#64748b' : '#334155';
+    const chartGridColor = isDark ? 'rgba(51, 65, 85, 0.3)' : 'rgba(203, 213, 225, 0.6)';
+    const chartTooltipBg = isDark ? '#0f172a' : '#1e293b';
+
     // Chart.js render
     trendsChartInstance = new Chart(ctx, {
       type: 'line',
@@ -74,8 +80,8 @@ async function loadMarketTrends() {
           {
             label: 'Lowest Rate ($/min)',
             data: minData.length > 0 ? minData : [0],
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderColor: isDark ? '#10b981' : '#059669',
+            backgroundColor: isDark ? 'rgba(16, 185, 129, 0.1)' : 'rgba(5, 150, 105, 0.12)',
             fill: true,
             tension: 0.3,
             borderWidth: 2,
@@ -85,7 +91,7 @@ async function loadMarketTrends() {
           {
             label: 'Market Average ($/min)',
             data: avgData.length > 0 ? avgData : [0],
-            borderColor: '#3b82f6',
+            borderColor: isDark ? '#3b82f6' : '#2563eb',
             backgroundColor: 'transparent',
             borderDash: [5, 5],
             borderWidth: 2,
@@ -94,7 +100,7 @@ async function loadMarketTrends() {
           {
             label: 'Highest Rate ($/min)',
             data: maxData.length > 0 ? maxData : [0],
-            borderColor: '#f59e0b',
+            borderColor: isDark ? '#f59e0b' : '#d97706',
             backgroundColor: 'transparent',
             borderWidth: 1.5,
             pointRadius: 2
@@ -113,14 +119,14 @@ async function loadMarketTrends() {
             display: true,
             position: 'top',
             labels: {
-              color: '#94a3b8',
-              font: { size: 11, family: 'Inter' },
+              color: chartLabelColor,
+              font: { size: 11, family: 'Inter', weight: '600' },
               boxWidth: 12,
               usePointStyle: true
             }
           },
           tooltip: {
-            backgroundColor: '#0f172a',
+            backgroundColor: chartTooltipBg,
             borderColor: '#334155',
             borderWidth: 1,
             titleColor: '#fff',
@@ -130,14 +136,14 @@ async function loadMarketTrends() {
         },
         scales: {
           x: {
-            grid: { color: 'rgba(51, 65, 85, 0.3)' },
-            ticks: { color: '#64748b', font: { size: 10 } }
+            grid: { color: chartGridColor },
+            ticks: { color: chartTickColor, font: { size: 10, weight: '500' } }
           },
           y: {
-            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+            grid: { color: chartGridColor },
             ticks: {
-              color: '#64748b',
-              font: { size: 10 },
+              color: chartTickColor,
+              font: { size: 10, weight: '500' },
               callback: function(v) { return '$' + Number(v).toFixed(4); }
             }
           }
