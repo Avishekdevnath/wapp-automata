@@ -180,7 +180,21 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
         if (isLoggedOut) {
           this.transitionState('auth_required');
-          logger.error('WhatsApp session logged out or invalidated. Re-authentication via QR scan is required.');
+          logger.warn('WhatsApp session logged out or invalidated. Purging stale auth credentials and generating fresh QR pairing...');
+          try {
+            const dir = initSessionDirectory(this.sessionPath);
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+              if (file !== 'session_state.json' && file !== 'lid_cache.json') {
+                fs.rmSync(path.join(dir, file), { recursive: true, force: true });
+              }
+            }
+          } catch (cleanErr) {
+            logger.error('Failed to clean session directory after logout', { error: cleanErr });
+          }
+          if (this.isRunning) {
+            this.scheduleReconnect();
+          }
         } else if (this.isRunning) {
           this.transitionState('connecting');
           this.scheduleReconnect();

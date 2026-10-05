@@ -3,6 +3,8 @@
  */
 let lastRenderedQR = null;
 let hasAutoOpenedQr = false;
+let lastKnownStatus = null;
+let devicePollingTimer = null;
 
 async function pollSessionStatus() {
   try {
@@ -22,7 +24,9 @@ async function pollSessionStatus() {
     const navPhone = document.getElementById('nav-device-phone');
     const navDot = document.getElementById('nav-device-dot');
     if (navPhone) navPhone.innerText = isAuth ? phone : 'Scan QR to Link';
-    if (navDot) navDot.className = isAuth ? 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse' : 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+    if (navDot) navDot.className = isAuth 
+      ? 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse' 
+      : 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
 
     // 2. Update Sidebar Badge
     const sideBadge = document.getElementById('sidebar-device-badge');
@@ -44,9 +48,30 @@ async function pollSessionStatus() {
     const modalName = document.getElementById('modal-connected-name');
     const connectedSection = document.getElementById('device-modal-connected');
     const scanSection = document.getElementById('device-modal-scan');
+    const spinner = document.getElementById('qr-loading-spinner');
+    const canvas = document.getElementById('qrcode-canvas');
 
     if (modalPhone) modalPhone.innerText = phone;
     if (modalName) modalName.innerText = name;
+
+    // Detect fresh successful authentication transition
+    if (isAuth && lastKnownStatus && lastKnownStatus !== 'authenticated') {
+      if (typeof showToast === 'function') {
+        showToast(`WhatsApp linked successfully! (${phone})`, 'success');
+      }
+      if (typeof playMessageSound === 'function') {
+        playMessageSound();
+      }
+      // If modal is open, show connected state for 2s then close
+      const modal = document.getElementById('device-modal');
+      if (modal && !modal.classList.contains('hidden')) {
+        if (connectedSection) connectedSection.classList.remove('hidden');
+        if (scanSection) scanSection.classList.add('hidden');
+        setTimeout(() => {
+          closeDeviceModal();
+        }, 2200);
+      }
+    }
 
     if (isAuth) {
       if (connectedSection) connectedSection.classList.remove('hidden');
@@ -55,17 +80,34 @@ async function pollSessionStatus() {
       if (connectedSection) connectedSection.classList.add('hidden');
       if (scanSection) scanSection.classList.remove('hidden');
 
-      if (session.qr && session.qr !== lastRenderedQR) {
-        renderQrCode(session.qr);
-        lastRenderedQR = session.qr;
+      if (session.qr) {
+        if (session.qr !== lastRenderedQR) {
+          renderQrCode(session.qr);
+          lastRenderedQR = session.qr;
+        }
+      } else {
+        // No QR currently available (generating or disconnected)
+        if (canvas) canvas.innerHTML = '';
+        if (spinner) {
+          spinner.classList.remove('hidden');
+          const spinnerText = spinner.querySelector('span');
+          if (spinnerText) {
+            spinnerText.innerText = session.status === 'auth_required' 
+              ? 'Pairing session reset. Reconnecting for fresh QR...' 
+              : 'Generating fresh pairing QR code...';
+          }
+        }
+        lastRenderedQR = null;
       }
 
-      // Auto-open modal on first view if user has not linked WhatsApp yet
-      if (!hasAutoOpenedQr && session.status === 'scan_qr') {
+      // Auto-open modal on first page load if unlinked
+      if (!hasAutoOpenedQr && session.status === 'scan_qr' && session.qr) {
         hasAutoOpenedQr = true;
         openDeviceModal();
       }
     }
+
+    lastKnownStatus = session.status;
   } catch (e) {
     console.warn('Error polling session status:', e);
   }
@@ -131,6 +173,8 @@ async function triggerSessionReset() {
     const canvas = document.getElementById('qrcode-canvas');
     if (canvas) canvas.innerHTML = '';
     lastRenderedQR = null;
+    lastKnownStatus = 'resetting';
+    setTimeout(pollSessionStatus, 1500);
   } catch (e) {
     showToast('Error resetting session', 'error');
   } finally {
@@ -142,7 +186,14 @@ async function triggerSessionReset() {
   }
 }
 
+// Autonomous background polling: poll every 2.5 seconds continuously
+if (!devicePollingTimer) {
+  devicePollingTimer = setInterval(pollSessionStatus, 2500);
+}
+
+// Window exports & aliases
 window.openDeviceModal = openDeviceModal;
 window.closeDeviceModal = closeDeviceModal;
 window.pollSessionStatus = pollSessionStatus;
+window.pollDeviceStatus = pollSessionStatus; // Alias for backward compatibility
 window.triggerSessionReset = triggerSessionReset;
