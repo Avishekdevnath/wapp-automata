@@ -98,8 +98,6 @@ async function pollSessionStatus() {
         }
         lastRenderedQR = null;
       }
-
-      }
     }
 
     lastKnownStatus = session.status;
