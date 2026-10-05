@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
+const { parseTelecomMessage, extractTelecomWithAI } = require('./telecom-parser');
 
 // Zero-dependency .env loader — must run before any process.env reads
 const _envPath = path.join(__dirname, '..', '.env');
@@ -49,6 +50,175 @@ const MEDIA_DIR = path.join(DATA_DIR, 'media');
 
 if (!fs.existsSync(MEDIA_DIR)) {
   try { fs.mkdirSync(MEDIA_DIR, { recursive: true }); } catch {}
+}
+
+let tradingDb = null;
+function getTradingDb() {
+  if (tradingDb) return tradingDb;
+  try {
+    const Database = require('better-sqlite3');
+    const db = new Database(SQLITE_FILE);
+    db.pragma('journal_mode = WAL');
+    db.pragma('busy_timeout = 5000');
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS route_ticks (
+        id TEXT PRIMARY KEY,
+        message_id TEXT NOT NULL,
+        vendor_name TEXT,
+        vendor_phone TEXT NOT NULL,
+        company_name TEXT,
+        country TEXT NOT NULL,
+        route_type TEXT NOT NULL,
+        billing_pulse TEXT DEFAULT '1/1',
+        rate_per_min REAL,
+        ani_pass TEXT,
+        quality_notes TEXT,
+        fas_free INTEGER DEFAULT 1,
+        intent TEXT DEFAULT 'WTS',
+        raw_text TEXT,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_routes_dest ON route_ticks (country, route_type, created_at);
+      CREATE INDEX IF NOT EXISTS idx_routes_price ON route_ticks (country, rate_per_min);
+      CREATE INDEX IF NOT EXISTS idx_routes_created ON route_ticks (created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS market_news (
+        id TEXT PRIMARY KEY,
+        message_id TEXT NOT NULL,
+        category TEXT NOT NULL,
+        headline TEXT NOT NULL,
+        affected_countries TEXT,
+        urgency TEXT DEFAULT 'MEDIUM',
+        raw_text TEXT,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_news_created ON market_news (created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS vendors (
+        phone TEXT PRIMARY KEY,
+        name TEXT,
+        company TEXT,
+        total_offers INTEGER DEFAULT 1,
+        last_seen_at INTEGER NOT NULL
+      );
+    `);
+    tradingDb = db;
+    return db;
+  } catch (err) {
+    console.error('Failed to initialize trading SQLite DB:', err.message);
+    return null;
+  }
+}
+
+function saveParsedTelecom(db, parsed, record) {
+  if (!db || !parsed) return;
+  const now = record.created_at ? new Date(record.created_at).getTime() : Date.now();
+  const insertRoute = db.prepare(`
+    INSERT OR IGNORE INTO route_ticks (
+      id, message_id, vendor_name, vendor_phone, company_name,
+      country, route_type, billing_pulse, rate_per_min, ani_pass,
+      quality_notes, fas_free, intent, raw_text, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const upsertVendor = db.prepare(`
+    INSERT INTO vendors (phone, name, company, total_offers, last_seen_at)
+    VALUES (?, ?, ?, 1, ?)
+    ON CONFLICT(phone) DO UPDATE SET
+      name = COALESCE(excluded.name, vendors.name),
+      company = COALESCE(excluded.company, vendors.company),
+      total_offers = vendors.total_offers + 1,
+      last_seen_at = excluded.last_seen_at
+  `);
+
+  db.transaction(() => {
+    if (Array.isArray(parsed.routes)) {
+      for (const r of parsed.routes) {
+        const routeId = `rt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        insertRoute.run(
+          routeId,
+          record.id || `msg_${Date.now()}`,
+          r.vendor_name || record.sender_name || 'Vendor',
+          record.sender_phone || r.vendor_phone || 'unknown',
+          r.company_name || parsed.company || null,
+          r.country,
+          r.route_type,
+          r.billing_pulse || '1/1',
+          r.rate_per_min || null,
+          r.ani_pass || null,
+          r.quality_notes || null,
+          r.fas_free ? 1 : 0,
+          r.intent || 'WTS',
+          r.raw_text || null,
+          now
+        );
+      }
+    }
+
+    if (record.sender_phone) {
+      upsertVendor.run(
+        record.sender_phone,
+        parsed.vendor_name || record.sender_name || 'Vendor',
+        parsed.company || null,
+        now
+      );
+    }
+
+    if (parsed.news) {
+      const newsId = `news_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      db.prepare(`
+        INSERT OR IGNORE INTO market_news (
+          id, message_id, category, headline, affected_countries, urgency, raw_text, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        newsId,
+        record.id || `msg_${Date.now()}`,
+        parsed.news.category,
+        parsed.news.headline,
+        parsed.news.affected_countries,
+        parsed.news.urgency,
+        parsed.news.raw_text,
+        now
+      );
+    }
+  })();
+}
+
+async function processTelecomIntelligence(record) {
+  if (!record || !record.text) return;
+  try {
+    const parsed = await extractTelecomWithAI(record.text, record.sender_phone, record.sender_name);
+    if (!parsed || !parsed.isTelecom) return;
+    const db = getTradingDb();
+    if (!db) return;
+    saveParsedTelecom(db, parsed, record);
+    if (parsed.routes && parsed.routes.length > 0) {
+      console.log(`📈 [Trading Terminal] Extracted ${parsed.routes.length} routes from ${record.sender_name || record.sender_phone}`);
+    }
+  } catch (err) {
+    console.error('Error in processTelecomIntelligence:', err.message);
+  }
+}
+
+function backfillHistoricalTelecomData() {
+  try {
+    const db = getTradingDb();
+    if (!db) return;
+    const count = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get()?.c || 0;
+    if (count === 0 && recentMessages.length > 0) {
+      console.log(`🔍 [Telecom Backfill] Seeding routes from ${recentMessages.length} existing messages...`);
+      for (const msg of recentMessages) {
+        if (msg.text) {
+          const parsed = parseTelecomMessage(msg.text, msg.sender_phone, msg.sender_name);
+          if (parsed && parsed.isTelecom) {
+            saveParsedTelecom(db, parsed, msg);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Telecom Backfill] Warning:', err.message);
+  }
 }
 
 const MIME_TYPES = {
@@ -519,6 +689,9 @@ function processWebhookDelivery(body, headers) {
   recentMessages.unshift(record);
   if (recentMessages.length > 500) recentMessages.pop();
   saveMessagesToDisk(recentMessages);
+
+  // Ingest into Telecom Intelligence Engine
+  processTelecomIntelligence(record);
 
   if (hasMedia && parsed && parsed.message && parsed.message.raw_payload) {
     downloadMediaInBackground(messageId, parsed.message.raw_payload);
@@ -1008,9 +1181,187 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ status: 'ok', cleared: true }));
     }
+
+    // ==========================================
+    // 4. WHOLESALE TELECOM TRADING TERMINAL APIS
+    // ==========================================
+
+    if (req.method === 'GET' && pathname === '/api/routes') {
+      const db = getTradingDb();
+      if (!db) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Database unavailable' }));
+      }
+
+      const q = (parsedUrl.searchParams.get('q') || '').trim().toLowerCase();
+      const country = (parsedUrl.searchParams.get('country') || '').trim();
+      const type = (parsedUrl.searchParams.get('type') || '').trim();
+      const pulse = (parsedUrl.searchParams.get('pulse') || '').trim();
+      const intent = (parsedUrl.searchParams.get('intent') || '').trim().toUpperCase();
+      const limit = Math.min(parseInt(parsedUrl.searchParams.get('limit') || '50', 10), 200);
+      const offset = parseInt(parsedUrl.searchParams.get('offset') || '0', 10);
+
+      let where = [];
+      let params = [];
+
+      if (q) {
+        where.push('(LOWER(country) LIKE ? OR LOWER(vendor_name) LIKE ? OR LOWER(COALESCE(company_name,"")) LIKE ? OR LOWER(COALESCE(quality_notes,"")) LIKE ? OR LOWER(COALESCE(raw_text,"")) LIKE ?)');
+        const wild = `%${q}%`;
+        params.push(wild, wild, wild, wild, wild);
+      }
+      if (country) {
+        where.push('LOWER(country) = LOWER(?)');
+        params.push(country);
+      }
+      if (type) {
+        where.push('LOWER(route_type) = LOWER(?)');
+        params.push(type);
+      }
+      if (pulse) {
+        where.push('billing_pulse = ?');
+        params.push(pulse);
+      }
+      if (intent) {
+        where.push('intent = ?');
+        params.push(intent);
+      }
+
+      const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+      const countRow = db.prepare(`SELECT COUNT(*) as total FROM route_ticks ${whereClause}`).get(...params);
+      const rows = db.prepare(`
+        SELECT * FROM route_ticks 
+        ${whereClause}
+        ORDER BY created_at DESC 
+        LIMIT ? OFFSET ?
+      `).all(...params, limit, offset);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        status: 'ok',
+        total: countRow ? countRow.total : 0,
+        routes: rows
+      }));
+    }
+
+    if (req.method === 'GET' && pathname === '/api/trends') {
+      const db = getTradingDb();
+      if (!db) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Database unavailable' }));
+      }
+      const days = parseInt(parsedUrl.searchParams.get('days') || '30', 10);
+      const country = parsedUrl.searchParams.get('country') || '';
+      const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
+
+      let sql = `
+        SELECT 
+          date(created_at / 1000, 'unixepoch') AS day,
+          country,
+          route_type,
+          ROUND(MIN(rate_per_min), 5) AS min_rate,
+          ROUND(AVG(rate_per_min), 5) AS avg_rate,
+          ROUND(MAX(rate_per_min), 5) AS max_rate,
+          COUNT(*) as offer_count
+        FROM route_ticks
+        WHERE created_at >= ?
+      `;
+      const params = [cutoff];
+      if (country) {
+        sql += ' AND LOWER(country) = LOWER(?)';
+        params.push(country);
+      }
+      sql += ' GROUP BY day, country, route_type ORDER BY day ASC';
+
+      const rows = db.prepare(sql).all(...params);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ status: 'ok', trends: rows }));
+    }
+
+    if (req.method === 'GET' && pathname === '/api/news') {
+      const db = getTradingDb();
+      if (!db) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Database unavailable' }));
+      }
+      const rows = db.prepare('SELECT * FROM market_news ORDER BY created_at DESC LIMIT 50').all();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ status: 'ok', news: rows }));
+    }
+
+    if (req.method === 'GET' && pathname === '/api/vendors') {
+      const db = getTradingDb();
+      if (!db) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Database unavailable' }));
+      }
+      const rows = db.prepare('SELECT * FROM vendors ORDER BY last_seen_at DESC LIMIT 50').all();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ status: 'ok', vendors: rows }));
+    }
+
+    if (req.method === 'GET' && pathname === '/api/insights') {
+      const db = getTradingDb();
+      if (!db) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Database unavailable' }));
+      }
+      const totalRoutes = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get()?.c || 0;
+      const totalCountries = db.prepare('SELECT COUNT(DISTINCT country) as c FROM route_ticks').get()?.c || 0;
+      const totalVendors = db.prepare('SELECT COUNT(*) as c FROM vendors').get()?.c || 0;
+      const urgentNews = db.prepare("SELECT COUNT(*) as c FROM market_news WHERE urgency = 'HIGH'").get()?.c || 0;
+      const recentRoutes = db.prepare('SELECT * FROM route_ticks ORDER BY created_at DESC LIMIT 6').all();
+      const topNews = db.prepare('SELECT * FROM market_news ORDER BY created_at DESC LIMIT 3').all();
+
+      // Detect potential arbitrage: matching countries where WTS exists and WTB exists
+      const wtsCountries = db.prepare("SELECT DISTINCT country FROM route_ticks WHERE intent = 'WTS'").all().map(r => r.country);
+      let wtbMatches = [];
+      if (wtsCountries.length > 0) {
+        const placeholders = wtsCountries.map(() => '?').join(',');
+        wtbMatches = db.prepare(`
+          SELECT * FROM route_ticks WHERE intent = 'WTB' AND country IN (${placeholders})
+          ORDER BY created_at DESC LIMIT 5
+        `).all(...wtsCountries);
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        status: 'ok',
+        summary: {
+          totalRoutes,
+          totalCountries,
+          totalVendors,
+          urgentNews
+        },
+        recentRoutes,
+        topNews,
+        arbitrageOpportunities: wtbMatches
+      }));
+    }
+
+    if (req.method === 'GET' && pathname === '/api/export/routes') {
+      const db = getTradingDb();
+      if (!db) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Database unavailable' }));
+      }
+      const rows = db.prepare('SELECT * FROM route_ticks ORDER BY created_at DESC LIMIT 2000').all();
+      
+      let csv = 'ID,Date,Country,Route Type,Pulse,Rate USD,FAS Free,Vendor Name,Vendor Phone,Company,Quality Notes,Intent\r\n';
+      for (const r of rows) {
+        const dateStr = new Date(r.created_at).toISOString();
+        const esc = (s) => `"${String(s || '').replace(/"/g, '""')}"`;
+        csv += `${esc(r.id)},${esc(dateStr)},${esc(r.country)},${esc(r.route_type)},${esc(r.billing_pulse)},${esc(r.rate_per_min || '')},${esc(r.fas_free ? 'YES' : 'NO')},${esc(r.vendor_name)},${esc(r.vendor_phone)},${esc(r.company_name)},${esc(r.quality_notes)},${esc(r.intent)}\r\n`;
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="telecom_routes_${new Date().toISOString().slice(0, 10)}.csv"`
+      });
+      return res.end(csv);
+    }
   }
 
-  // 4. STATIC FILE SERVING (Serves public/ assets)
+  // 5. STATIC FILE SERVING (Serves public/ assets)
   if (req.method === 'GET') {
     return serveStaticFile(pathname, res);
   }
@@ -1020,8 +1371,11 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`\n🚀 Modular Dual-Mode SaaS Dashboard running at: http://${HOST}:${PORT}/`);
+  console.log(`\n🚀 Wholesale Telecom Trading Terminal running at: http://${HOST}:${PORT}/`);
   console.log(`📁 Serving frontend components from:         ${PUBLIC_DIR}`);
   console.log(`🔑 Password Gate:                            "${DASHBOARD_PASSWORD}"`);
   console.log(`📡 Ingestion Endpoint:                        http://${HOST}:${PORT}/webhook\n`);
+
+  // Backfill telecom data from existing history
+  setTimeout(backfillHistoricalTelecomData, 1000);
 });

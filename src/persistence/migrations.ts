@@ -45,6 +45,62 @@ const MIGRATIONS: Migration[] = [
         ON messages (chat_id, message_timestamp);
       `);
     }
+  },
+  {
+    version: 2,
+    description: 'Wholesale telecom trading tables: route_ticks, market_news, vendors',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS route_ticks (
+          id TEXT PRIMARY KEY,
+          message_id TEXT NOT NULL,
+          vendor_name TEXT,
+          vendor_phone TEXT NOT NULL,
+          company_name TEXT,
+          country TEXT NOT NULL,
+          route_type TEXT NOT NULL,
+          billing_pulse TEXT DEFAULT '1/1',
+          rate_per_min REAL,
+          ani_pass TEXT,
+          quality_notes TEXT,
+          fas_free INTEGER DEFAULT 1,
+          intent TEXT DEFAULT 'WTS',
+          raw_text TEXT,
+          created_at INTEGER NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_routes_dest 
+        ON route_ticks (country, route_type, created_at);
+
+        CREATE INDEX IF NOT EXISTS idx_routes_price 
+        ON route_ticks (country, rate_per_min);
+
+        CREATE INDEX IF NOT EXISTS idx_routes_created 
+        ON route_ticks (created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS market_news (
+          id TEXT PRIMARY KEY,
+          message_id TEXT NOT NULL,
+          category TEXT NOT NULL,
+          headline TEXT NOT NULL,
+          affected_countries TEXT,
+          urgency TEXT DEFAULT 'MEDIUM',
+          raw_text TEXT,
+          created_at INTEGER NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_news_created 
+        ON market_news (created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS vendors (
+          phone TEXT PRIMARY KEY,
+          name TEXT,
+          company TEXT,
+          total_offers INTEGER DEFAULT 1,
+          last_seen_at INTEGER NOT NULL
+        );
+      `);
+    }
   }
 ];
 

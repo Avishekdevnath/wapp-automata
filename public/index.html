@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WappAutomata • Live Control Center</title>
+  <title>WappAutomata • Wholesale Telecom Trading Terminal</title>
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +12,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for Historical Trends -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- QRCode.js for In-Browser QR Rendering -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- Custom Styling -->
@@ -26,13 +28,6 @@
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            brand: {
-              50: '#ecfdf5',
-              100: '#d1fae5',
-              500: '#10b981',
-              600: '#059669',
-              700: '#047857',
-            },
             dark: {
               950: '#060911',
               900: '#0c1220',
@@ -46,7 +41,7 @@
     }
   </script>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+<body class="min-h-screen bg-dark-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
 
   <!-- ========================================== -->
   <!-- 1. AUTHENTICATION GATE (Password Overlay)  -->
@@ -62,19 +57,19 @@
       </div>
 
       <div class="space-y-1">
-        <h2 class="text-xl font-bold text-white tracking-tight">WappAutomata Security Gate</h2>
-        <p class="text-xs text-slate-400">Enter your dashboard authorization password to access live WhatsApp communications.</p>
+        <h2 class="text-xl font-bold text-white tracking-tight">Telecom Trading Terminal</h2>
+        <p class="text-xs text-slate-400">Enter your access password to unlock live route feeds, market trends & vendor intelligence.</p>
       </div>
 
       <form onsubmit="handleLoginSubmit(event)" class="space-y-4 text-left">
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1.5">Access Password</label>
+          <label class="block text-xs font-medium text-slate-300 mb-1.5">Terminal Access Password</label>
           <div class="relative">
             <i data-lucide="key-round" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
             <input 
               type="password" 
               id="auth-password" 
-              placeholder="Enter dashboard password..." 
+              placeholder="Enter password (default: wapp2026)" 
               required
               class="w-full bg-dark-900 border border-dark-700 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
             />
@@ -84,55 +79,155 @@
         <p id="auth-error-msg" class="text-xs text-rose-400 font-medium hidden text-center"></p>
 
         <button type="submit" id="btn-login" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2">
-          <span>Unlock Dashboard</span>
+          <span>Unlock Terminal</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
       </form>
 
-      <p class="text-[11px] text-slate-500">End-to-End Encrypted Gateway • DigitalOcean Droplet</p>
+      <p class="text-[11px] text-slate-500">End-to-End Encrypted Gateway • Hostinger KVM 2</p>
     </div>
   </div>
 
   <!-- ========================================== -->
   <!-- 2. MAIN APPLICATION (Post-Authentication) -->
   <!-- ========================================== -->
-  <div id="main-app" class="flex-1 flex flex-col hidden">
+  <div id="main-app" class="flex-1 flex overflow-hidden hidden">
 
-    <!-- Top Navigation Header -->
-    <header class="sticky top-0 z-40 border-b border-dark-700/80 bg-dark-950/80 backdrop-blur-xl">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16 gap-3">
-          
-          <!-- Logo & Brand -->
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" onclick="closeMobileSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden hidden"></div>
+
+    <!-- RESPONSIVE SIDEBAR -->
+    <aside id="app-sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-64 bg-dark-900 border-r border-dark-700/80 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+      
+      <!-- Top Branding -->
+      <div>
+        <div class="h-16 px-5 border-b border-dark-700/80 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-[1px] shadow-lg shadow-emerald-500/20 shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-[1px] shadow-md shadow-emerald-500/20 shrink-0">
               <div class="w-full h-full bg-dark-950 rounded-[11px] flex items-center justify-center">
-                <i data-lucide="radio" class="w-5 h-5 text-emerald-400"></i>
+                <i data-lucide="radio" class="w-4 h-4 text-emerald-400"></i>
               </div>
             </div>
             <div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-base tracking-tight text-white">WappAutomata</span>
-                <span id="role-pill" class="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Client Mode</span>
-              </div>
-              <p class="text-xs text-slate-400 hidden sm:block">WhatsApp Live Communications & Gateway</p>
+              <span class="font-bold text-sm tracking-tight text-white block">WappAutomata</span>
+              <span class="text-[10px] font-semibold tracking-wider uppercase text-emerald-400">VoIP Terminal</span>
+            </div>
+          </div>
+          <!-- Close button for mobile -->
+          <button onclick="closeMobileSidebar()" class="p-1 rounded-lg text-slate-400 hover:text-white lg:hidden">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="p-3 space-y-1">
+          
+          <!-- Route Matrix -->
+          <button onclick="switchView('routes')" data-view="routes" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm transition-all">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="table" class="w-4 h-4 text-emerald-400"></i>
+              <span>Route Matrix</span>
+            </div>
+            <span id="route-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300">0</span>
+          </button>
+
+          <!-- Market Trends & Charts -->
+          <button onclick="switchView('trends')" data-view="trends" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-dark-900 border border-transparent font-medium text-xs flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i>
+              <span>Market Trends</span>
+            </div>
+            <span class="text-[10px] text-slate-500">Charts</span>
+          </button>
+
+          <!-- AI Insights & Arbitrage -->
+          <button onclick="switchView('insights')" data-view="insights" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-dark-900 border border-transparent font-medium text-xs flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+              <span>AI Insights</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/20 text-amber-300 uppercase">Signals</span>
+          </button>
+
+          <!-- Telco News & Outages -->
+          <button onclick="switchView('news')" data-view="news" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-dark-900 border border-transparent font-medium text-xs flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="newspaper" class="w-4 h-4 text-rose-400"></i>
+              <span>Telco News</span>
+            </div>
+            <span id="news-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-dark-800 text-slate-300">0</span>
+          </button>
+
+          <!-- Vendor Directory -->
+          <button onclick="switchView('vendors')" data-view="vendors" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-dark-900 border border-transparent font-medium text-xs flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
+              <span>Carriers & Vendors</span>
+            </div>
+            <span id="vendor-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-dark-800 text-slate-300">0</span>
+          </button>
+
+          <!-- Live WhatsApp Terminal -->
+          <button onclick="switchView('terminal')" data-view="terminal" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-dark-900 border border-transparent font-medium text-xs flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="message-square-code" class="w-4 h-4 text-teal-400"></i>
+              <span>Live Terminal</span>
+            </div>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          </button>
+
+          <!-- Developer Studio -->
+          <button onclick="switchView('dev')" data-view="dev" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-dark-900 border border-transparent font-medium text-xs flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="code-2" class="w-4 h-4 text-sky-400"></i>
+              <span>Developer Studio</span>
+            </div>
+            <span class="text-[10px] text-slate-500">API</span>
+          </button>
+
+        </nav>
+      </div>
+
+      <!-- Bottom Status & System Health -->
+      <div class="p-4 border-t border-dark-700/80 space-y-3">
+        <!-- Storage Health Indicator -->
+        <div onclick="openStorageModal()" class="cursor-pointer p-3 rounded-xl bg-dark-950/70 border border-dark-800 hover:border-slate-600 transition-colors">
+          <div class="flex items-center justify-between text-xs mb-1.5">
+            <span class="text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Disk Storage</span>
+            </span>
+            <span id="sidebar-storage-text" class="font-mono font-semibold text-slate-200">--%</span>
+          </div>
+          <div class="w-full h-1.5 rounded-full bg-dark-800 overflow-hidden">
+            <div id="sidebar-storage-bar" class="h-full bg-emerald-500 transition-all duration-500" style="width: 10%;"></div>
+          </div>
+        </div>
+
+        <p class="text-[10px] text-slate-500 text-center">Hostinger KVM 2 • Node.js v22</p>
+      </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+
+      <!-- Top Header Navigation -->
+      <header class="sticky top-0 z-20 border-b border-dark-700/80 bg-dark-950/90 backdrop-blur-xl">
+        <div class="px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+          
+          <!-- Left: Mobile toggle & Title -->
+          <div class="flex items-center gap-3 min-w-0">
+            <button onclick="toggleMobileSidebar()" class="p-2 rounded-xl bg-dark-900 border border-dark-700 text-slate-300 hover:text-white lg:hidden">
+              <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <div class="min-w-0">
+              <h1 id="view-header-title" class="font-bold text-base text-white tracking-tight truncate">Route Matrix & Rate Sheet</h1>
+              <p id="view-header-sub" class="text-xs text-slate-400 hidden sm:block truncate">Filter, compare, and knock carriers for active wholesale voice routes</p>
             </div>
           </div>
 
-          <!-- Mode Switcher Pill (Client Inbox <-> Developer Studio) -->
-          <div class="flex items-center p-1 rounded-xl bg-dark-900 border border-dark-700 text-xs">
-            <button onclick="setUiMode('client')" id="btn-mode-client" class="px-3 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-              <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
-              <span>Client Inbox</span>
-            </button>
-            <button onclick="setUiMode('dev')" id="btn-mode-dev" class="px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5">
-              <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
-              <span>Developer Studio</span>
-            </button>
-          </div>
-
-          <!-- Top Right Controls -->
-          <div class="flex items-center gap-2">
+          <!-- Right: Controls -->
+          <div class="flex items-center gap-2 shrink-0">
             <!-- WhatsApp Device Manager Trigger Pill -->
             <button onclick="openDeviceModal()" id="btn-device-status" class="px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-emerald-500/40 text-xs flex items-center gap-2 transition-all">
               <span id="nav-device-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -140,15 +235,8 @@
               <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
             </button>
 
-            <!-- Disk & Media Storage Pill -->
-            <button onclick="openStorageModal()" id="btn-storage-status" class="px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-emerald-500/40 text-xs flex items-center gap-2 transition-all" title="Disk Storage & Media Management">
-              <span id="nav-storage-dot" class="w-2 h-2 rounded-full bg-rose-500 animate-pulse hidden"></span>
-              <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i>
-              <span id="nav-storage-text" class="text-slate-200 font-medium font-mono text-[11px]">--%</span>
-            </button>
-
             <!-- Sound Alert Toggle -->
-            <button id="btn-sound" onclick="toggleSound()" class="p-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 hover:text-white transition-all text-xs" title="Toggle audio chime on message">
+            <button id="btn-sound" onclick="toggleSound()" class="p-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 hover:text-white transition-all text-xs" title="Toggle audio chime">
               <i id="icon-sound" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
             </button>
 
@@ -159,489 +247,387 @@
           </div>
 
         </div>
-      </div>
-    </header>
+      </header>
 
-    <!-- Main Dynamic Content Workspace -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <!-- VIEW CONTAINER -->
+      <main class="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto">
 
-      <!-- Storage Warning Alert Banner -->
-      <div id="storage-alert-banner" class="hidden glass-card rounded-2xl p-4 border border-rose-500/40 bg-rose-950/20 text-rose-200 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 shrink-0">
-            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h4 class="text-xs font-bold text-rose-300">Disk Storage Alert</h4>
-            <p id="storage-alert-text" class="text-xs text-rose-200/80">Storage is running high.</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button onclick="openStorageModal()" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-md transition-all">
-            Manage Storage
-          </button>
-          <button onclick="dismissStorageWarning()" class="p-1.5 rounded-lg bg-dark-900/60 hover:bg-dark-900 text-rose-300 hover:text-white transition-colors" title="Dismiss Alert">
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- ============================================== -->
-      <!-- VIEW 1: CLIENT INBOX (Clean & Non-Technical)  -->
-      <!-- ============================================== -->
-      <div id="view-client" class="space-y-6">
-
-        <!-- WhatsApp Device Status Banner -->
-        <div class="glass-card rounded-2xl p-5 border border-dark-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-              <i data-lucide="smartphone" class="w-6 h-6"></i>
-            </div>
-            <div class="space-y-0.5">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Connected WhatsApp Phone</span>
-                <span id="client-banner-status" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Active</span>
+        <!-- ============================================== -->
+        <!-- VIEW 1: ROUTE MATRIX (Searchable Rate Sheet)   -->
+        <!-- ============================================== -->
+        <div id="view-routes" class="space-y-4">
+          
+          <!-- Filters & Action Bar -->
+          <div class="glass-card rounded-2xl p-4 border border-dark-700/80 space-y-3">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              
+              <!-- Search Bar -->
+              <div class="relative flex-1">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input 
+                  type="text" 
+                  id="route-search-input" 
+                  oninput="handleRouteSearch(event)"
+                  placeholder="Search destination, prefix, carrier, notes (e.g. Colombia, 1/1, IVR, Echolink)..."
+                  class="w-full bg-dark-900 border border-dark-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                />
               </div>
-              <h3 id="client-banner-phone" class="text-lg font-bold text-white font-mono">+880 1516-539430</h3>
-              <p id="client-banner-name" class="text-xs text-slate-400">Account: Smart Tutors</p>
+
+              <!-- Country Select -->
+              <div class="flex items-center gap-2">
+                <select 
+                  id="route-country-select"
+                  onchange="handleCountryFilter(this.value)"
+                  class="bg-dark-900 border border-dark-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="">All Destinations</option>
+                  <option value="USA">🇺🇸 USA</option>
+                  <option value="Canada">🇨🇦 Canada</option>
+                  <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                  <option value="Australia">🇦🇺 Australia</option>
+                  <option value="Germany">🇩🇪 Germany</option>
+                  <option value="Hong Kong">🇭🇰 Hong Kong</option>
+                  <option value="Colombia">🇨🇴 Colombia</option>
+                  <option value="Mexico">🇲🇽 Mexico</option>
+                  <option value="Brazil">🇧🇷 Brazil</option>
+                  <option value="Singapore">🇸🇬 Singapore</option>
+                  <option value="Macau">🇲🇴 Macau</option>
+                  <option value="India">🇮🇳 India</option>
+                  <option value="Bangladesh">🇧🇩 Bangladesh</option>
+                  <option value="Taiwan">🇹🇼 Taiwan</option>
+                </select>
+
+                <!-- Export CSV Button -->
+                <button 
+                  onclick="exportRoutesCSV()" 
+                  class="px-3 py-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-slate-500 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition-all shrink-0"
+                  title="Download rate sheet as CSV"
+                >
+                  <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>Export CSV</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Quick Filter Badges -->
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-dark-800 text-xs">
+              <span class="text-slate-500 text-[11px] mr-1">Filter Type:</span>
+              <button onclick="handleTypeFilter(''); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-medium text-[11px] transition-all">All</button>
+              <button onclick="handleTypeFilter('CLI'); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">CLI</button>
+              <button onclick="handleTypeFilter('CC CLI'); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">CC CLI</button>
+              <button onclick="handleTypeFilter('IVR'); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">IVR</button>
+              
+              <span class="text-slate-600 mx-1">|</span>
+              <span class="text-slate-500 text-[11px] mr-1">Pulse:</span>
+              <button onclick="handlePulseFilter(''); this.parentElement.querySelectorAll('.filter-pulse').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-pulse px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-medium text-[11px] transition-all">All</button>
+              <button onclick="handlePulseFilter('1/1'); this.parentElement.querySelectorAll('.filter-pulse').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-pulse px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">1/1</button>
+              <button onclick="handlePulseFilter('60/1'); this.parentElement.querySelectorAll('.filter-pulse').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-pulse px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">60/1</button>
             </div>
           </div>
 
-          <div class="flex items-center gap-2 shrink-0">
-            <button onclick="openDeviceModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-200 border border-dark-600 text-xs font-medium flex items-center gap-2 transition-all">
-              <i data-lucide="qr-code" class="w-4 h-4 text-emerald-400"></i>
-              <span>Switch / Re-link Account</span>
-            </button>
+          <!-- Rate Sheet Table -->
+          <div class="glass-card rounded-2xl border border-dark-700/80 overflow-hidden shadow-xl">
+            <div class="px-5 py-3 border-b border-dark-700/80 flex items-center justify-between">
+              <span id="route-total-count" class="font-bold text-xs text-white">Active Rates Feed</span>
+              <span class="text-[11px] text-slate-500">Auto-refreshed in real-time</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-dark-700 text-[11px] font-semibold text-slate-400 uppercase tracking-wider bg-dark-900/60">
+                    <th class="py-3 px-4">Destination</th>
+                    <th class="py-3 px-4">Route Type</th>
+                    <th class="py-3 px-4">Pulse</th>
+                    <th class="py-3 px-4">Price ($/min)</th>
+                    <th class="py-3 px-4">Quality & FAS</th>
+                    <th class="py-3 px-4">Carrier / Vendor</th>
+                    <th class="py-3 px-4 text-right">Quick Action</th>
+                  </tr>
+                </thead>
+                <tbody id="route-matrix-tbody" class="divide-y divide-dark-800/60 text-xs">
+                  <!-- Injected via route-matrix.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW 2: MARKET TRENDS (Chart.js Analytics)     -->
+        <!-- ============================================== -->
+        <div id="view-trends" class="space-y-6 hidden">
+          
+          <!-- KPI Summary Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="glass-card rounded-2xl p-5 border border-dark-700/80">
+              <span class="text-xs text-slate-400 font-medium block mb-1">Average Market Rate</span>
+              <span id="trends-kpi-avg" class="text-xl font-bold font-mono text-emerald-400 block">--</span>
+              <span class="text-[10px] text-slate-500">Based on recent vendor quotes</span>
+            </div>
+            <div class="glass-card rounded-2xl p-5 border border-dark-700/80">
+              <span class="text-xs text-slate-400 font-medium block mb-1">Lowest Historical Dip</span>
+              <span id="trends-kpi-lowest" class="text-xl font-bold font-mono text-blue-400 block">--</span>
+              <span class="text-[10px] text-slate-500">Cheapest quote observed</span>
+            </div>
+            <div class="glass-card rounded-2xl p-5 border border-dark-700/80">
+              <span class="text-xs text-slate-400 font-medium block mb-1">Total Market Quotes</span>
+              <span id="trends-kpi-count" class="text-xl font-bold font-mono text-purple-400 block">--</span>
+              <span class="text-[10px] text-slate-500">Logged price ticks</span>
+            </div>
+          </div>
+
+          <!-- Interactive Chart Box -->
+          <div class="glass-card rounded-2xl p-6 border border-dark-700/80 space-y-4 shadow-xl">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="text-sm font-bold text-white">Route Price Trajectory ($/min)</h3>
+                <p class="text-xs text-slate-400">Tracks price compression, stability, and market spreads</p>
+              </div>
+
+              <!-- Period Toggle & Country Selector -->
+              <div class="flex items-center gap-2">
+                <select id="trends-country-select" onchange="handleTrendsCountryChange(event)" class="bg-dark-900 border border-dark-700 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+                  <option value="">All Destinations</option>
+                </select>
+
+                <div class="flex items-center p-1 rounded-xl bg-dark-900 border border-dark-700 text-xs">
+                  <button id="btn-period-7" onclick="handleTrendsPeriodChange(7)" class="btn-trends-period px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all">7D</button>
+                  <button id="btn-period-30" onclick="handleTrendsPeriodChange(30)" class="btn-trends-period px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-medium transition-all">30D</button>
+                  <button id="btn-period-90" onclick="handleTrendsPeriodChange(90)" class="btn-trends-period px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all">90D</button>
+                  <button id="btn-period-365" onclick="handleTrendsPeriodChange(365)" class="btn-trends-period px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all">1Y</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="w-full h-80 relative">
+              <canvas id="trends-chart-canvas"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW 3: AI INSIGHTS & ARBITRAGE SIGNALS        -->
+        <!-- ============================================== -->
+        <div id="view-insights" class="space-y-6 hidden">
+          
+          <!-- Key Metrics -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-4 border border-dark-700/80">
+              <span class="text-xs text-slate-400 block mb-1">Total Routes</span>
+              <span id="kpi-total-routes" class="text-xl font-bold font-mono text-emerald-400">0</span>
+            </div>
+            <div class="glass-card rounded-2xl p-4 border border-dark-700/80">
+              <span class="text-xs text-slate-400 block mb-1">Unique Destinations</span>
+              <span id="kpi-total-dest" class="text-xl font-bold font-mono text-blue-400">0</span>
+            </div>
+            <div class="glass-card rounded-2xl p-4 border border-dark-700/80">
+              <span class="text-xs text-slate-400 block mb-1">Active Carriers</span>
+              <span id="kpi-total-vendors" class="text-xl font-bold font-mono text-purple-400">0</span>
+            </div>
+            <div class="glass-card rounded-2xl p-4 border border-dark-700/80">
+              <span class="text-xs text-slate-400 block mb-1">Urgent Warnings</span>
+              <span id="kpi-urgent-news" class="text-xl font-bold font-mono text-rose-400">0</span>
+            </div>
+          </div>
+
+          <!-- Arbitrage Matchmaker Card -->
+          <div class="glass-card rounded-2xl p-6 border border-dark-700/80 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                  <i data-lucide="scale" class="w-4 h-4 text-amber-400"></i>
+                  <span>Arbitrage Opportunities (Buy vs. Sell Matches)</span>
+                </h3>
+                <p class="text-xs text-slate-400">Matches buyers urgently seeking routes (WTB) with vendors supplying capacity (WTS)</p>
+              </div>
+            </div>
+
+            <div id="arbitrage-matches-list" class="space-y-3">
+              <!-- Injected via ai-insights.js -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW 4: TELCO NEWS & OUTAGES                   -->
+        <!-- ============================================== -->
+        <div id="view-news" class="space-y-4 hidden">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white">Carrier Outages & Regulatory Feed</h3>
+              <p class="text-xs text-slate-400">Real-time alerts extracted from carrier broadcasts and groups</p>
+            </div>
+          </div>
+
+          <div id="telco-news-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Injected via telco-news.js -->
           </div>
         </div>
 
-        <!-- Client Search & Chat Filter Bar -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-dark-700/80 pb-3">
-          <div class="relative flex-1 max-w-md">
-            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input 
-              type="text" 
-              id="client-search-input" 
-              placeholder="Search by sender, phone number, group, or message..."
-              oninput="renderClientFeed()"
-              class="w-full bg-dark-900 border border-dark-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
-            />
-          </div>
-
-          <div class="flex items-center gap-2">
-            <select id="client-filter-type" onchange="renderClientFeed()" class="bg-dark-900 border border-dark-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
-              <option value="all">All Conversations</option>
-              <option value="group">👥 Groups Only</option>
-              <option value="direct">👤 Direct Messages</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Client Message List -->
-        <div id="client-messages-container" class="space-y-3">
-          <!-- Dynamically populated cards -->
-        </div>
-
-      </div>
-
-      <!-- ============================================== -->
-      <!-- VIEW 2: DEVELOPER STUDIO (Full Technical View) -->
-      <!-- ============================================== -->
-      <div id="view-dev" class="hidden space-y-6">
-
-        <!-- KPI Metric Ribbon -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
-            <div class="space-y-1">
-              <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Messages Ingested</p>
-              <h3 id="stat-total" class="text-2xl font-bold tracking-tight text-white font-mono">0</h3>
-              <p class="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
-                <i data-lucide="arrow-up-right" class="w-3 h-3"></i> Durable SQLite Queue
-              </p>
+        <!-- ============================================== -->
+        <!-- VIEW 5: VENDOR DIRECTORY                       -->
+        <!-- ============================================== -->
+        <div id="view-vendors" class="space-y-4 hidden">
+          <div class="glass-card rounded-2xl border border-dark-700/80 overflow-hidden shadow-xl">
+            <div class="px-5 py-3 border-b border-dark-700/80 flex items-center justify-between">
+              <span class="font-bold text-xs text-white">Carriers & Account Managers</span>
+              <span class="text-[11px] text-slate-500">Direct WhatsApp Contacts</span>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <i data-lucide="inbox" class="w-6 h-6"></i>
-            </div>
-          </div>
-
-          <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
-            <div class="space-y-1">
-              <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">HMAC SHA-256</p>
-              <h3 id="stat-hmac-rate" class="text-2xl font-bold tracking-tight text-emerald-400 font-mono">100%</h3>
-              <p class="text-[11px] text-slate-400 flex items-center gap-1">
-                <i data-lucide="shield-check" class="w-3 h-3 text-emerald-400"></i> Zero Forged Packets
-              </p>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
-              <i data-lucide="lock" class="w-6 h-6"></i>
-            </div>
-          </div>
-
-          <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
-            <div class="space-y-1">
-              <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Channels</p>
-              <h3 id="stat-channels" class="text-2xl font-bold tracking-tight text-white font-mono">0</h3>
-              <p class="text-[11px] text-slate-400 flex items-center gap-1">
-                <i data-lucide="users" class="w-3 h-3 text-sky-400"></i> Detected Groups & Contacts
-              </p>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-              <i data-lucide="message-square" class="w-6 h-6"></i>
-            </div>
-          </div>
-
-          <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
-            <div class="space-y-1">
-              <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Transit Latency</p>
-              <h3 id="stat-latency" class="text-2xl font-bold tracking-tight text-white font-mono">~18 ms</h3>
-              <p class="text-[11px] text-slate-400 flex items-center gap-1">
-                <i data-lucide="zap" class="w-3 h-3 text-amber-400"></i> Sub-Second Ingestion
-              </p>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <i data-lucide="gauge" class="w-6 h-6"></i>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-dark-700 text-[11px] font-semibold text-slate-400 uppercase tracking-wider bg-dark-900/60">
+                    <th class="py-3 px-4">Contact</th>
+                    <th class="py-3 px-4">Company</th>
+                    <th class="py-3 px-4">Activity Volume</th>
+                    <th class="py-3 px-4">Last Seen</th>
+                    <th class="py-3 px-4 text-right">Direct Outreach</th>
+                  </tr>
+                </thead>
+                <tbody id="vendors-tbody" class="divide-y divide-dark-800/60 text-xs">
+                  <!-- Injected via vendor-dir.js -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <!-- Dev View Action Bar -->
-        <div class="flex items-center justify-between border-b border-dark-700/80 pb-3">
-          <div class="flex items-center gap-2">
-            <button onclick="switchDevSubTab('feed')" id="dev-tab-feed" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5">
-              <i data-lucide="binary" class="w-3.5 h-3.5"></i> Raw Payloads
-            </button>
-            <button onclick="switchDevSubTab('audit')" id="dev-tab-audit" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-dark-800 transition-all flex items-center gap-1.5">
-              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> HMAC Audit Trail
-            </button>
-            <button onclick="switchDevSubTab('docs')" id="dev-tab-docs" class="px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-dark-800 transition-all flex items-center gap-1.5">
-              <i data-lucide="code-2" class="w-3.5 h-3.5"></i> Client SDKs
-            </button>
+        <!-- ============================================== -->
+        <!-- VIEW 6: LIVE TERMINAL (Incoming WhatsApp Feed) -->
+        <!-- ============================================== -->
+        <div id="view-terminal" class="space-y-4 hidden">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white">Live WhatsApp Communications Stream</h3>
+              <p class="text-xs text-slate-400">Raw captured messages from your connected WhatsApp groups</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="exportMessagesJson()" class="px-3 py-1.5 rounded-lg bg-dark-900 border border-dark-700 text-xs text-slate-300 hover:text-white flex items-center gap-1.5">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Export JSON</span>
+              </button>
+              <button onclick="clearMessagesFeed()" class="px-3 py-1.5 rounded-lg bg-dark-900 border border-dark-700 text-xs text-rose-300 hover:bg-rose-900/30 flex items-center gap-1.5">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>Clear Feed</span>
+              </button>
+            </div>
           </div>
 
-          <div class="flex items-center gap-2">
-            <button onclick="testForwarderPing()" class="px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/30 transition-all text-xs font-medium flex items-center gap-1.5" title="Send a test ping to n8n webhook">
-              <i data-lucide="send" class="w-3.5 h-3.5"></i>
-              <span>Test n8n Webhook</span>
-            </button>
-            <button onclick="openSimulateModal()" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-all text-xs font-medium flex items-center gap-1.5">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-              <span>Simulate Webhook</span>
-            </button>
-            <button onclick="exportMessagesJson()" class="p-2 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white text-xs" title="Export JSON">
-              <i data-lucide="download" class="w-4 h-4"></i>
-            </button>
-            <button onclick="clearMessagesFeed()" class="p-2 rounded-lg bg-dark-900 border border-dark-700 hover:border-rose-700/50 text-slate-400 hover:text-rose-300 text-xs" title="Clear Feed">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
+          <div id="client-messages-feed" class="space-y-3">
+            <!-- Injected via client-inbox.js -->
           </div>
         </div>
 
-        <!-- Dev Sub-Tab 1: Raw Feed -->
-        <div id="dev-content-feed" class="space-y-3">
-          <div id="dev-messages-container" class="space-y-3"></div>
-        </div>
-
-        <!-- Dev Sub-Tab 2: Audit Table -->
-        <div id="dev-content-audit" class="hidden glass-card rounded-2xl p-5 border border-dark-700 overflow-x-auto">
-          <table class="w-full text-left text-xs font-mono">
-            <thead>
-              <tr class="border-b border-dark-700 text-slate-400 uppercase text-[10px]">
-                <th class="py-2.5 px-3">Delivery ID</th>
-                <th class="py-2.5 px-3">Event</th>
-                <th class="py-2.5 px-3">HMAC Digest</th>
-                <th class="py-2.5 px-3">Attempt</th>
-                <th class="py-2.5 px-3">Status</th>
-                <th class="py-2.5 px-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody id="audit-table-body" class="divide-y divide-dark-800 text-slate-300"></tbody>
-          </table>
-        </div>
-
-        <!-- Dev Sub-Tab 3: Client SDKs -->
-        <div id="dev-content-docs" class="hidden space-y-4">
-          <div class="glass-card rounded-2xl p-6 border border-dark-700 space-y-4">
-            <h4 class="text-sm font-semibold text-white">Client Webhook Verification</h4>
-            <p class="text-xs text-slate-400">Copy this code into your client application (Next.js / Node / Python) to verify HMAC-SHA256 signatures.</p>
-            <pre class="bg-dark-950 p-4 rounded-xl text-xs font-mono text-emerald-300 overflow-x-auto"><code>const crypto = require('crypto');
-function verifyWebhook(body, sig, secret) {
-  const hash = 'sha256=' + crypto.createHmac('sha256', secret).update(body).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(hash));
-}</code></pre>
+        <!-- ============================================== -->
+        <!-- VIEW 7: DEVELOPER STUDIO                       -->
+        <!-- ============================================== -->
+        <div id="view-dev" class="space-y-6 hidden">
+          <!-- Simulation Box -->
+          <div class="glass-card rounded-2xl p-6 border border-dark-700/80 space-y-4 shadow-xl">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <i data-lucide="flask-conical" class="w-4 h-4 text-sky-400"></i>
+              <span>Simulate Inbound Telecom Message</span>
+            </h3>
+            <p class="text-xs text-slate-400">Simulate a real carrier WhatsApp rate post to test the real-time extraction pipeline.</p>
+            <form onsubmit="handleSimulationSubmit(event)" class="space-y-3">
+              <div>
+                <textarea 
+                  id="sim-text" 
+                  rows="4" 
+                  placeholder="Paste telecom message (e.g. Colombia CC CLI 1/1 at $0.0055)..."
+                  required
+                  class="w-full bg-dark-900 border border-dark-700 rounded-xl p-3 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                ></textarea>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <input type="text" id="sim-sender-phone" placeholder="Sender Phone (+123456789)" class="bg-dark-900 border border-dark-700 rounded-xl px-3 py-1.5 text-xs text-white" />
+                  <input type="text" id="sim-sender-name" placeholder="Sender Name (HANI)" class="bg-dark-900 border border-dark-700 rounded-xl px-3 py-1.5 text-xs text-white" />
+                </div>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center gap-2 transition-all">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                  <span>Test Ingest</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
-      </div>
+      </main>
 
-    </main>
-
+    </div>
   </div>
 
-  <!-- ============================================== -->
-  <!-- 3. IN-BROWSER WHATSAPP DEVICE MANAGER MODAL   -->
-  <!-- ============================================== -->
-  <div id="device-modal" class="fixed inset-0 z-50 overflow-hidden hidden" role="dialog" aria-modal="true">
-    <div class="absolute inset-0 bg-dark-950/80 backdrop-blur-sm" onclick="closeDeviceModal()"></div>
-    <div class="fixed inset-0 flex items-center justify-center p-4">
-      <div class="glass-card max-w-md w-full rounded-3xl p-6 sm:p-8 border border-dark-700 shadow-2xl space-y-5 text-center relative">
-        
-        <button onclick="closeDeviceModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
+  <!-- ========================================== -->
+  <!-- 3. MODALS (WhatsApp Device & Storage)     -->
+  <!-- ========================================== -->
+
+  <!-- WhatsApp Device Manager Modal -->
+  <div id="modal-device" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+    <div class="glass-modal max-w-md w-full rounded-3xl p-6 border border-dark-700 shadow-2xl space-y-6">
+      <div class="flex items-center justify-between pb-3 border-b border-dark-700">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="smartphone" class="w-5 h-5 text-emerald-400"></i>
+          <h3 class="font-bold text-sm text-white">WhatsApp Device Manager</h3>
+        </div>
+        <button onclick="closeDeviceModal()" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
+      </div>
 
-        <!-- Connected State Visual -->
-        <div id="device-modal-connected" class="space-y-4">
-          <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
-            <i data-lucide="check-circle-2" class="w-8 h-8"></i>
-          </div>
-          <div class="space-y-1">
-            <h3 class="text-lg font-bold text-white">WhatsApp Account Active</h3>
-            <p class="text-xs text-slate-400">This phone is connected 24/7 to the collector daemon.</p>
-          </div>
+      <!-- Live QR / Status Container -->
+      <div id="modal-device-content" class="text-center space-y-4">
+        <!-- Rendered via device-manager.js -->
+      </div>
 
-          <div class="bg-dark-950 rounded-2xl p-4 border border-dark-800 text-left space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400">Linked Phone:</span>
-              <span id="modal-connected-phone" class="text-white font-mono font-semibold">+880 1516-539430</span>
-            </div>
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400">Account Name:</span>
-              <span id="modal-connected-name" class="text-slate-200 font-medium">Smart Tutors</span>
-            </div>
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400">Connection Mode:</span>
-              <span class="text-emerald-400 font-medium">Multi-Device Companion</span>
-            </div>
-          </div>
-
-          <div class="pt-2">
-            <button onclick="triggerSessionReset()" id="btn-reset-session" class="w-full py-2.5 rounded-xl bg-dark-800 hover:bg-rose-900/30 text-rose-300 border border-dark-700 hover:border-rose-500/40 text-xs font-semibold transition-all flex items-center justify-center gap-2">
-              <i data-lucide="log-out" class="w-4 h-4"></i>
-              <span>Switch / Log Out WhatsApp Account</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- QR Scan Required State Visual -->
-        <div id="device-modal-scan" class="space-y-4 hidden">
-          <div class="space-y-1">
-            <h3 class="text-lg font-bold text-white">Pair New WhatsApp Phone</h3>
-            <p class="text-xs text-slate-400">Scan this code to link your WhatsApp account.</p>
-          </div>
-
-          <!-- Canvas QR code rendered dynamically -->
-          <div class="p-3 bg-white/5 rounded-2xl border border-dark-700 flex items-center justify-center min-h-[220px]">
-            <div id="qrcode-canvas"></div>
-            <div id="qr-loading-spinner" class="text-xs text-slate-400 flex flex-col items-center gap-2">
-              <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-emerald-400"></i>
-              <span>Generating fresh pairing QR code...</span>
-            </div>
-          </div>
-
-          <!-- 3 Step Instructions -->
-          <div class="text-left text-xs space-y-1.5 bg-dark-950 p-3.5 rounded-xl border border-dark-800 text-slate-300">
-            <div class="flex items-center gap-2">
-              <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center">1</span>
-              <span>Open <strong>WhatsApp</strong> on your phone</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center">2</span>
-              <span>Tap <strong>Settings</strong> or <strong>⋮</strong> → <strong>Linked Devices</strong></span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold flex items-center justify-center">3</span>
-              <span>Tap <strong>Link a Device</strong> and scan this screen</span>
-            </div>
-          </div>
-
-          <p class="text-[11px] text-slate-500">QR code refreshes automatically every ~20 seconds.</p>
-        </div>
-
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-dark-800">
+        <button onclick="closeDeviceModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- ============================================== -->
-  <!-- 4. SLIDE-OVER DRAWER (Payload Inspector)       -->
-  <!-- ============================================== -->
-  <div id="inspector-drawer" class="fixed inset-0 z-50 overflow-hidden hidden" role="dialog" aria-modal="true">
-    <div class="absolute inset-0 bg-dark-950/80 backdrop-blur-sm" onclick="closeInspector()"></div>
-    <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
-      <div class="w-screen max-w-2xl bg-dark-900 border-l border-dark-700 shadow-2xl flex flex-col">
-        <div class="p-6 border-b border-dark-700 flex items-center justify-between bg-dark-950/60">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <i data-lucide="binary" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <h3 class="text-sm font-bold text-white" id="drawer-title">Webhook Payload Inspector</h3>
-              <p class="text-xs text-slate-400 font-mono" id="drawer-subtitle">del_01...</p>
-            </div>
+  <!-- Storage Manager Modal -->
+  <div id="modal-storage" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+    <div class="glass-modal max-w-md w-full rounded-3xl p-6 border border-dark-700 shadow-2xl space-y-6">
+      <div class="flex items-center justify-between pb-3 border-b border-dark-700">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="hard-drive" class="w-5 h-5 text-emerald-400"></i>
+          <h3 class="font-bold text-sm text-white">Storage & Cache Manager</h3>
+        </div>
+        <button onclick="closeStorageModal()" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div class="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-2">
+          <div class="flex justify-between">
+            <span class="text-slate-400">Total Disk Used:</span>
+            <span id="modal-disk-used" class="font-mono text-white font-semibold">--%</span>
           </div>
-          <button onclick="closeInspector()" class="text-slate-400 hover:text-white">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Media Cache Files:</span>
+            <span id="modal-media-count" class="font-mono text-white font-semibold">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-400">Media Cache Size:</span>
+            <span id="modal-media-size" class="font-mono text-white font-semibold">-- MB</span>
+          </div>
         </div>
-        <div class="flex-1 overflow-y-auto p-6 space-y-4">
-          <pre class="bg-dark-950 text-slate-200 p-4 rounded-xl border border-dark-800 text-xs font-mono overflow-x-auto max-h-96 leading-relaxed"><code id="drawer-json-content"></code></pre>
-        </div>
-        <div class="p-4 border-t border-dark-700 bg-dark-950/60 flex items-center justify-between">
-          <button onclick="copyDrawerJson()" class="px-3.5 py-2 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-600 text-xs font-medium text-slate-200 flex items-center gap-1.5">
-            <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-400"></i> Copy JSON
-          </button>
-          <button onclick="closeInspector()" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-medium">Done</button>
+
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <button onclick="handlePurgeMedia(80)" class="py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium">Purge Oldest 80%</button>
+          <button onclick="handlePurgeMedia(100)" class="py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-medium">Purge 100% Media</button>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ============================================== -->
-  <!-- 5. SIMULATE WEBHOOK MODAL (Developer Studio)   -->
-  <!-- ============================================== -->
-  <div id="simulate-modal" class="fixed inset-0 z-50 overflow-hidden hidden" role="dialog" aria-modal="true">
-    <div class="absolute inset-0 bg-dark-950/80 backdrop-blur-sm" onclick="closeSimulateModal()"></div>
-    <div class="fixed inset-0 flex items-center justify-center p-4">
-      <div class="glass-card max-w-lg w-full rounded-3xl p-6 sm:p-8 border border-dark-700 shadow-2xl space-y-5 text-left relative">
-        <button onclick="closeSimulateModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <i data-lucide="sparkles" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-white">Simulate Webhook Ingestion</h3>
-            <p class="text-xs text-slate-400">Dispatch an authentic HMAC-signed WhatsApp payload to the receiver.</p>
-          </div>
-        </div>
-
-        <form onsubmit="handleSimulateSubmit(event)" class="space-y-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Sender Name</label>
-              <input type="text" id="sim-sender-name" value="Dr. Tariqul Islam" required
-                class="w-full bg-dark-950 border border-dark-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Sender Phone</label>
-              <input type="text" id="sim-sender-phone" value="+880 1711-223344" required
-                class="w-full bg-dark-950 border border-dark-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Chat Type</label>
-              <select id="sim-chat-type" class="w-full bg-dark-950 border border-dark-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
-                <option value="direct">Direct Message (1:1)</option>
-                <option value="group" selected>Group Chat</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Chat / Group Name</label>
-              <input type="text" id="sim-chat-name" value="Executive Parents Community"
-                class="w-full bg-dark-950 border border-dark-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Message Text</label>
-            <textarea id="sim-text" rows="3" required
-              class="w-full bg-dark-950 border border-dark-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500 leading-relaxed">Hello, please provide an update on today's session schedule.</textarea>
-          </div>
-
-          <div class="flex items-center justify-end gap-2 pt-2">
-            <button type="button" onclick="closeSimulateModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium">Cancel</button>
-            <button type="submit" id="btn-submit-sim" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-600/25 flex items-center gap-1.5 transition-all">
-              <i data-lucide="send" class="w-3.5 h-3.5"></i>
-              <span>Dispatch Payload</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================== -->
-  <!-- 6. STORAGE & MEDIA MANAGEMENT MODAL           -->
-  <!-- ============================================== -->
-  <div id="storage-modal" class="fixed inset-0 z-50 overflow-hidden hidden" role="dialog" aria-modal="true">
-    <div class="absolute inset-0 bg-dark-950/80 backdrop-blur-sm" onclick="closeStorageModal()"></div>
-    <div class="fixed inset-0 flex items-center justify-center p-4">
-      <div class="glass-card max-w-lg w-full rounded-3xl p-6 sm:p-8 border border-dark-700 shadow-2xl space-y-5 text-left relative">
-        <button onclick="closeStorageModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <i data-lucide="hard-drive" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-white">Media & Server Storage</h3>
-            <p class="text-xs text-slate-400">Monitor disk health and clean cached media files.</p>
-          </div>
-        </div>
-
-        <!-- VPS Disk Gauge -->
-        <div class="p-4 rounded-2xl bg-dark-900 border border-dark-800 space-y-3">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-300 font-medium">VPS Primary Disk</span>
-            <span id="modal-disk-usage-text" class="font-mono font-semibold text-emerald-400">--%</span>
-          </div>
-          <div class="w-full h-3 rounded-full bg-dark-950 border border-dark-800 overflow-hidden p-0.5">
-            <div id="modal-disk-progress" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-          <div class="flex items-center justify-between text-[11px] text-slate-400">
-            <span>Automated Protection: <strong class="text-emerald-400">Active</strong></span>
-            <span>Trigger threshold: <strong class="text-amber-400">80% Full</strong></span>
-          </div>
-        </div>
-
-        <!-- Media Storage Metrics -->
-        <div class="grid grid-cols-2 gap-3">
-          <div class="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-1">
-            <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Cached Media Files</p>
-            <p id="modal-media-count" class="text-xl font-bold font-mono text-white">0</p>
-            <p class="text-[11px] text-slate-400">Images, audio & docs</p>
-          </div>
-          <div class="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-1">
-            <p class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Storage Used</p>
-            <p id="modal-media-size" class="text-xl font-bold font-mono text-emerald-400">0 MB</p>
-            <p class="text-[11px] text-slate-400">In /data/media folder</p>
-          </div>
-        </div>
-
-        <!-- Automated Policy Notice -->
-        <div class="p-3.5 rounded-xl bg-dark-800/60 border border-dark-700/60 text-xs text-slate-300 space-y-1">
-          <div class="flex items-center gap-1.5 text-emerald-400 font-semibold text-xs">
-            <i data-lucide="shield-alert" class="w-4 h-4"></i>
-            <span>Automated 80% Safety Policy</span>
-          </div>
-          <p class="text-[11px] text-slate-400 leading-relaxed">
-            When server disk reaches 80% capacity, a warning is raised and the oldest 50% of media files are automatically deleted. Chat messages, contacts, and SQLite records remain permanently intact.
-          </p>
-        </div>
-
-        <!-- Manual Purge Controls -->
-        <div class="space-y-2 pt-1">
-          <p class="text-xs font-semibold text-slate-300">Manual Clean-up Options</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button type="button" id="btn-purge-80" onclick="handlePurgeMedia(80)" class="w-full py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium flex items-center justify-center gap-2 transition-all">
-              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-              <span>Delete Oldest 80%</span>
-            </button>
-            <button type="button" id="btn-purge-100" onclick="handlePurgeMedia(100)" class="w-full py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium flex items-center justify-center gap-2 transition-all">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span>Purge 100% Media</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end pt-2">
-          <button type="button" onclick="closeStorageModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium">Close</button>
-        </div>
+      <div class="flex items-center justify-end pt-2 border-t border-dark-800">
+        <button onclick="closeStorageModal()" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 text-xs font-medium">Close</button>
       </div>
     </div>
   </div>
@@ -649,13 +635,18 @@ function verifyWebhook(body, sig, secret) {
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
 
-  <!-- Modular Component Scripts -->
-  <script src="/js/app.js?v=8"></script>
-  <script src="/js/auth.js?v=8"></script>
-  <script src="/js/client-inbox.js?v=8"></script>
-  <script src="/js/dev-studio.js?v=8"></script>
-  <script src="/js/device-manager.js?v=8"></script>
-  <script src="/js/storage-manager.js?v=8"></script>
-  <script src="/js/simulator.js?v=8"></script>
+  <!-- Modular Scripts -->
+  <script src="/js/app.js?v=9"></script>
+  <script src="/js/auth.js?v=9"></script>
+  <script src="/js/route-matrix.js?v=9"></script>
+  <script src="/js/market-trends.js?v=9"></script>
+  <script src="/js/ai-insights.js?v=9"></script>
+  <script src="/js/telco-news.js?v=9"></script>
+  <script src="/js/vendor-dir.js?v=9"></script>
+  <script src="/js/client-inbox.js?v=9"></script>
+  <script src="/js/dev-studio.js?v=9"></script>
+  <script src="/js/device-manager.js?v=9"></script>
+  <script src="/js/storage-manager.js?v=9"></script>
+  <script src="/js/simulator.js?v=9"></script>
 </body>
 </html>
