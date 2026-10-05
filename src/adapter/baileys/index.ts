@@ -3,7 +3,8 @@ import path from 'node:path';
 import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason,
-  WASocket
+  WASocket,
+  Browsers
 } from '@whiskeysockets/baileys';
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
@@ -32,6 +33,8 @@ export class BaileysAdapter implements IWhatsAppAdapter {
   private lastConnectedAt: number | null = null;
   private lastDisconnectedAt: number | null = null;
   private accountJid: string | null = null;
+  private lastQR: string | null = null;
+  private pairPollTimer: NodeJS.Timeout | null = null;
 
   private messageHandlers: RawMessageHandler[] = [];
   private statusHandlers: ConnectionStateChangeHandler[] = [];
@@ -112,10 +115,47 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
     const sock = makeWASocket({
       auth: state,
+      browser: Browsers.macOS('Desktop'),
+      syncFullHistory: false,
+      markOnlineOnConnect: true,
+      generateHighQualityLinkPreview: false,
       logger: pino({ level: 'silent' }),
       printQRInTerminal: false
     });
     this.sock = sock;
+
+    if (this.pairPollTimer) {
+      clearInterval(this.pairPollTimer);
+      this.pairPollTimer = null;
+    }
+
+    this.pairPollTimer = setInterval(async () => {
+      try {
+        const pairFile = path.join(resolvedSessionDir, 'pair_request.json');
+        if (fs.existsSync(pairFile)) {
+          const raw = fs.readFileSync(pairFile, 'utf8');
+          fs.rmSync(pairFile, { force: true });
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.phone && !state.creds?.registered) {
+            const clean = String(parsed.phone).replace(/[^0-9]/g, '');
+            if (clean.length >= 8) {
+              logger.info('Requesting WhatsApp 8-digit pairing code', { phone: clean });
+              const code = await sock.requestPairingCode(clean);
+              logger.info('Generated WhatsApp pairing code:', { code });
+              this.writeSessionState({
+                status: 'scan_qr',
+                qr: this.lastQR,
+                pairingCode: code,
+                pairingPhone: clean,
+                updatedAt: Date.now()
+              });
+            }
+          }
+        }
+      } catch (err) {
+        logger.error('Error handling pairing code request', { error: String(err) });
+      }
+    }, 1000);
 
     if (state.creds?.me?.id) {
       this.writeSessionState({
@@ -132,6 +172,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
+        this.lastQR = qr;
         this.transitionState('auth_required');
         this.writeSessionState({
           status: 'scan_qr',
@@ -145,6 +186,10 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       }
 
       if (connection === 'open') {
+        if (this.pairPollTimer) {
+          clearInterval(this.pairPollTimer);
+          this.pairPollTimer = null;
+        }
         this.accountJid = sock.user?.id ?? null;
         this.lastConnectedAt = Date.now();
         this.transitionState('authenticated');
@@ -160,6 +205,10 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       }
 
       if (connection === 'close') {
+        if (this.pairPollTimer) {
+          clearInterval(this.pairPollTimer);
+          this.pairPollTimer = null;
+        }
         this.lastDisconnectedAt = Date.now();
         const error = lastDisconnect?.error as { output?: { statusCode?: number } } | undefined;
         const statusCode = error?.output?.statusCode;

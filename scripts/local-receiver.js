@@ -895,6 +895,52 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ status: 'ok', message: 'Session reset initiated' }));
     }
 
+    if (req.method === 'POST' && pathname === '/api/session/pair-code') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        let parsed = {};
+        try { parsed = JSON.parse(body); } catch {}
+        const phone = parsed.phone ? String(parsed.phone).replace(/[^0-9]/g, '') : '';
+        if (!phone || phone.length < 8) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ status: 'error', error: 'Valid phone number required' }));
+        }
+
+        try {
+          const pairReqFile = path.join(SESSION_PATH, 'pair_request.json');
+          fs.writeFileSync(pairReqFile, JSON.stringify({ phone }), 'utf8');
+
+          const stateFile = path.join(SESSION_PATH, 'session_state.json');
+          let code = null;
+          for (let i = 0; i < 14; i++) {
+            await new Promise(r => setTimeout(r, 500));
+            if (fs.existsSync(stateFile)) {
+              try {
+                const s = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+                if (s && s.pairingCode && s.pairingPhone === phone) {
+                  code = s.pairingCode;
+                  break;
+                }
+              } catch {}
+            }
+          }
+
+          if (code) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ status: 'ok', pairingCode: code }));
+          } else {
+            res.writeHead(504, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ status: 'error', error: 'Timed out waiting for WhatsApp pairing code. Ensure collector is running.' }));
+          }
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ status: 'error', error: err.message }));
+        }
+      });
+      return;
+    }
+
     if (req.method === 'POST' && pathname === '/api/simulate') {
       let body = '';
       req.on('data', chunk => { body += chunk; });

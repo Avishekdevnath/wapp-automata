@@ -179,6 +179,77 @@ async function triggerSessionReset() {
   }
 }
 
+function switchPairMethod(method) {
+  const qrTab = document.getElementById('tab-pair-qr');
+  const codeTab = document.getElementById('tab-pair-code');
+  const qrContainer = document.getElementById('pair-method-qr-container');
+  const codeContainer = document.getElementById('pair-method-code-container');
+
+  if (method === 'qr') {
+    if (qrTab) qrTab.className = 'py-1.5 px-3 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition-all flex items-center justify-center gap-1.5';
+    if (codeTab) codeTab.className = 'py-1.5 px-3 rounded-lg text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
+    if (qrContainer) qrContainer.classList.remove('hidden');
+    if (codeContainer) codeContainer.classList.add('hidden');
+  } else {
+    if (codeTab) codeTab.className = 'py-1.5 px-3 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition-all flex items-center justify-center gap-1.5';
+    if (qrTab) qrTab.className = 'py-1.5 px-3 rounded-lg text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
+    if (codeContainer) codeContainer.classList.remove('hidden');
+    if (qrContainer) qrContainer.classList.add('hidden');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+async function requestPhonePairingCode() {
+  const input = document.getElementById('input-pair-phone');
+  const btn = document.getElementById('btn-request-pair-code');
+  const resultBox = document.getElementById('pair-code-result-box');
+  const codeText = document.getElementById('pair-code-text');
+
+  const phone = input ? input.value.trim() : '';
+  if (!phone || phone.length < 8) {
+    if (typeof showToast === 'function') showToast('Please enter a valid WhatsApp phone number', 'error');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Requesting...';
+  }
+
+  try {
+    const res = await fetch('/api/session/pair-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    if (res.ok && data.pairingCode) {
+      if (codeText) codeText.innerText = data.pairingCode;
+      if (resultBox) resultBox.classList.remove('hidden');
+      if (typeof showToast === 'function') showToast('Pairing code generated! Enter it on your phone.', 'success');
+    } else {
+      if (typeof showToast === 'function') showToast(data.error || 'Failed to get pairing code', 'error');
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('Network error requesting pairing code', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = 'Get Code';
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function copyPairingCode() {
+  const codeText = document.getElementById('pair-code-text');
+  if (!codeText) return;
+  const code = codeText.innerText.trim();
+  navigator.clipboard.writeText(code).then(() => {
+    if (typeof showToast === 'function') showToast('Pairing code copied to clipboard!', 'info');
+  }).catch(() => {});
+}
+
 // Autonomous background polling: poll every 2.5 seconds continuously
 if (!devicePollingTimer) {
   devicePollingTimer = setInterval(pollSessionStatus, 2500);
@@ -190,3 +261,6 @@ window.closeDeviceModal = closeDeviceModal;
 window.pollSessionStatus = pollSessionStatus;
 window.pollDeviceStatus = pollSessionStatus; // Alias for backward compatibility
 window.triggerSessionReset = triggerSessionReset;
+window.switchPairMethod = switchPairMethod;
+window.requestPhonePairingCode = requestPhonePairingCode;
+window.copyPairingCode = copyPairingCode;
