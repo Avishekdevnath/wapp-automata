@@ -558,6 +558,19 @@ function closeRouteDetailModal() {
   activeDetailRouteId = null;
 }
 
+function pitchRouteFromModal() {
+  const route = cachedRoutes.find(r => r.id === activeDetailRouteId);
+  if (!route) return;
+  const cleanPhone = (route.vendor_phone || '').replace(/[^0-9]/g, '');
+  closeRouteDetailModal();
+  window.location.hash = '#/insights';
+  setTimeout(() => {
+    if (typeof populatePitchForm === 'function') {
+      populatePitchForm(route.country, route.route_type, route.rate_per_min, route.vendor_name, cleanPhone);
+    }
+  }, 250);
+}
+
 /**
  * 1-Click Copy Wholesale Trade Ticket to Clipboard
  */

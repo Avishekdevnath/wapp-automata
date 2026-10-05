@@ -7,7 +7,7 @@ const { PORT, HOST, DASHBOARD_PASSWORD, PUBLIC_DIR } = require('./server/config'
 const { isAuthenticated, generateAuthToken } = require('./server/auth');
 const { processWebhookDelivery } = require('./server/webhook-receiver');
 const { handleRoutesGet, handleRoutesPost, handleRoutesSeed, handleRoutesExport } = require('./server/routes-api');
-const { handleTrendsGet, handleNewsGet, handleVendorsGet, handleInsightsGet } = require('./server/market-api');
+const { handleTrendsGet, handleNewsGet, handleVendorsGet, handleInsightsGet, handlePitchPost } = require('./server/market-api');
 const { handleSystemApi } = require('./server/system-api');
 const { handleAiSettingsApi } = require('./server/ai-settings');
 const { handlePipelineApi } = require('./server/pipeline-api');
@@ -79,6 +79,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/news') return handleNewsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/vendors') return handleVendorsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/insights') return handleInsightsGet(req, res);
+    if (req.method === 'POST' && pathname === '/api/insights/pitch') return handlePitchPost(req, res);
 
     // AI Engine Settings APIs
     if (pathname.startsWith('/api/settings/ai')) {

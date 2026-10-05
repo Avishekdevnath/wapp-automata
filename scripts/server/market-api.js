@@ -102,9 +102,33 @@ function handleInsightsGet(req, res) {
   }));
 }
 
+const { generateTradePitch } = require('./pitch-generator');
+
+async function handlePitchPost(req, res) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', async () => {
+    try {
+      const payload = JSON.parse(body || '{}');
+      const pitches = await generateTradePitch(payload);
+      const cleanPhone = (payload.vendorPhone || '').replace(/[^0-9]/g, '');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        status: 'ok',
+        pitches,
+        phone: cleanPhone
+      }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: err.message }));
+    }
+  });
+}
+
 module.exports = {
   handleTrendsGet,
   handleNewsGet,
   handleVendorsGet,
-  handleInsightsGet
+  handleInsightsGet,
+  handlePitchPost
 };
