@@ -80,6 +80,13 @@ describe('Phase 1 & 2 AI Intelligence Guardrail Tests', () => {
 
     const stats = getQueueStats();
     assert.ok(typeof stats.pending === 'number', 'Queue stats pending should be a number');
+
+    // Clean up test records so test execution leaves zero database pollution
+    try {
+      db.prepare('DELETE FROM ai_tasks WHERE id = ?').run(taskId);
+      db.prepare('DELETE FROM route_ticks WHERE message_id LIKE ?').run('test_msg_%');
+      db.prepare('DELETE FROM vendors WHERE phone = ?').run('+18005550199');
+    } catch (_) {}
   });
 
 });
