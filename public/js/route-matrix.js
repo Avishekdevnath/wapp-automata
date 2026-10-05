@@ -147,6 +147,27 @@ async function loadRouteMatrix() {
 }
 
 /**
+ * Render FAS & Fraud Security Status Badge
+ */
+function renderFraudBadge(r) {
+  const level = r.fraud_risk_level || 'LOW';
+  const score = r.fraud_risk_score || 0;
+  const flags = Array.isArray(r.fraud_flags) ? r.fraud_flags : [];
+  const flagsStr = escapeHtml(flags.join(' • '));
+
+  if (level === 'CRITICAL') {
+    return `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30" title="${flagsStr || 'Extreme FAS Risk'}"><i data-lucide="alert-triangle" class="w-3 h-3 text-rose-500"></i> High FAS Risk (${score})</span>`;
+  }
+  if (level === 'HIGH') {
+    return `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="${flagsStr || 'Below market floor'}"><i data-lucide="shield-alert" class="w-3 h-3 text-amber-500"></i> Rate Notice (${score})</span>`;
+  }
+  if (level === 'MEDIUM') {
+    return `<span class="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30" title="${flagsStr || 'Standard commercial corridor'}"><i data-lucide="shield" class="w-3 h-3 text-sky-500"></i> Market Rate</span>`;
+  }
+  return `<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" title="${flagsStr || 'Verified route terms'}"><i data-lucide="shield-check" class="w-3 h-3 text-emerald-500"></i> Verified Safe</span>`;
+}
+
+/**
  * Render Precision Table View
  */
 function renderRouteTable(routes) {
@@ -231,8 +252,8 @@ function renderRouteTable(routes) {
 
         <!-- Quality & FAS -->
         <td class="py-3 px-4">
-          <div class="space-y-0.5">
-            ${r.fas_free ? '<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> 100% FAS-Free</span>' : '<span class="text-[10px] text-amber-400">Standard</span>'}
+          <div class="space-y-1">
+            ${renderFraudBadge(r)}
             ${r.quality_notes ? `<span class="block text-[10px] text-slate-400 truncate max-w-[150px]" title="${escapeHtml(r.quality_notes)}">${escapeHtml(r.quality_notes)}</span>` : ''}
           </div>
         </td>
@@ -338,8 +359,8 @@ function renderRouteCards(routes) {
         <!-- Quality & FAS Indicator -->
         <div class="text-xs space-y-1">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] text-slate-400 font-medium">Quality Verification:</span>
-            ${r.fas_free ? '<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> FAS-Free Certified</span>' : '<span class="text-[11px] text-slate-400">Standard Wholesale</span>'}
+            <span class="text-[11px] text-slate-400 font-medium">Security & FAS:</span>
+            ${renderFraudBadge(r)}
           </div>
           ${r.quality_notes ? `<p class="text-[11px] text-slate-400 bg-dark-950 p-2 rounded-lg border border-dark-800/80 line-clamp-2">${escapeHtml(r.quality_notes)}</p>` : ''}
         </div>
@@ -509,9 +530,10 @@ function openRouteDetailModal(routeId) {
   }
   if (elPulse) elPulse.innerText = route.billing_pulse || '1/1';
   if (elFas) {
-    elFas.innerHTML = route.fas_free 
-      ? '<span class="text-emerald-400 font-semibold flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i> 100% FAS-Free Certified</span>'
-      : '<span class="text-amber-400">Standard Tier</span>';
+    const flagsList = (route.fraud_flags && Array.isArray(route.fraud_flags) && route.fraud_flags.length > 0)
+      ? `<div class="mt-1 flex flex-wrap gap-1">${route.fraud_flags.map(f => `<span class="px-1.5 py-0.5 bg-dark-950 border border-dark-800 rounded text-[10px] text-slate-300">${escapeHtml(f)}</span>`).join('')}</div>`
+      : '';
+    elFas.innerHTML = `<div class="space-y-1">${renderFraudBadge(route)}${flagsList}</div>`;
   }
   if (elVendor) elVendor.innerText = route.vendor_name || 'Direct Vendor';
   if (elCompany) elCompany.innerText = route.company_name || 'Wholesale Provider';

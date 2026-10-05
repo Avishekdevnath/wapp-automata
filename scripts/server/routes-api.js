@@ -7,6 +7,7 @@
  */
 const { getTradingDb } = require('./db');
 const { seedBenchmarkRoutes } = require('../benchmark-data');
+const { evaluateRouteFraudRisk } = require('./fraud-detector');
 
 function handleRoutesGet(req, res, parsedUrl) {
   const db = getTradingDb();
@@ -77,6 +78,50 @@ function handleRoutesGet(req, res, parsedUrl) {
   const fasRow = db.prepare('SELECT COUNT(*) as c FROM route_ticks WHERE fas_free = 1').get()?.c || 0;
   const destRow = db.prepare('SELECT COUNT(DISTINCT country) as c FROM route_ticks').get()?.c || 0;
 
+  const enrichedRows = rows.map(r => {
+    let flags = [];
+    try {
+      flags = typeof r.fraud_flags === 'string' ? JSON.parse(r.fraud_flags) : (r.fraud_flags || []);
+    } catch (_) {}
+
+    let riskScore = r.fraud_risk_score;
+    let riskLevel = r.fraud_risk_level;
+    let badge = 'Verified Safe';
+    let color = 'emerald';
+
+    if (riskScore === null || riskScore === undefined || !riskLevel || !r.fraud_flags || flags.length === 0) {
+      const evalRes = evaluateRouteFraudRisk(r);
+      riskScore = evalRes.risk_score;
+      riskLevel = evalRes.risk_level;
+      badge = evalRes.badge;
+      color = evalRes.color;
+      flags = evalRes.flags;
+    } else {
+      if (riskScore > 75) {
+        badge = '🚨 High FAS Risk';
+        color = 'rose';
+      } else if (riskScore > 50) {
+        badge = '⚠️ Rate Notice';
+        color = 'amber';
+      } else if (riskScore > 25) {
+        badge = 'Market Rate';
+        color = 'sky';
+      } else {
+        badge = 'Verified Safe';
+        color = 'emerald';
+      }
+    }
+
+    return {
+      ...r,
+      fraud_risk_score: riskScore,
+      fraud_risk_level: riskLevel,
+      fraud_badge: badge,
+      fraud_color: color,
+      fraud_flags: flags
+    };
+  });
+
   res.writeHead(200, { 'Content-Type': 'application/json' });
   return res.end(JSON.stringify({
     status: 'ok',
@@ -89,7 +134,7 @@ function handleRoutesGet(req, res, parsedUrl) {
       fasFreeCount: fasRow,
       destCount: destRow
     },
-    routes: rows
+    routes: enrichedRows
   }));
 }
 

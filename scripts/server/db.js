@@ -85,6 +85,12 @@ function getTradingDb() {
       CREATE INDEX IF NOT EXISTS idx_ai_tasks_hash ON ai_tasks (content_hash);
       CREATE INDEX IF NOT EXISTS idx_ai_tasks_created ON ai_tasks (created_at DESC);
     `);
+
+    // Safe schema migrations for FAS & Fraud Risk Scorer
+    try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_risk_score INTEGER DEFAULT 0;`); } catch (_) {}
+    try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_risk_level TEXT DEFAULT 'LOW';`); } catch (_) {}
+    try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_flags TEXT;`); } catch (_) {}
+
     tradingDb = db;
     seedBenchmarkRoutes(db);
     return db;
@@ -96,13 +102,15 @@ function getTradingDb() {
 
 function saveParsedTelecom(db, parsed, record) {
   if (!db || !parsed) return;
+  const { evaluateRouteFraudRisk } = require('./fraud-detector');
   const now = record.created_at ? new Date(record.created_at).getTime() : Date.now();
   const insertRoute = db.prepare(`
     INSERT OR IGNORE INTO route_ticks (
       id, message_id, vendor_name, vendor_phone, company_name,
       country, route_type, billing_pulse, rate_per_min, ani_pass,
-      quality_notes, fas_free, intent, raw_text, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      quality_notes, fas_free, intent, raw_text, fraud_risk_score,
+      fraud_risk_level, fraud_flags, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const upsertVendor = db.prepare(`
@@ -119,6 +127,16 @@ function saveParsedTelecom(db, parsed, record) {
     if (Array.isArray(parsed.routes)) {
       for (const r of parsed.routes) {
         const routeId = `rt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const fraud = evaluateRouteFraudRisk({
+          country: r.country,
+          route_type: r.route_type,
+          billing_pulse: r.billing_pulse,
+          rate_per_min: r.rate_per_min,
+          ani_pass: r.ani_pass,
+          quality_notes: r.quality_notes,
+          raw_text: r.raw_text || record.text
+        });
+
         insertRoute.run(
           routeId,
           record.id || `msg_${Date.now()}`,
@@ -134,6 +152,9 @@ function saveParsedTelecom(db, parsed, record) {
           r.fas_free ? 1 : 0,
           r.intent || 'WTS',
           r.raw_text || null,
+          fraud.risk_score,
+          fraud.risk_level,
+          JSON.stringify(fraud.flags),
           now
         );
       }
