@@ -7,7 +7,7 @@ const { PORT, HOST, DASHBOARD_PASSWORD, PUBLIC_DIR } = require('./server/config'
 const { isAuthenticated, generateAuthToken } = require('./server/auth');
 const { processWebhookDelivery } = require('./server/webhook-receiver');
 const { handleRoutesGet, handleRoutesPost, handleRoutesSeed, handleRoutesExport } = require('./server/routes-api');
-const { handleTrendsGet, handleNewsGet, handleVendorsGet, handleInsightsGet, handlePitchPost } = require('./server/market-api');
+const { handleTrendsGet, handleNewsGet, handleVendorsGet, handleInsightsGet, handlePitchPost, handleExecutiveBriefGet } = require('./server/market-api');
 const { handleSystemApi } = require('./server/system-api');
 const { handleAiSettingsApi } = require('./server/ai-settings');
 const { handlePipelineApi } = require('./server/pipeline-api');
@@ -76,6 +76,7 @@ const server = http.createServer(async (req, res) => {
 
     // Market & Intelligence APIs
     if (req.method === 'GET' && pathname === '/api/trends') return handleTrendsGet(req, res, parsedUrl);
+    if (req.method === 'GET' && pathname === '/api/news/executive-brief') return handleExecutiveBriefGet(req, res, parsedUrl);
     if (req.method === 'GET' && pathname === '/api/news') return handleNewsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/vendors') return handleVendorsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/insights') return handleInsightsGet(req, res);

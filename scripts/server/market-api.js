@@ -125,10 +125,25 @@ async function handlePitchPost(req, res) {
   });
 }
 
+const { getExecutiveOutageBrief } = require('./executive-summary');
+
+async function handleExecutiveBriefGet(req, res, parsedUrl) {
+  try {
+    const force = parsedUrl.searchParams.get('refresh') === 'true';
+    const brief = await getExecutiveOutageBrief(force);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ status: 'ok', brief }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: err.message }));
+  }
+}
+
 module.exports = {
   handleTrendsGet,
   handleNewsGet,
   handleVendorsGet,
   handleInsightsGet,
-  handlePitchPost
+  handlePitchPost,
+  handleExecutiveBriefGet
 };

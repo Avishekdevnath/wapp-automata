@@ -1,12 +1,16 @@
 /**
  * Telecom Industry News & Outage Alerts Controller
  * - Displays carrier maintenance, regulatory blocks (FCC/NCC), and FAS fraud warnings
+ * - AI Executive Outage & Risk Briefing synthesized with DeepSeek AI
  */
 
 async function loadTelcoNews() {
   const container = document.getElementById('telco-news-container');
   const countBadge = document.getElementById('news-count-badge');
   if (!container) return;
+
+  // Load Executive Brief in parallel
+  loadExecutiveBrief(false);
 
   try {
     const res = await fetch('/api/news');
@@ -76,4 +80,95 @@ async function loadTelcoNews() {
   }
 }
 
+/**
+ * Loads AI Executive Outage & Risk Briefing
+ */
+async function loadExecutiveBrief(forceRefresh = false) {
+  const elBadge = document.getElementById('brief-status-badge');
+  const elIconBox = document.getElementById('brief-status-icon-box');
+  const elHeadline = document.getElementById('brief-headline');
+  const elTime = document.getElementById('brief-generated-time');
+  const elCount = document.getElementById('brief-alerts-count');
+  const elCorridors = document.getElementById('brief-corridors-list');
+  const elRouting = document.getElementById('brief-routing-list');
+  const elReg = document.getElementById('brief-regulatory-text');
+
+  if (!elHeadline) return;
+
+  try {
+    const url = `/api/news/executive-brief${forceRefresh ? '?refresh=true' : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const brief = data.brief || {};
+
+    const color = brief.badge_color || 'amber';
+    const status = brief.status_level ? brief.status_level.replace(/_/g, ' ') : 'MODERATE RISK';
+
+    if (elBadge) {
+      elBadge.className = `px-2 py-0.5 rounded text-[10px] font-bold bg-${color}-500/10 text-${color}-400 border border-${color}-500/30`;
+      elBadge.innerText = status;
+    }
+    if (elIconBox) {
+      elIconBox.className = `w-10 h-10 rounded-2xl bg-${color}-500/10 border border-${color}-500/30 flex items-center justify-center text-${color}-400 shrink-0`;
+      elIconBox.innerHTML = color === 'rose' 
+        ? `<i data-lucide="alert-octagon" class="w-5 h-5"></i>` 
+        : (color === 'emerald' ? `<i data-lucide="shield-check" class="w-5 h-5"></i>` : `<i data-lucide="shield-alert" class="w-5 h-5"></i>`);
+    }
+
+    if (elHeadline) elHeadline.innerText = brief.headline || 'Network Posture Normal';
+    if (elCount) elCount.innerText = brief.active_alerts_count || 0;
+    if (elTime) elTime.innerText = `Updated ${formatTimeAgo(brief.generated_at || Date.now())}`;
+
+    // Render Corridors at Risk
+    if (elCorridors) {
+      const corridors = brief.corridors_at_risk || [];
+      if (corridors.length === 0) {
+        elCorridors.innerHTML = `<span class="text-slate-500 italic text-[11px]">No degraded corridors</span>`;
+      } else {
+        elCorridors.innerHTML = corridors.map(c => 
+          `<span class="px-2 py-0.5 bg-dark-950 border border-dark-800 rounded-md text-[10px] text-amber-300 font-medium">${escapeHtml(c)}</span>`
+        ).join('');
+      }
+    }
+
+    // Render Routing Recommendations
+    if (elRouting) {
+      const recs = brief.routing_recommendations || [];
+      if (recs.length === 0) {
+        elRouting.innerHTML = `<li class="text-slate-500 italic text-[11px]">Traffic routing standard</li>`;
+      } else {
+        elRouting.innerHTML = recs.map(r => 
+          `<li class="flex items-start gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"></i><span>${escapeHtml(r)}</span></li>`
+        ).join('');
+      }
+    }
+
+    // Render Regulatory Text
+    if (elReg) {
+      elReg.innerText = brief.regulatory_brief || 'Standard carrier compliance across active interconnects.';
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  } catch (err) {
+    console.error('Error loading executive brief:', err);
+  }
+}
+
+async function refreshExecutiveBrief() {
+  const btn = document.getElementById('btn-refresh-brief');
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+  }
+  await loadExecutiveBrief(true);
+  if (btn) {
+    btn.disabled = false;
+    btn.classList.remove('opacity-50');
+  }
+  if (typeof showToast === 'function') showToast('Executive Briefing regenerated!', 'success');
+}
+
 window.loadTelcoNews = loadTelcoNews;
+window.loadExecutiveBrief = loadExecutiveBrief;
+window.refreshExecutiveBrief = refreshExecutiveBrief;

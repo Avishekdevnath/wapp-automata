@@ -1,12 +1,97 @@
 <!-- VIEW 4: TELCO NEWS & OUTAGES -->
-<div id="view-news" class="space-y-4 hidden">
-  <div class="flex items-center justify-between">
+<div id="view-news" class="space-y-6 hidden">
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
     <div>
-      <h3 class="text-sm font-bold text-white">Carrier Outages & Regulatory Feed</h3>
-      <p class="text-xs text-slate-400">Real-time alerts extracted from carrier broadcasts and groups</p>
+      <h3 class="text-base font-bold text-white flex items-center gap-2">
+        <i data-lucide="radio" class="w-4 h-4 text-rose-500"></i>
+        <span>Global Telecom Outages & Regulatory Feed</span>
+      </h3>
+      <p class="text-xs text-slate-400">Real-time carrier incident intelligence synthesized via DeepSeek AI</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button 
+        id="btn-refresh-brief"
+        onclick="refreshExecutiveBrief()" 
+        class="px-3.5 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-200 border border-dark-700 text-xs font-medium flex items-center gap-1.5 transition-all shadow-sm"
+      >
+        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-400"></i>
+        <span>Regenerate Executive Brief</span>
+      </button>
     </div>
   </div>
 
+  <!-- AI Executive Outage & Risk Briefing Card -->
+  <div id="executive-brief-card" class="glass-card rounded-2xl p-6 border border-dark-700/80 space-y-4 shadow-xl">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-dark-800">
+      <div class="flex items-center gap-3">
+        <div id="brief-status-icon-box" class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="brief-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+              MODERATE RISK
+            </span>
+            <span id="brief-generated-time" class="text-[10px] text-slate-500 font-mono">Synthesizing...</span>
+          </div>
+          <h4 id="brief-headline" class="text-sm font-bold text-white mt-1">Analyzing global carrier broadcasts...</h4>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0 text-xs font-mono">
+        <span class="px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-800 text-slate-300">
+          Alerts Ingested: <strong id="brief-alerts-count" class="text-white">0</strong>
+        </span>
+      </div>
+    </div>
+
+    <!-- 3-Column Tactical Intelligence Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+      <!-- 1. Corridors at Risk -->
+      <div class="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-2">
+        <span class="text-slate-400 font-bold uppercase text-[10px] tracking-wider block flex items-center gap-1.5">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-400"></i>
+          <span>Corridors at Risk</span>
+        </span>
+        <div id="brief-corridors-list" class="flex flex-wrap gap-1.5 pt-1">
+          <span class="text-slate-500 italic text-[11px]">No degraded corridors</span>
+        </div>
+      </div>
+
+      <!-- 2. Routing Recommendations -->
+      <div class="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-2">
+        <span class="text-slate-400 font-bold uppercase text-[10px] tracking-wider block flex items-center gap-1.5">
+          <i data-lucide="git-branch" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Trading Routing Advice</span>
+        </span>
+        <ul id="brief-routing-list" class="space-y-1.5 text-slate-300 text-[11px]">
+          <li class="flex items-start gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"></i><span>Monitor trunk stability</span></li>
+        </ul>
+      </div>
+
+      <!-- 3. Regulatory Posture -->
+      <div class="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-2">
+        <span class="text-slate-400 font-bold uppercase text-[10px] tracking-wider block flex items-center gap-1.5">
+          <i data-lucide="scale" class="w-3.5 h-3.5 text-purple-400"></i>
+          <span>Regulatory Compliance</span>
+        </span>
+        <p id="brief-regulatory-text" class="text-slate-300 text-[11px] leading-relaxed">
+          Active regulatory scrutiny and telecom commission orders.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Sub-heading for Alerts Feed -->
+  <div class="flex items-center justify-between pt-2">
+    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+      <i data-lucide="list" class="w-3.5 h-3.5 text-slate-400"></i>
+      <span>Verified Carrier Alerts & Notice Log</span>
+    </h4>
+  </div>
+
+  <!-- Live Ingested News Items -->
   <div id="telco-news-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <!-- Injected via telco-news.js -->
   </div>
