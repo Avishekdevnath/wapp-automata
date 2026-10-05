@@ -99,7 +99,7 @@ function renderClientFeed() {
       : (typeof getAvatarColor === 'function' ? getAvatarColor(m.sender_phone || m.sender_name) : 'from-emerald-500 to-teal-700');
     const isGroup = m.chat_type === 'group';
 
-    // Time formatting: 03:05:12 and date Oct 6
+    // Time & Date formatting with Year: e.g. 04:21:39 and Oct 6, 2026
     let timeStr = '';
     let dateStr = '';
     if (m.occurred_at || m.timestamp) {
@@ -107,7 +107,7 @@ function renderClientFeed() {
         const d = new Date(m.occurred_at || m.timestamp);
         if (!isNaN(d.getTime())) {
           timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-          dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+          dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
         }
       } catch {}
     }
@@ -188,10 +188,10 @@ function renderClientFeed() {
 
     return `
       <div class="table-msg-row flex items-center px-3 sm:px-4 py-2 hover:bg-slate-50 dark:hover:bg-dark-800/60 transition-colors cursor-pointer group text-xs gap-2 sm:gap-3" onclick="openMessageDetailModal('${m.id}')">
-        <!-- Col 1: Time (w-24 sm:w-28 shrink-0) -->
-        <div class="w-24 sm:w-28 shrink-0 select-none">
+        <!-- Col 1: Time & Date with Year (w-28 sm:w-32 shrink-0) -->
+        <div class="w-28 sm:w-32 shrink-0 select-none">
           <div class="font-mono text-[11px] text-slate-800 dark:text-slate-200 font-semibold tracking-tight">${esc(timeStr)}</div>
-          ${dateStr ? `<div class="text-[10px] text-slate-500 dark:text-slate-400">${esc(dateStr)}</div>` : ''}
+          ${dateStr ? `<div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono tracking-tight">${esc(dateStr)}</div>` : ''}
         </div>
 
         <!-- Col 2: Sender & Chat (w-44 sm:w-56 md:w-64 shrink-0 flex items-center gap-2 min-w-0) -->

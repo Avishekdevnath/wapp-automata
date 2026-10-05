@@ -470,7 +470,7 @@ function renderRouteCards(routes) {
         <div class="pt-3 border-t border-dark-800/80 flex items-center justify-between gap-2">
           <div class="min-w-0">
             <span class="font-semibold text-xs text-white block truncate">${escapeHtml(r.vendor_name || 'Carrier')}</span>
-            <span class="text-[10px] text-slate-500 block truncate">${escapeHtml(r.company_name || r.vendor_phone)} • ${timeAgo}</span>
+            <span class="text-[10px] text-slate-500 block truncate" title="${typeof formatDateTime === 'function' ? escapeHtml(formatDateTime(r.created_at)) : ''}">${escapeHtml(r.company_name || r.vendor_phone)} • ${timeAgo}</span>
           </div>
 
           <div class="flex items-center gap-1.5 shrink-0">
