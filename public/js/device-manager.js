@@ -2,6 +2,7 @@
  * Device Manager Module: WhatsApp Pairing & In-Browser QR Code Generation
  */
 let lastRenderedQR = null;
+let hasAutoOpenedQr = false;
 
 async function pollSessionStatus() {
   try {
@@ -17,27 +18,28 @@ async function pollSessionStatus() {
     const phone = session.phone || 'No Account Linked';
     const name = session.name || 'WhatsApp Account';
 
-    // Update Nav Header Pill
+    // 1. Update Nav Header Pill
     const navPhone = document.getElementById('nav-device-phone');
     const navDot = document.getElementById('nav-device-dot');
-    if (navPhone) navPhone.innerText = phone;
-    if (navDot) navDot.className = isAuth ? 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse' : 'w-2 h-2 rounded-full bg-rose-400';
+    if (navPhone) navPhone.innerText = isAuth ? phone : 'Scan QR to Link';
+    if (navDot) navDot.className = isAuth ? 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse' : 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
 
-    // Update Client Inbox Top Banner
-    const bannerPhone = document.getElementById('client-banner-phone');
-    const bannerName = document.getElementById('client-banner-name');
-    const bannerStatus = document.getElementById('client-banner-status');
-
-    if (bannerPhone) bannerPhone.innerText = phone;
-    if (bannerName) bannerName.innerText = isAuth ? `Account: ${name}` : 'Scan QR code to connect';
-    if (bannerStatus) {
-      bannerStatus.innerText = isAuth ? 'Active' : 'Disconnected';
-      bannerStatus.className = isAuth 
-        ? 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-        : 'px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30';
+    // 2. Update Sidebar Badge
+    const sideBadge = document.getElementById('sidebar-device-badge');
+    if (sideBadge) {
+      sideBadge.innerText = isAuth ? 'Connected' : 'Scan QR';
+      sideBadge.className = isAuth 
+        ? 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300' 
+        : 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 animate-pulse';
     }
 
-    // Update Device Modal Elements
+    // 3. Update Workspace Unlinked Alert Banner
+    const unlinkedBanner = document.getElementById('unlinked-account-banner');
+    if (unlinkedBanner) {
+      unlinkedBanner.classList.toggle('hidden', isAuth);
+    }
+
+    // 4. Update Modal Elements
     const modalPhone = document.getElementById('modal-connected-phone');
     const modalName = document.getElementById('modal-connected-name');
     const connectedSection = document.getElementById('device-modal-connected');
@@ -57,8 +59,16 @@ async function pollSessionStatus() {
         renderQrCode(session.qr);
         lastRenderedQR = session.qr;
       }
+
+      // Auto-open modal on first view if user has not linked WhatsApp yet
+      if (!hasAutoOpenedQr && session.status === 'scan_qr') {
+        hasAutoOpenedQr = true;
+        openDeviceModal();
+      }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('Error polling session status:', e);
+  }
 }
 
 function renderQrCode(qrString) {
@@ -92,13 +102,15 @@ function renderQrCode(qrString) {
 }
 
 function openDeviceModal() {
-  document.getElementById('device-modal')?.classList.remove('hidden');
+  const modal = document.getElementById('device-modal');
+  if (modal) modal.classList.remove('hidden');
   pollSessionStatus();
   if (window.lucide) lucide.createIcons();
 }
 
 function closeDeviceModal() {
-  document.getElementById('device-modal')?.classList.add('hidden');
+  const modal = document.getElementById('device-modal');
+  if (modal) modal.classList.add('hidden');
 }
 
 async function triggerSessionReset() {
@@ -129,3 +141,8 @@ async function triggerSessionReset() {
     }
   }
 }
+
+window.openDeviceModal = openDeviceModal;
+window.closeDeviceModal = closeDeviceModal;
+window.pollSessionStatus = pollSessionStatus;
+window.triggerSessionReset = triggerSessionReset;
