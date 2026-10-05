@@ -208,3 +208,48 @@ html:not(.dark) .table-msg-row:hover {
   padding-bottom: 0.85rem;
 }
 
+/* ==========================================================================
+   High-Contrast Stream Pagination (Light & Dark Dual Mode)
+   ========================================================================== */
+#stream-page-info {
+  font-weight: 500;
+}
+
+html:not(.dark) #stream-page-info {
+  color: #475569 !important;
+}
+
+.dark #stream-page-info {
+  color: #94a3b8 !important;
+}
+
+#stream-page-start,
+#stream-page-end {
+  font-weight: 700 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+html:not(.dark) #stream-page-start,
+html:not(.dark) #stream-page-end {
+  color: #0f172a !important;
+}
+
+.dark #stream-page-start,
+.dark #stream-page-end {
+  color: #ffffff !important;
+}
+
+#stream-page-total {
+  font-weight: 700 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+html:not(.dark) #stream-page-total {
+  color: #059669 !important;
+}
+
+.dark #stream-page-total {
+  color: #34d399 !important;
+}
+
+

@@ -187,11 +187,11 @@ function renderClientFeed() {
     const cleanPreview = (m.text || '').replace(/\r?\n+/g, ' ').trim();
 
     return `
-      <div class="table-msg-row flex items-center px-3 sm:px-4 py-2 hover:bg-dark-800/60 transition-colors cursor-pointer group text-xs gap-2 sm:gap-3" onclick="openMessageDetailModal('${m.id}')">
+      <div class="table-msg-row flex items-center px-3 sm:px-4 py-2 hover:bg-slate-50 dark:hover:bg-dark-800/60 transition-colors cursor-pointer group text-xs gap-2 sm:gap-3" onclick="openMessageDetailModal('${m.id}')">
         <!-- Col 1: Time (w-24 sm:w-28 shrink-0) -->
         <div class="w-24 sm:w-28 shrink-0 select-none">
-          <div class="font-mono text-[11px] text-slate-200 font-semibold tracking-tight">${esc(timeStr)}</div>
-          ${dateStr ? `<div class="text-[10px] text-slate-500">${esc(dateStr)}</div>` : ''}
+          <div class="font-mono text-[11px] text-slate-800 dark:text-slate-200 font-semibold tracking-tight">${esc(timeStr)}</div>
+          ${dateStr ? `<div class="text-[10px] text-slate-500 dark:text-slate-400">${esc(dateStr)}</div>` : ''}
         </div>
 
         <!-- Col 2: Sender & Chat (w-44 sm:w-56 md:w-64 shrink-0 flex items-center gap-2 min-w-0) -->
@@ -199,13 +199,13 @@ function renderClientFeed() {
           ${avatarHtml}
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5 truncate">
-              <span class="font-bold text-white truncate text-xs ${isOutbound ? 'text-indigo-300' : 'text-slate-100'}">
+              <span class="font-bold truncate text-xs ${isOutbound ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-900 dark:text-slate-100'}">
                 ${esc(m.sender_name || (isOutbound ? 'You' : (m.sender_phone || 'Carrier')))}
               </span>
             </div>
             <div class="flex items-center gap-1 text-[10px] flex-wrap mt-0.5">
               ${badges.join('')}
-              ${m.sender_phone && !isOutbound ? `<span class="text-slate-400 font-mono text-[10px] truncate">${esc(m.sender_phone)}</span>` : ''}
+              ${m.sender_phone && !isOutbound ? `<span class="text-slate-500 dark:text-slate-400 font-mono text-[10px] truncate">${esc(m.sender_phone)}</span>` : ''}
             </div>
           </div>
         </div>
@@ -213,20 +213,20 @@ function renderClientFeed() {
         <!-- Col 3: Message & Attachments (flex-1 min-w-0 pr-3 flex items-center gap-2) -->
         <div class="flex-1 min-w-0 pr-3 flex items-center gap-2">
           ${mediaPill}
-          ${m.reply_to ? `<span class="shrink-0 text-slate-500 flex items-center gap-0.5 text-[10px]" title="Quoted reply"><i data-lucide="reply" class="w-2.5 h-2.5"></i></span>` : ''}
-          <span class="truncate font-mono text-[11px] text-slate-300 leading-snug group-hover:text-white transition-colors">
-            ${cleanPreview ? esc(cleanPreview) : (mediaPill ? '' : '<span class="italic text-slate-600">[No text preview]</span>')}
+          ${m.reply_to ? `<span class="shrink-0 text-slate-400 dark:text-slate-500 flex items-center gap-0.5 text-[10px]" title="Quoted reply"><i data-lucide="reply" class="w-2.5 h-2.5"></i></span>` : ''}
+          <span class="truncate font-mono text-[11px] text-slate-700 dark:text-slate-300 leading-snug group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+            ${cleanPreview ? esc(cleanPreview) : (mediaPill ? '' : '<span class="italic text-slate-400 dark:text-slate-600">[No text preview]</span>')}
           </span>
         </div>
 
         <!-- Col 4: Actions (w-24 sm:w-32 text-right shrink-0 flex items-center justify-end gap-1.5) -->
         <div class="w-24 sm:w-32 text-right shrink-0 flex items-center justify-end gap-1.5" onclick="event.stopPropagation()">
-          <button onclick="openMessageDetailModal('${m.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white font-semibold text-[11px] flex items-center gap-1 shadow-xs transition-all border border-emerald-500/30" title="View Full Message as it is">
+          <button onclick="openMessageDetailModal('${m.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600/15 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-white font-semibold text-[11px] flex items-center gap-1 shadow-xs transition-all border border-emerald-500/30" title="View Full Message as it is">
             <i data-lucide="eye" class="w-3 h-3"></i>
             <span>View</span>
           </button>
           ${knockUrl ? `
-            <a href="${knockUrl}" target="_blank" class="p-1 rounded-lg bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-400 hover:text-emerald-400 transition-colors" title="Chat on WhatsApp">
+            <a href="${knockUrl}" target="_blank" class="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-dark-900 dark:hover:bg-dark-800 border border-slate-200 dark:border-dark-700 text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors" title="Chat on WhatsApp">
               <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
             </a>
           ` : ''}
@@ -621,9 +621,9 @@ function setStreamPageSize(size) {
   localStorage.setItem('wapp_stream_page_size', streamPageSize);
   document.querySelectorAll('.btn-stream-size').forEach(btn => {
     if (parseInt(btn.getAttribute('data-size'), 10) === streamPageSize) {
-      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono';
+      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono shadow-xs';
     } else {
-      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono';
+      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all font-mono';
     }
   });
   renderClientFeed();
@@ -649,37 +649,38 @@ function updateStreamPaginationUI(total) {
   const nextBtn = document.getElementById('btn-stream-next');
 
   if (streamPageSize <= 0) {
-    if (startEl) startEl.innerText = total > 0 ? 1 : 0;
-    if (endEl) endEl.innerText = total;
-    if (totalEl) totalEl.innerText = total;
-    if (currEl) currEl.innerText = 1;
-    if (totalPagesEl) totalPagesEl.innerText = 1;
+    const sVal = total > 0 ? 1 : 0;
+    if (startEl) startEl.textContent = String(sVal);
+    if (endEl) endEl.textContent = String(total);
+    if (totalEl) totalEl.textContent = String(total);
+    if (currEl) currEl.textContent = '1';
+    if (totalPagesEl) totalPagesEl.textContent = '1';
     if (prevBtn) prevBtn.disabled = true;
     if (nextBtn) nextBtn.disabled = true;
-    return;
+  } else {
+    const maxPages = Math.max(1, Math.ceil(total / streamPageSize));
+    if (streamPage > maxPages) streamPage = maxPages;
+    if (streamPage < 1) streamPage = 1;
+
+    const start = total === 0 ? 0 : (streamPage - 1) * streamPageSize + 1;
+    const end = Math.min(streamPage * streamPageSize, total);
+
+    if (startEl) startEl.textContent = String(start);
+    if (endEl) endEl.textContent = String(end);
+    if (totalEl) totalEl.textContent = String(total);
+    if (currEl) currEl.textContent = String(streamPage);
+    if (totalPagesEl) totalPagesEl.textContent = String(maxPages);
+
+    if (prevBtn) prevBtn.disabled = (streamPage <= 1);
+    if (nextBtn) nextBtn.disabled = (streamPage >= maxPages);
   }
-
-  const maxPages = Math.max(1, Math.ceil(total / streamPageSize));
-  if (streamPage > maxPages) streamPage = maxPages;
-
-  const start = total === 0 ? 0 : (streamPage - 1) * streamPageSize + 1;
-  const end = Math.min(streamPage * streamPageSize, total);
-
-  if (startEl) startEl.innerText = start;
-  if (endEl) endEl.innerText = end;
-  if (totalEl) totalEl.innerText = total;
-  if (currEl) currEl.innerText = streamPage;
-  if (totalPagesEl) totalPagesEl.innerText = maxPages;
-
-  if (prevBtn) prevBtn.disabled = (streamPage <= 1);
-  if (nextBtn) nextBtn.disabled = (streamPage >= maxPages);
 
   document.querySelectorAll('.btn-stream-size').forEach(btn => {
     const s = parseInt(btn.getAttribute('data-size'), 10);
     if (s === streamPageSize) {
-      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono';
+      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold transition-all font-mono shadow-xs';
     } else {
-      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all font-mono';
+      btn.className = 'btn-stream-size px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all font-mono';
     }
   });
 }
