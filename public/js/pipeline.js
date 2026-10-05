@@ -120,12 +120,17 @@ function openPipelineInspect(id) {
     jsonEl.innerText = JSON.stringify(payload, null, 2);
   }
 
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    if (window.initWindow) window.initWindow(modal);
+    modal.classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 
 function closePipelineInspectModal() {
   const modal = document.getElementById('modal-pipeline-inspect');
   if (modal) modal.classList.add('hidden');
+  if (window.removeDockPill) window.removeDockPill('modal-pipeline-inspect');
 }
 
 function loadPipelineSample(sampleKey) {

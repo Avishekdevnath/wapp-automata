@@ -68,7 +68,10 @@ function updateStorageModalMetrics(data) {
 
 function openStorageModal() {
   const modal = document.getElementById('storage-modal');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    if (window.initWindow) window.initWindow(modal);
+    modal.classList.remove('hidden');
+  }
   pollStorageStatus();
   if (window.lucide) lucide.createIcons();
 }
@@ -76,6 +79,7 @@ function openStorageModal() {
 function closeStorageModal() {
   const modal = document.getElementById('storage-modal');
   if (modal) modal.classList.add('hidden');
+  if (window.removeDockPill) window.removeDockPill('storage-modal');
 }
 
 async function handlePurgeMedia(percentage) {

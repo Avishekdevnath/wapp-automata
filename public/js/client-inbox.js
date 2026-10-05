@@ -316,12 +316,17 @@ function updateStreamPaginationUI(total) {
  */
 function openPurgeStreamModal() {
   const modal = document.getElementById('modal-purge-stream');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    if (window.initWindow) window.initWindow(modal);
+    modal.classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 
 function closePurgeStreamModal() {
   const modal = document.getElementById('modal-purge-stream');
   if (modal) modal.classList.add('hidden');
+  if (window.removeDockPill) window.removeDockPill('modal-purge-stream');
 }
 
 async function confirmPurgeStream() {

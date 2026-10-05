@@ -622,7 +622,10 @@ function openRouteDetailModal(routeId) {
   }
 
   const modal = document.getElementById('route-detail-modal');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    if (window.initWindow) window.initWindow(modal);
+    modal.classList.remove('hidden');
+  }
 
   if (window.lucide) window.lucide.createIcons();
 }
@@ -630,6 +633,7 @@ function openRouteDetailModal(routeId) {
 function closeRouteDetailModal() {
   const modal = document.getElementById('route-detail-modal');
   if (modal) modal.classList.add('hidden');
+  if (window.removeDockPill) window.removeDockPill('route-detail-modal');
   activeDetailRouteId = null;
 }
 
@@ -685,12 +689,17 @@ Carrier     : ${route.vendor_name || 'Direct Vendor'} (${route.vendor_phone})
  */
 function openPostRouteModal() {
   const modal = document.getElementById('modal-post-route');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    if (window.initWindow) window.initWindow(modal);
+    modal.classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons();
+  }
 }
 
 function closePostRouteModal() {
   const modal = document.getElementById('modal-post-route');
   if (modal) modal.classList.add('hidden');
+  if (window.removeDockPill) window.removeDockPill('modal-post-route');
 }
 
 async function handlePostRouteSubmit(e) {

@@ -194,16 +194,24 @@
   </div>
 
   <!-- MODAL: Trace Inspection Drawer/Modal -->
-  <div id="modal-pipeline-inspect" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-overlay hidden" onclick="if (event.target === this) closePipelineInspectModal()">
-    <div class="glass-modal rounded-2xl w-full max-w-2xl border border-dark-700 p-6 space-y-4 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-dark-700 pb-3">
-        <div class="flex items-center gap-2">
+  <div id="modal-pipeline-inspect" class="win-modal-container hidden" onclick="if (event.target === this) closePipelineInspectModal()">
+    <div class="glass-modal win-window rounded-2xl w-full max-w-2xl border border-dark-700 p-5 space-y-4 shadow-2xl relative">
+      <div class="win-titlebar flex items-center justify-between pb-3 border-b border-dark-700 select-none">
+        <div class="flex items-center gap-2.5 pointer-events-none">
           <i data-lucide="binary" class="w-4 h-4 text-purple-400"></i>
-          <h3 class="text-sm font-bold text-white">Pipeline Message Trace Details</h3>
+          <h3 class="text-sm font-bold text-white leading-tight">Pipeline Message Trace Details</h3>
         </div>
-        <button onclick="closePipelineInspectModal()" class="p-1 rounded-lg text-slate-400 hover:text-white">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
+        <div class="flex items-center gap-1 win-controls">
+          <button type="button" class="win-btn win-btn-min" title="Minimize">
+            <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+          </button>
+          <button type="button" class="win-btn win-btn-max" title="Maximize">
+            <i data-lucide="square" class="w-3.5 h-3.5"></i>
+          </button>
+          <button type="button" class="win-btn win-btn-close" title="Close" onclick="closePipelineInspectModal()">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
       </div>
 
       <div class="space-y-3 text-xs">
@@ -234,6 +242,9 @@
           Close
         </button>
       </div>
+
+      <!-- Window Resize Grip Handle -->
+      <div class="win-resizer" title="Drag to resize window"></div>
     </div>
   </div>
 

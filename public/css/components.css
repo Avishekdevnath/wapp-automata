@@ -29,28 +29,206 @@ html:not(.dark) .modal-backdrop-overlay {
   to { opacity: 1; }
 }
 
-.glass-modal {
-  background-color: var(--modal-bg) !important;
-  border: 1px solid var(--modal-border) !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--modal-border) !important;
-  animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Windows 11 Fluent Modal Window System (Depth, Draggable, Resizable, Dock) */
+.win-modal-container {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(11, 20, 26, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease, backdrop-filter 0.2s ease;
 }
 
-@keyframes modalScaleIn {
+html:not(.dark) .win-modal-container {
+  background: rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Floating Window Mode (allows full interaction with website underneath) */
+.win-modal-container.win-floating-mode {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: none !important;
+}
+
+.win-modal-container.win-floating-mode .win-window {
+  pointer-events: auto !important;
+}
+
+/* Windows 11 Fluent Window Dialog with Genuine Depth */
+.glass-modal,
+.win-window {
+  border-radius: 1rem !important;
+  background-color: rgba(17, 27, 33, 0.96) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 28px 70px -10px rgba(0, 0, 0, 0.75), 
+              0 0 0 1px rgba(255, 255, 255, 0.1),
+              0 1px 1px 0 rgba(255, 255, 255, 0.08) inset !important;
+  min-width: 380px;
+  min-height: 260px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+  user-select: auto;
+}
+
+html:not(.dark) .glass-modal,
+html:not(.dark) .win-window {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 28px 70px -10px rgba(15, 23, 42, 0.22), 
+              0 0 0 1px rgba(0, 0, 0, 0.08),
+              0 1px 1px 0 rgba(255, 255, 255, 0.9) inset !important;
+}
+
+/* Windows 11 Titlebar */
+.win-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  user-select: none;
+  cursor: grab;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+}
+
+html:not(.dark) .win-titlebar {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.win-titlebar:active,
+.win-titlebar.cursor-grabbing {
+  cursor: grabbing !important;
+}
+
+/* Window Control Buttons */
+.win-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.win-btn {
+  width: 2rem;
+  height: 1.75rem;
+  border-radius: 0.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.win-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+html:not(.dark) .win-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #0f172a;
+}
+
+.win-btn-close:hover {
+  background: #e81123 !important;
+  color: #ffffff !important;
+}
+
+/* Resize Grip at Bottom Right */
+.win-resizer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, rgba(148, 163, 184, 0.5) 50%, rgba(148, 163, 184, 0.5) 65%, transparent 65%, transparent 80%, rgba(148, 163, 184, 0.5) 80%);
+  border-bottom-right-radius: 0.85rem;
+  z-index: 30;
+}
+
+/* Maximized State */
+.win-window.win-maximized,
+.glass-modal.win-maximized {
+  left: 12px !important;
+  top: 12px !important;
+  width: calc(100vw - 24px) !important;
+  height: calc(100vh - 24px) !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0.75rem !important;
+}
+
+/* Minimized Dock Bar */
+#win-taskbar-dock {
+  position: fixed;
+  bottom: 1rem;
+  right: 1.5rem;
+  z-index: 60;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 0.5rem;
+  pointer-events: auto;
+}
+
+.win-dock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  background: rgba(17, 27, 33, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  animation: winDockSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+html:not(.dark) .win-dock-pill {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+  color: #0f172a;
+}
+
+.win-dock-pill:hover {
+  transform: translateY(-2px);
+  border-color: #00a884;
+}
+
+@keyframes winDockSlideUp {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(6px);
+    transform: translateY(16px) scale(0.9);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateY(0) scale(1);
   }
-}
-
-html:not(.dark) .glass-modal {
-  background-color: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(203, 213, 225, 0.6) !important;
 }
 
 /* Light mode typography & section contrast inside Modals */

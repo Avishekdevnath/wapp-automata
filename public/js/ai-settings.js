@@ -4,7 +4,10 @@
 
 async function openAiSettingsModal() {
   const modal = document.getElementById('modal-ai-settings');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    if (window.initWindow) window.initWindow(modal);
+    modal.classList.remove('hidden');
+  }
   await loadAiSettings();
   if (window.lucide) lucide.createIcons();
 }
@@ -12,6 +15,7 @@ async function openAiSettingsModal() {
 function closeAiSettingsModal() {
   const modal = document.getElementById('modal-ai-settings');
   if (modal) modal.classList.add('hidden');
+  if (window.removeDockPill) window.removeDockPill('modal-ai-settings');
   const feedback = document.getElementById('ai-test-feedback');
   if (feedback) feedback.classList.add('hidden');
 }
