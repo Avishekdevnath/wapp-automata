@@ -2,7 +2,6 @@
  * Device Manager Module: WhatsApp Pairing & In-Browser QR Code Generation
  */
 let lastRenderedQR = null;
-let hasAutoOpenedQr = false;
 let lastKnownStatus = null;
 let devicePollingTimer = null;
 
@@ -100,10 +99,6 @@ async function pollSessionStatus() {
         lastRenderedQR = null;
       }
 
-      // Auto-open modal on first page load if unlinked
-      if (!hasAutoOpenedQr && session.status === 'scan_qr' && session.qr) {
-        hasAutoOpenedQr = true;
-        openDeviceModal();
       }
     }
 
