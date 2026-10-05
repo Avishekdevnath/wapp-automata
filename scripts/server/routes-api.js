@@ -29,7 +29,7 @@ function handleRoutesGet(req, res, parsedUrl) {
   let params = [];
 
   if (q) {
-    where.push('(LOWER(country) LIKE ? OR LOWER(vendor_name) LIKE ? OR LOWER(COALESCE(company_name,"")) LIKE ? OR LOWER(COALESCE(quality_notes,"")) LIKE ? OR LOWER(COALESCE(raw_text,"")) LIKE ?)');
+    where.push("(LOWER(country) LIKE ? OR LOWER(vendor_name) LIKE ? OR LOWER(COALESCE(company_name, '')) LIKE ? OR LOWER(COALESCE(quality_notes, '')) LIKE ? OR LOWER(COALESCE(raw_text, '')) LIKE ?)");
     const wild = `%${q}%`;
     params.push(wild, wild, wild, wild, wild);
   }

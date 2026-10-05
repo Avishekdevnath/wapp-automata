@@ -108,7 +108,7 @@ function purgeMediaFiles(percentage) {
 
 function checkStorageAndAutoPurge() {
   const stats = getStorageStats();
-  if (stats.disk.usedPercent >= 80) {
+  if (stats.disk.usedPercent >= 80 && stats.files && stats.files.length > 0) {
     console.warn(`⚠️ STORAGE WARNING: Disk usage at ${stats.disk.usedPercent}% (exceeds 80% threshold). Automatically purging oldest 50% media...`);
     const result = purgeMediaFiles(50);
     storageWarning = {
