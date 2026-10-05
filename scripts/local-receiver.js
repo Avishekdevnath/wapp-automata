@@ -10,6 +10,7 @@ const { handleRoutesGet, handleRoutesPost, handleRoutesSeed, handleRoutesExport 
 const { handleTrendsGet, handleNewsGet, handleVendorsGet, handleInsightsGet } = require('./server/market-api');
 const { handleSystemApi } = require('./server/system-api');
 const { handleAiSettingsApi } = require('./server/ai-settings');
+const { handlePipelineApi } = require('./server/pipeline-api');
 const { serveStaticFile } = require('./server/static');
 const { backfillHistoricalTelecomData } = require('./server/db');
 const { recentMessages } = require('./server/store');
@@ -82,6 +83,12 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith('/api/settings/ai')) {
       const handledAi = handleAiSettingsApi(req, res, pathname);
       if (handledAi) return;
+    }
+
+    // System Pipeline & AI Processing Inspector APIs
+    if (pathname.startsWith('/api/pipeline')) {
+      const handledPipe = handlePipelineApi(req, res, pathname, parsedUrl);
+      if (handledPipe) return;
     }
 
     // System, Session, Storage, Forwarder & Media APIs

@@ -78,6 +78,15 @@
             <span id="stream-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-dark-800 text-slate-300">0</span>
           </button>
 
+          <!-- System Pipeline & AI Inspector -->
+          <button onclick="switchView('pipeline')" data-view="pipeline" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i>
+              <span>System Pipeline</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 uppercase">Live AI</span>
+          </button>
+
           <!-- Developer Studio -->
           <button onclick="switchView('dev')" data-view="dev" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5">

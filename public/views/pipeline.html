@@ -1,0 +1,240 @@
+<!-- ============================================== -->
+<!-- VIEW 7: SYSTEM PIPELINE & AI INSPECTOR         -->
+<!-- ============================================== -->
+<div id="view-pipeline" class="space-y-6 hidden">
+
+  <!-- Top Pipeline Header & Stage Flowchart -->
+  <div class="glass-card rounded-2xl p-5 border border-dark-700/80 space-y-4 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="space-y-0.5">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <h2 class="text-sm font-bold text-white tracking-tight">System Dataflow & Real-Time AI Pipeline</h2>
+          <span id="pipeline-active-provider-tag" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">DeepSeek-V3</span>
+        </div>
+        <p class="text-xs text-slate-400">Live telemetry of message ingestion, AI entity extraction, SQLite queue, and market indexing.</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="togglePipelineAutoRefresh()" id="btn-pipeline-autorefresh" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 text-xs text-emerald-400 hover:text-white flex items-center gap-1.5 transition-all">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span id="label-pipeline-autorefresh">Auto-Refresh: ON</span>
+        </button>
+        <button onclick="loadPipelineStatus()" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 text-xs text-slate-300 hover:text-white flex items-center gap-1.5 transition-all" title="Refresh Telemetry">
+          <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5-Stage Visual Architecture Flowchart -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-dark-800">
+      <!-- Stage 1: Ingestion -->
+      <div class="p-3.5 rounded-xl bg-dark-950/80 border border-dark-800 space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">1. Inbound Stream</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        </div>
+        <span class="text-base font-bold text-white block">WhatsApp Baileys</span>
+        <div class="flex items-center justify-between text-[11px] text-slate-400">
+          <span>Ingested:</span>
+          <strong id="pipe-stat-ingested" class="text-emerald-400 font-mono">0</strong>
+        </div>
+      </div>
+
+      <!-- Stage 2: Queue & Storage -->
+      <div class="p-3.5 rounded-xl bg-dark-950/80 border border-dark-800 space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">2. Durable Queue</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        </div>
+        <span class="text-base font-bold text-white block">SQLite WAL</span>
+        <div class="flex items-center justify-between text-[11px] text-slate-400">
+          <span>Pending:</span>
+          <strong id="pipe-stat-queue" class="text-white font-mono">0 msgs</strong>
+        </div>
+      </div>
+
+      <!-- Stage 3: AI Intelligence Engine -->
+      <div class="p-3.5 rounded-xl bg-dark-950/80 border border-purple-500/20 space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-semibold text-purple-400 uppercase tracking-wider">3. AI Intelligence</span>
+          <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+        </div>
+        <span id="pipe-stat-ai-model" class="text-base font-bold text-purple-300 block truncate">DeepSeek</span>
+        <div class="flex items-center justify-between text-[11px] text-slate-400">
+          <span>Avg Latency:</span>
+          <strong id="pipe-stat-ai-latency" class="text-purple-300 font-mono">0ms</strong>
+        </div>
+      </div>
+
+      <!-- Stage 4: Trading Database -->
+      <div class="p-3.5 rounded-xl bg-dark-950/80 border border-dark-800 space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">4. Market Database</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        </div>
+        <span class="text-base font-bold text-white block">Rate Matrix DB</span>
+        <div class="flex items-center justify-between text-[11px] text-slate-400">
+          <span>Active Routes:</span>
+          <strong id="pipe-stat-routes" class="text-emerald-400 font-mono">0</strong>
+        </div>
+      </div>
+
+      <!-- Stage 5: Downstream Webhook -->
+      <div class="p-3.5 rounded-xl bg-dark-950/80 border border-dark-800 space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">5. Downstream</span>
+          <span id="pipe-webhook-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+        </div>
+        <span class="text-base font-bold text-white block">Client Webhook</span>
+        <div class="flex items-center justify-between text-[11px] text-slate-400">
+          <span>Status:</span>
+          <strong id="pipe-stat-webhook" class="text-slate-300 font-mono text-[10px]">Disabled</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Pipeline Content Grid: Live Trace Feed + Interactive AI Sandbox -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT: Real-Time AI Processing Feed (7 Cols) -->
+    <div class="lg:col-span-7 space-y-3">
+      <div class="glass-card rounded-2xl border border-dark-700/80 overflow-hidden shadow-sm">
+        <div class="px-5 py-3.5 border-b border-dark-700/80 flex items-center justify-between bg-dark-900/30">
+          <div class="flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+            <span class="font-bold text-xs text-white">Live AI Processing Stream</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          </div>
+          <span class="text-[11px] text-slate-500">Captures raw message ➔ AI extraction in real time</span>
+        </div>
+
+        <!-- Scrollable Feed Container -->
+        <div class="overflow-x-auto overflow-y-auto max-h-[560px]">
+          <table class="w-full text-left border-collapse">
+            <thead class="sticky top-0 z-10 border-b border-dark-700">
+              <tr class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider bg-dark-900/90">
+                <th class="py-3 px-3.5 bg-slate-100 dark:bg-dark-900">Time</th>
+                <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">Sender / Contact</th>
+                <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">AI Result</th>
+                <th class="py-3 px-3 bg-slate-100 dark:bg-dark-900">Latency</th>
+                <th class="py-3 px-3 text-right bg-slate-100 dark:bg-dark-900">Inspect</th>
+              </tr>
+            </thead>
+            <tbody id="pipeline-feed-tbody" class="divide-y divide-dark-800/60 text-xs">
+              <!-- Dynamically populated via pipeline.js -->
+              <tr>
+                <td colspan="5" class="py-8 text-center text-slate-500 text-xs">
+                  <i data-lucide="inbox" class="w-6 h-6 mx-auto mb-2 text-slate-600"></i>
+                  Waiting for live WhatsApp messages to flow through the AI engine...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Interactive AI Sandbox / Testing Bench (5 Cols) -->
+    <div class="lg:col-span-5 space-y-4">
+      <div class="glass-card rounded-2xl p-5 border border-dark-700/80 space-y-4 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="flask-conical" class="w-4 h-4 text-purple-400"></i>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">AI Intelligence Sandbox</h3>
+          </div>
+          <span class="text-[10px] text-slate-400">Live Engine Tester</span>
+        </div>
+        <p class="text-xs text-slate-400">Test how the active AI engine parses wholesale rate sheets or news alerts in real time.</p>
+
+        <!-- Sample Load Buttons -->
+        <div class="flex flex-wrap gap-1.5 text-[11px]">
+          <span class="text-slate-500 self-center text-[10px] mr-1">Load Preset:</span>
+          <button onclick="loadPipelineSample('rate_sheet')" class="px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-300 hover:text-white transition-all">Rate Sheet</button>
+          <button onclick="loadPipelineSample('buying_demand')" class="px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-300 hover:text-white transition-all">Buyer Demand</button>
+          <button onclick="loadPipelineSample('outage_alert')" class="px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-300 hover:text-white transition-all">Outage Alert</button>
+        </div>
+
+        <!-- Prompt Textarea -->
+        <div class="space-y-1.5">
+          <textarea 
+            id="pipeline-sandbox-input" 
+            rows="5" 
+            placeholder="Paste raw WhatsApp carrier message here to test AI extraction..."
+            class="w-full bg-dark-900 border border-dark-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 font-mono leading-relaxed"
+          ></textarea>
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex items-center justify-between">
+          <button 
+            onclick="runPipelineSandboxTest()" 
+            id="btn-run-sandbox"
+            class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-2 shadow-md shadow-purple-600/20 transition-all"
+          >
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            <span>Test AI Extraction</span>
+          </button>
+          <span id="pipeline-sandbox-latency" class="text-[11px] font-mono text-purple-300">Ready</span>
+        </div>
+
+        <!-- Output Box -->
+        <div id="pipeline-sandbox-output-box" class="hidden space-y-2 pt-3 border-t border-dark-800">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-300">Extracted AI Output</span>
+            <span id="pipeline-sandbox-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Parsed</span>
+          </div>
+          <pre id="pipeline-sandbox-json" class="p-3 rounded-xl bg-dark-950 border border-dark-800 text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-56 leading-relaxed"></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL: Trace Inspection Drawer/Modal -->
+  <div id="modal-pipeline-inspect" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
+    <div class="glass-modal rounded-2xl w-full max-w-2xl border border-dark-700 p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-dark-700 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="binary" class="w-4 h-4 text-purple-400"></i>
+          <h3 class="text-sm font-bold text-white">Pipeline Message Trace Details</h3>
+        </div>
+        <button onclick="closePipelineInspectModal()" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <span class="text-slate-400 font-semibold block mb-1">Raw WhatsApp Message Ingested:</span>
+          <pre id="inspect-raw-text" class="p-3 rounded-xl bg-dark-950 border border-dark-800 font-mono text-slate-300 text-[11px] whitespace-pre-wrap max-h-36 overflow-y-auto"></pre>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-3 rounded-xl bg-dark-950/80 border border-dark-800">
+            <span class="text-[10px] text-slate-400 block">AI Engine Used</span>
+            <span id="inspect-provider" class="font-bold text-purple-300 font-mono">DeepSeek</span>
+          </div>
+          <div class="p-3 rounded-xl bg-dark-950/80 border border-dark-800">
+            <span class="text-[10px] text-slate-400 block">Extraction Latency</span>
+            <span id="inspect-latency" class="font-bold text-emerald-400 font-mono">380ms</span>
+          </div>
+        </div>
+
+        <div>
+          <span class="text-slate-400 font-semibold block mb-1">Extracted Telecom Data:</span>
+          <pre id="inspect-parsed-json" class="p-3 rounded-xl bg-dark-950 border border-dark-800 font-mono text-emerald-400 text-[11px] max-h-48 overflow-y-auto"></pre>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-dark-700">
+        <button onclick="closePipelineInspectModal()" class="px-4 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-200 text-xs font-medium">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

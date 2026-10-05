@@ -28,6 +28,8 @@ function switchView(viewName, updateHash = true) {
     }
   }
 
+  window.currentActiveView = viewName;
+
   const views = [
     'view-routes',
     'view-trends',
@@ -35,6 +37,7 @@ function switchView(viewName, updateHash = true) {
     'view-news',
     'view-vendors',
     'view-terminal',
+    'view-pipeline',
     'view-dev'
   ];
 
@@ -59,6 +62,7 @@ function switchView(viewName, updateHash = true) {
     'news': { title: 'Telco News & Outage Alerts', sub: 'Real-time carrier maintenance, regulatory blocks, and FAS fraud warnings' },
     'vendors': { title: 'Carrier & Vendor Directory', sub: 'Registered telecom wholesale providers and account managers' },
     'terminal': { title: 'Live WhatsApp Messages Stream', sub: 'Continuous 24/7 capture of all incoming group broadcasts, rate sheets, and carrier DMs' },
+    'pipeline': { title: 'System Pipeline & AI Inspector', sub: 'Real-time telemetry of message ingestion, AI entity extraction, queue, and market indexing' },
     'dev': { title: 'Developer Studio & API Lab', sub: 'Webhook payload inspection, HMAC validation, and traffic simulator' }
   };
 
@@ -75,6 +79,7 @@ function switchView(viewName, updateHash = true) {
   if (viewName === 'news' && typeof loadTelcoNews === 'function') loadTelcoNews();
   if (viewName === 'vendors' && typeof loadVendorDirectory === 'function') loadVendorDirectory();
   if (viewName === 'terminal' && typeof renderClientFeed === 'function') renderClientFeed();
+  if (viewName === 'pipeline' && typeof loadPipelineStatus === 'function') loadPipelineStatus();
   if (viewName === 'dev') {
     if (typeof renderDevFeed === 'function') renderDevFeed();
     if (typeof renderAuditTable === 'function') renderAuditTable();
