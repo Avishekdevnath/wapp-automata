@@ -125,3 +125,33 @@ async function dismissStorageWarning() {
     if (navDot) navDot.classList.add('hidden');
   } catch (err) {}
 }
+
+async function handleRunLogRetention() {
+  const btn = document.getElementById('btn-run-retention');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/storage/retention', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: 30 })
+    });
+    const result = await res.json();
+    if (res.ok && result.status === 'ok') {
+      showToast(result.message || 'Log retention cleanup completed', 'success');
+      pollStorageStatus();
+    } else {
+      showToast('Log retention cleanup failed', 'error');
+    }
+  } catch (err) {
+    showToast('Network error during log retention cleanup', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+window.handleRunLogRetention = handleRunLogRetention;
+window.handlePurgeMedia = handlePurgeMedia;
+window.openStorageModal = openStorageModal;
+window.closeStorageModal = closeStorageModal;
+window.pollStorageStatus = pollStorageStatus;

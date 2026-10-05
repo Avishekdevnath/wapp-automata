@@ -36,20 +36,20 @@
           </button>
         </div>
 
-        <button onclick="toggleStreamAutoScroll()" id="btn-stream-autoscroll" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 text-xs text-emerald-400 hover:text-white flex items-center gap-1.5 transition-all">
-          <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
+        <button onclick="toggleStreamAutoScroll()" id="btn-stream-autoscroll" class="btn btn-secondary btn-sm">
+          <i data-lucide="chevrons-down" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span id="label-stream-autoscroll">Auto-Scroll: ON</span>
         </button>
-        <button onclick="exportMessagesJson()" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 text-xs text-slate-300 hover:text-white flex items-center gap-1.5 transition-all">
+        <button onclick="exportMessagesJson()" class="btn btn-secondary btn-sm">
           <i data-lucide="download" class="w-3.5 h-3.5"></i>
           <span>Export JSON</span>
         </button>
-        <button onclick="exportMessagesCsv()" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 text-xs text-slate-300 hover:text-white flex items-center gap-1.5 transition-all">
+        <button onclick="exportMessagesCsv()" class="btn btn-secondary btn-sm">
           <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
           <span>Export CSV</span>
         </button>
         <!-- Purge Stream Button -->
-        <button onclick="openPurgeStreamModal()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-xs text-rose-400 hover:text-rose-300 border border-rose-500/30 flex items-center gap-1.5 transition-all" title="Permanently delete raw WhatsApp message stream (preserves analyzed routes & vendors)">
+        <button onclick="openPurgeStreamModal()" class="btn btn-danger btn-sm" title="Permanently delete raw WhatsApp message stream (preserves analyzed routes & vendors)">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
           <span>Purge Stream</span>
         </button>

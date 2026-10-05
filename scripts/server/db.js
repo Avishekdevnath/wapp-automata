@@ -223,8 +223,58 @@ function backfillHistoricalTelecomData(recentMessages) {
   }
 }
 
+/**
+ * Automated SQLite Log Retention
+ * Prunes bulky raw_payload envelopes older than retentionDays (30d) and purges delivered records older than 60d.
+ * Never touches parsed routes (route_ticks) or vendors!
+ */
+function pruneRawPayloads(db, retentionDays = 30) {
+  if (!db) return { prunedPayloads: 0, deletedOldMessages: 0 };
+  const cutoffMs = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+  const delCutoffMs = Date.now() - (retentionDays * 2 * 24 * 60 * 60 * 1000);
+
+  try {
+    let prunedCount = 0;
+    let deletedCount = 0;
+
+    // Check if messages table exists
+    const hasMessages = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'").get();
+    if (hasMessages) {
+      // 1. Permanently delete delivered messages older than 2x retention window (60d)
+      const delStmt = db.prepare(`
+        DELETE FROM messages
+        WHERE created_at < ? AND status = 'delivered'
+      `);
+      const delRes = delStmt.run(delCutoffMs);
+      deletedCount = delRes.changes;
+
+      // 2. Prune bulky raw payloads of remaining messages older than retention window (30d)
+      const pruneStmt = db.prepare(`
+        UPDATE messages
+        SET raw_payload = '{"pruned":true}',
+            updated_at = ?
+        WHERE created_at < ? AND raw_payload != '{"pruned":true}' AND status != 'pending'
+      `);
+      const pruneRes = pruneStmt.run(Date.now(), cutoffMs);
+      prunedCount = pruneRes.changes;
+
+      try { db.pragma('incremental_vacuum(50)'); } catch (_) {}
+    }
+
+    return {
+      prunedPayloads: prunedCount,
+      deletedOldMessages: deletedCount,
+      retentionDays
+    };
+  } catch (err) {
+    console.warn('[SQLite Log Retention] Notice:', err.message);
+    return { prunedPayloads: 0, deletedOldMessages: 0, error: err.message };
+  }
+}
+
 module.exports = {
   getTradingDb,
   saveParsedTelecom,
-  backfillHistoricalTelecomData
+  backfillHistoricalTelecomData,
+  pruneRawPayloads
 };

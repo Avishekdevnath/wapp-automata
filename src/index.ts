@@ -131,7 +131,30 @@ export function createApplication(options?: ApplicationOptions): ApplicationCont
     // 4. Start queue worker engine
     worker.start();
 
-    // 5. Connect WhatsApp adapter if registered
+    // 5. Automated SQLite Log Retention (prune envelopes > 30 days, purge delivered > 60 days)
+    try {
+      const retentionResult = queueRepo.pruneOldPayloads(30);
+      if (retentionResult.prunedCount > 0 || retentionResult.deletedCount > 0) {
+        logger.info('Automated SQLite log retention cleanup completed', retentionResult);
+      }
+    } catch (err) {
+      logger.warn('Automated SQLite log retention warning', { error: err });
+    }
+
+    const retentionIntervalMs = 24 * 60 * 60 * 1000;
+    const retentionTimer = setInterval(() => {
+      try {
+        const res = queueRepo.pruneOldPayloads(30);
+        if (res.prunedCount > 0 || res.deletedCount > 0) {
+          logger.info('Periodic SQLite log retention cleanup completed', res);
+        }
+      } catch (err) {
+        logger.warn('Periodic SQLite log retention warning', { error: err });
+      }
+    }, retentionIntervalMs);
+    retentionTimer.unref();
+
+    // 6. Connect WhatsApp adapter if registered
     if (adapter) {
       await adapter.start();
     }

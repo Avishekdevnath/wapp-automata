@@ -10,7 +10,7 @@ const { getSessionState } = require('./auth');
 const { getStorageStats, purgeMediaFiles, dismissStorageWarning } = require('./media');
 const { processWebhookDelivery } = require('./webhook-receiver');
 const { forwardWebhookToClient } = require('./forwarder');
-const { getTradingDb } = require('./db');
+const { getTradingDb, pruneRawPayloads } = require('./db');
 
 const MIME_TYPES = {
   '.jpg': 'image/jpeg',
@@ -183,8 +183,32 @@ function handleSystemApi(req, res, pathname, parsedUrl) {
       media: s.media,
       autoPurgeThresholdPercent: s.autoPurgeThresholdPercent,
       autoPurgeEvictPercent: s.autoPurgeEvictPercent,
+      retentionPolicy: {
+        active: true,
+        days: 30,
+        description: 'Auto-prunes raw WhatsApp envelopes older than 30–60 days, keeping parsed routes and carrier contacts forever'
+      },
       warning: s.warning
     }));
+  }
+
+  if (req.method === 'POST' && pathname === '/api/storage/retention') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      let parsed = {};
+      try { parsed = JSON.parse(body); } catch {}
+      const days = Number(parsed.days) || 30;
+      const db = getTradingDb();
+      const result = pruneRawPayloads(db, days);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        status: 'ok',
+        ...result,
+        message: `Retention routine complete. Pruned ${result.prunedPayloads || 0} payloads (> ${days}d), purged ${result.deletedOldMessages || 0} delivered envelopes (> ${days * 2}d). Routes & vendors intact forever.`
+      }));
+    });
+    return true;
   }
 
   if (req.method === 'POST' && pathname === '/api/storage/purge') {

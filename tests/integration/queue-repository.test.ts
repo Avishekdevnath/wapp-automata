@@ -157,4 +157,44 @@ describe('Phase 5 Queue Repository Integration Tests', () => {
     assert.ok(record !== null);
     assert.equal(record.status, 'pending');
   });
+
+  it('should prune old payloads for delivered messages older than retention window while preserving pending', () => {
+    const nowMs = 1727915000000;
+    const msPerDay = 24 * 60 * 60 * 1000;
+
+    // Msg 1: delivered 35 days ago (should have payload pruned, row preserved)
+    const env1 = { ...sampleEnvelope, id: 'msg_35d_ago' };
+    repo.enqueue(env1);
+    db.prepare('UPDATE messages SET created_at = ?, status = ? WHERE id = ?').run(nowMs - (35 * msPerDay), 'delivered', 'msg_35d_ago');
+
+    // Msg 2: delivered 65 days ago (older than 2x retention, should be deleted)
+    const env2 = { ...sampleEnvelope, id: 'msg_65d_ago' };
+    repo.enqueue(env2);
+    db.prepare('UPDATE messages SET created_at = ?, status = ? WHERE id = ?').run(nowMs - (65 * msPerDay), 'delivered', 'msg_65d_ago');
+
+    // Msg 3: pending 40 days ago (pending messages MUST never be pruned or deleted!)
+    const env3 = { ...sampleEnvelope, id: 'msg_pending_40d' };
+    repo.enqueue(env3);
+    db.prepare('UPDATE messages SET created_at = ? WHERE id = ?').run(nowMs - (40 * msPerDay), 'msg_pending_40d');
+
+    const result = repo.pruneOldPayloads(30, nowMs);
+    assert.equal(result.prunedCount, 1, 'Should prune payload of 35d old delivered message');
+    assert.equal(result.deletedCount, 1, 'Should delete 65d old delivered message');
+
+    // Check msg 1: still exists, status delivered, but raw_payload is pruned
+    const rec1 = repo.findById('msg_35d_ago');
+    assert.ok(rec1 !== null);
+    assert.equal(rec1.raw_payload, '{"pruned":true}');
+    assert.equal(rec1.status, 'delivered');
+
+    // Check msg 2: deleted
+    const rec2 = repo.findById('msg_65d_ago');
+    assert.equal(rec2, null);
+
+    // Check msg 3: pending message untouched
+    const rec3 = repo.findById('msg_pending_40d');
+    assert.ok(rec3 !== null);
+    assert.equal(rec3.status, 'pending');
+    assert.notEqual(rec3.raw_payload, '{"pruned":true}');
+  });
 });

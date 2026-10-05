@@ -106,7 +106,7 @@
                 <!-- Post Route Button -->
                 <button 
                   onclick="openPostRouteModal()"
-                  class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all shrink-0"
+                  class="btn btn-primary shrink-0"
                   title="Manually post a route offer or demand"
                 >
                   <i data-lucide="plus" class="w-3.5 h-3.5"></i>
@@ -117,7 +117,7 @@
                 <button 
                   id="btn-refresh-routes"
                   onclick="refreshRouteMatrix()"
-                  class="px-3 py-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-slate-500 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-all shrink-0"
+                  class="btn btn-secondary shrink-0"
                   title="Fetch latest wholesale rates from live collector"
                 >
                   <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -127,7 +127,7 @@
                 <!-- Export CSV -->
                 <button 
                   onclick="exportRoutesCSV()" 
-                  class="px-3 py-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-slate-500 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-all shrink-0"
+                  class="btn btn-secondary shrink-0"
                   title="Download full rate sheet as CSV"
                 >
                   <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -320,14 +320,14 @@
 
             <!-- Right: Page Navigation -->
             <div class="flex items-center gap-2">
-              <button onclick="changeRoutePage(-1)" id="btn-route-prev" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 hover:border-slate-500 text-slate-300 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all">
+              <button onclick="changeRoutePage(-1)" id="btn-route-prev" class="btn btn-secondary btn-sm disabled:opacity-40 disabled:pointer-events-none">
                 <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
                 <span>Previous</span>
               </button>
               <div class="px-3 py-1.5 rounded-xl bg-dark-950 border border-dark-800 font-mono text-[11px] text-slate-300">
                 Page <span id="route-current-page" class="text-emerald-400 font-bold">1</span> of <span id="route-total-pages" class="text-slate-400">1</span>
               </div>
-              <button onclick="changeRoutePage(1)" id="btn-route-next" class="px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 hover:border-slate-500 text-slate-300 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 transition-all">
+              <button onclick="changeRoutePage(1)" id="btn-route-next" class="btn btn-secondary btn-sm disabled:opacity-40 disabled:pointer-events-none">
                 <span>Next</span>
                 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
               </button>

@@ -83,4 +83,11 @@ export interface IQueueRepository {
    * Retrieves a single record by its message ID (wamid).
    */
   findById(id: string): QueueRecord | null;
+
+  /**
+   * Automated retention cleanup: prunes bulky raw_payload envelopes older than retentionDays
+   * on non-pending messages, and purges delivered records older than 2x retentionDays.
+   * Keeps parsed route_ticks, carrier contacts, and vendors intact forever.
+   */
+  pruneOldPayloads(retentionDays?: number, nowMs?: number): { prunedCount: number; deletedCount: number };
 }

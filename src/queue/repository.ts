@@ -202,4 +202,36 @@ export class SQLiteQueueRepository implements IQueueRepository {
     const row = this.findByIdStmt.get(id);
     return (row as QueueRecord) || null;
   }
+
+  public pruneOldPayloads(retentionDays: number = 30, nowMs: number = Date.now()): { prunedCount: number; deletedCount: number } {
+    const cutoff = nowMs - (retentionDays * 24 * 60 * 60 * 1000);
+    const delCutoff = nowMs - (retentionDays * 2 * 24 * 60 * 60 * 1000);
+
+    // 1. Permanently delete delivered messages older than 2x retention window (e.g. 60 days)
+    const delStmt = this.db.prepare(`
+      DELETE FROM messages
+      WHERE created_at < ? AND status = 'delivered'
+    `);
+    const delRes = delStmt.run(delCutoff);
+
+    // 2. Prune bulky raw payloads on remaining messages older than retention window (e.g. 30 days)
+    const pruneStmt = this.db.prepare(`
+      UPDATE messages
+      SET raw_payload = '{"pruned":true}',
+          updated_at = ?
+      WHERE created_at < ? AND raw_payload != '{"pruned":true}' AND status != 'pending'
+    `);
+    const pruneRes = pruneStmt.run(nowMs, cutoff);
+
+    try {
+      this.db.pragma('incremental_vacuum(50)');
+    } catch {
+      // Silently ignore if auto_vacuum is not incremental
+    }
+
+    return {
+      prunedCount: pruneRes.changes,
+      deletedCount: delRes.changes
+    };
+  }
 }
