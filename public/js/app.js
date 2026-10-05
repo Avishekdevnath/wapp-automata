@@ -356,3 +356,24 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(pollStorageStatus, 30000);
   }
 });
+
+// Global Keyboard Shortcut: Escape to close active modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' || e.key === 'Esc') {
+    if (typeof closeRouteDetailModal === 'function' && !document.getElementById('route-detail-modal')?.classList.contains('hidden')) {
+      closeRouteDetailModal();
+    } else if (typeof closePostRouteModal === 'function' && !document.getElementById('modal-post-route')?.classList.contains('hidden')) {
+      closePostRouteModal();
+    } else if (typeof closeDeviceModal === 'function' && !document.getElementById('device-modal')?.classList.contains('hidden')) {
+      closeDeviceModal();
+    } else if (typeof closeStorageModal === 'function' && (!document.getElementById('storage-modal')?.classList.contains('hidden') || !document.getElementById('modal-storage')?.classList.contains('hidden'))) {
+      closeStorageModal();
+    } else if (typeof closeAiSettingsModal === 'function' && !document.getElementById('modal-ai-settings')?.classList.contains('hidden')) {
+      closeAiSettingsModal();
+    } else if (typeof closePurgeStreamModal === 'function' && !document.getElementById('modal-purge-stream')?.classList.contains('hidden')) {
+      closePurgeStreamModal();
+    } else if (typeof closePipelineInspectModal === 'function' && !document.getElementById('modal-pipeline-inspect')?.classList.contains('hidden')) {
+      closePipelineInspectModal();
+    }
+  }
+});

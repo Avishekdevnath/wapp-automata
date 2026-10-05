@@ -10,17 +10,92 @@
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Modals */
+/* Smart Modals & Frosted Glass Backdrop */
+.modal-backdrop-overlay {
+  background: rgba(11, 20, 26, 0.72) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  animation: modalOverlayFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+html:not(.dark) .modal-backdrop-overlay {
+  background: rgba(15, 23, 42, 0.38) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+@keyframes modalOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .glass-modal {
   background-color: var(--modal-bg) !important;
   border: 1px solid var(--modal-border) !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--modal-border) !important;
+  animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 html:not(.dark) .glass-modal {
   background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(203, 213, 225, 0.6) !important;
+}
+
+/* Light mode typography & section contrast inside Modals */
+html:not(.dark) .glass-modal h2,
+html:not(.dark) .glass-modal h3,
+html:not(.dark) .glass-modal h4,
+html:not(.dark) .glass-modal .text-white {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .glass-modal p.text-slate-400,
+html:not(.dark) .glass-modal span.text-slate-400 {
+  color: #475569 !important;
+}
+
+html:not(.dark) .glass-modal .text-slate-300 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .glass-modal .text-slate-200 {
+  color: #1e293b !important;
+}
+
+html:not(.dark) .glass-modal .bg-dark-900,
+html:not(.dark) .glass-modal .bg-dark-950 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .glass-modal .border-dark-700,
+html:not(.dark) .glass-modal .border-dark-800 {
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .glass-modal button.bg-dark-800,
+html:not(.dark) .glass-modal button.bg-dark-900 {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+html:not(.dark) .glass-modal button.bg-dark-800:hover,
+html:not(.dark) .glass-modal button.bg-dark-900:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 /* Input Fields, Textareas, Selects */

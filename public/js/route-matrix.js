@@ -106,8 +106,13 @@ async function loadRouteMatrix() {
 
     if (kpiTotal) kpiTotal.innerText = stats.total || routes.length;
     if (kpiDest) kpiDest.innerText = `Across ${stats.destCount || 16} destinations`;
+    const kpiFloorSub = document.getElementById('kpi-floor-sub');
     if (kpiFloor) {
-      kpiFloor.innerText = stats.floorRate ? `$${Number(stats.floorRate).toFixed(4)}` : '$0.0045';
+      const bestRate = stats.bestTrustedFloor || stats.floorRate;
+      kpiFloor.innerText = bestRate ? `$${Number(bestRate).toFixed(4)}` : '$0.0045';
+      if (kpiFloorSub && stats.bestTrustedCountry) {
+        kpiFloorSub.innerText = `${stats.bestTrustedCountry} • Verified Safe`;
+      }
     }
     if (kpiLiq) {
       kpiLiq.innerText = `${stats.wtsCount || 0} / ${stats.wtbCount || 0}`;
@@ -207,11 +212,30 @@ function renderRouteTable(routes) {
       ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' 
       : 'bg-slate-800 text-slate-400 border-slate-700';
 
+    let bestBadge = '';
+    if (r.is_best_trusted_price) {
+      bestBadge = '<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 block mt-0.5 w-fit"><i data-lucide="award" class="w-2.5 h-2.5"></i> Best Trusted Price</span>';
+    }
+    const histDiff = r.diff_vs_avg_text 
+      ? `<span class="text-[10px] text-slate-400 font-mono block mt-0.5" title="Historical 30-day corridor comparison">${escapeHtml(r.diff_vs_avg_text)}</span>` 
+      : '';
+
     const rateDisplay = r.rate_per_min !== null 
-      ? `<span class="font-mono text-sm font-bold text-emerald-400">$${Number(r.rate_per_min).toFixed(4)}</span>` 
+      ? `<div>
+          <span class="font-mono text-sm font-bold text-emerald-400">$${Number(r.rate_per_min).toFixed(4)}</span>
+          ${bestBadge}
+          ${histDiff}
+        </div>` 
       : '<span class="text-slate-500 italic text-[11px]">Ping for Rate</span>';
 
     const cleanPhone = (r.vendor_phone || '').replace(/[^0-9]/g, '');
+
+    const newsBadge = r.active_news ? `
+      <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded ${r.active_news.urgency === 'HIGH' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'} cursor-pointer shrink-0" title="WhatsApp Alert: ${escapeHtml(r.active_news.headline)}">
+        <i data-lucide="${r.active_news.category === 'OUTAGE' ? 'alert-octagon' : (r.active_news.category === 'REGULATION' ? 'scale' : 'wrench')}" class="w-2.5 h-2.5"></i>
+        <span>${escapeHtml(r.active_news.category)}</span>
+      </span>
+    ` : '';
 
     return `
       <tr class="border-b border-dark-800/60 hover:bg-dark-800/40 transition-colors">
@@ -220,7 +244,10 @@ function renderRouteTable(routes) {
           <div class="flex items-center gap-2.5">
             <span class="text-xl select-none leading-none">${flag}</span>
             <div>
-              <span class="font-bold text-white text-xs block leading-tight">${escapeHtml(r.country)}</span>
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-white text-xs block leading-tight">${escapeHtml(r.country)}</span>
+                ${newsBadge}
+              </div>
               <span class="text-[10px] text-slate-400 block">${escapeHtml(r.ani_pass || 'Clean ANI')}</span>
             </div>
           </div>
@@ -319,9 +346,24 @@ function renderRouteCards(routes) {
       ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">🟢 WTS (Selling)</span>'
       : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">🟡 WTB (Buying)</span>';
 
+    let bestBadge = '';
+    if (r.is_best_trusted_price) {
+      bestBadge = '<span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 block mt-0.5 w-fit"><i data-lucide="award" class="w-2.5 h-2.5"></i> Best Trusted Price</span>';
+    }
+    const histDiff = r.diff_vs_avg_text 
+      ? `<span class="text-[10px] text-slate-400 font-mono block mt-0.5" title="Historical 30-day corridor comparison">${escapeHtml(r.diff_vs_avg_text)}</span>` 
+      : '';
+
     const rateDisplay = r.rate_per_min !== null 
       ? `$${Number(r.rate_per_min).toFixed(4)}` 
       : 'Ping for Rate';
+
+    const cardNewsBadge = r.active_news ? `
+      <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded ${r.active_news.urgency === 'HIGH' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}" title="WhatsApp Incident: ${escapeHtml(r.active_news.headline)}">
+        <i data-lucide="${r.active_news.category === 'OUTAGE' ? 'alert-octagon' : (r.active_news.category === 'REGULATION' ? 'scale' : 'wrench')}" class="w-2.5 h-2.5"></i>
+        <span>${escapeHtml(r.active_news.category)}</span>
+      </span>
+    ` : '';
 
     return `
       <div class="glass-card rounded-2xl p-4 border border-dark-700/80 hover:border-emerald-500/50 shadow-md space-y-3.5 transition-all">
@@ -330,7 +372,10 @@ function renderRouteCards(routes) {
           <div class="flex items-center gap-2.5">
             <span class="text-2xl select-none">${flag}</span>
             <div>
-              <h4 class="font-bold text-sm text-white leading-tight">${escapeHtml(r.country)}</h4>
+              <div class="flex items-center gap-1.5">
+                <h4 class="font-bold text-sm text-white leading-tight">${escapeHtml(r.country)}</h4>
+                ${cardNewsBadge}
+              </div>
               <span class="text-[10px] text-slate-400">${escapeHtml(r.ani_pass || 'Standard ANI')}</span>
             </div>
           </div>
@@ -345,6 +390,8 @@ function renderRouteCards(routes) {
               <span class="font-mono text-xl font-black text-emerald-400">${rateDisplay}</span>
               <span class="text-[10px] text-slate-500">/min</span>
             </div>
+            ${bestBadge}
+            ${histDiff}
           </div>
           <div class="text-right space-y-1">
             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-dark-800 text-slate-300 border border-dark-700">
@@ -513,6 +560,30 @@ function openRouteDetailModal(routeId) {
   const elNotes = document.getElementById('modal-route-notes');
   const btnKnock = document.getElementById('btn-modal-knock');
 
+  const elNewsBox = document.getElementById('modal-route-news-box');
+  if (elNewsBox) {
+    if (route.active_news) {
+      elNewsBox.classList.remove('hidden');
+      const isHigh = route.active_news.urgency === 'HIGH';
+      elNewsBox.innerHTML = `
+        <div class="p-3.5 rounded-2xl ${isHigh ? 'bg-rose-950/40 border border-rose-500/40 text-rose-300' : 'bg-amber-950/40 border border-amber-500/40 text-amber-300'} space-y-1.5 shadow-md">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs flex items-center gap-1.5">
+              <i data-lucide="${route.active_news.category === 'OUTAGE' ? 'alert-octagon' : (route.active_news.category === 'REGULATION' ? 'scale' : 'wrench')}" class="w-3.5 h-3.5"></i>
+              <span>Live WhatsApp Incident (${escapeHtml(route.active_news.category)} • ${escapeHtml(route.active_news.urgency)})</span>
+            </span>
+            <span class="text-[10px] font-mono opacity-75">${formatTimeAgo(route.active_news.created_at)}</span>
+          </div>
+          <p class="text-xs text-white font-semibold leading-snug">${escapeHtml(route.active_news.headline)}</p>
+          ${route.active_news.raw_text ? `<p class="text-[11px] text-slate-300 font-mono leading-relaxed bg-dark-900/80 p-2 rounded-lg border border-dark-800">${escapeHtml(route.active_news.raw_text)}</p>` : ''}
+        </div>
+      `;
+    } else {
+      elNewsBox.classList.add('hidden');
+      elNewsBox.innerHTML = '';
+    }
+  }
+
   if (elFlag) elFlag.innerText = flag;
   if (elTitle) elTitle.innerText = `${route.country} - ${route.route_type}`;
   if (elSubtitle) elSubtitle.innerText = `${route.vendor_name || 'Carrier'} • Verified Wholesale Feed`;
@@ -526,7 +597,11 @@ function openRouteDetailModal(routeId) {
     elType.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-dark-800 text-slate-200 border border-dark-700">${escapeHtml(route.route_type)}</span>`;
   }
   if (elRate) {
-    elRate.innerText = route.rate_per_min !== null ? `$${Number(route.rate_per_min).toFixed(4)} / min` : 'Ping for Rate';
+    const bestPill = route.is_best_trusted_price ? '<span class="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">🏆 Best Trusted Price</span>' : '';
+    const diffPill = route.diff_vs_avg_text ? `<span class="block text-[11px] text-slate-400 font-normal font-sans mt-0.5">${escapeHtml(route.diff_vs_avg_text)} vs 30d avg</span>` : '';
+    elRate.innerHTML = (route.rate_per_min !== null) 
+      ? `<span class="text-emerald-400 font-bold font-mono text-sm">$${Number(route.rate_per_min).toFixed(4)} / min</span>${bestPill}${diffPill}` 
+      : 'Ping for Rate';
   }
   if (elPulse) elPulse.innerText = route.billing_pulse || '1/1';
   if (elFas) {
@@ -796,8 +871,27 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+async function refreshRouteMatrix() {
+  const btn = document.getElementById('btn-refresh-routes');
+  const icon = btn?.querySelector('i');
+  if (icon) icon.classList.add('animate-spin');
+  try {
+    await loadRouteMatrix();
+    if (typeof showToast === 'function') {
+      showToast('Route matrix refreshed successfully', 'success');
+    }
+  } catch (err) {
+    console.error('Failed to refresh route matrix:', err);
+  } finally {
+    if (icon) {
+      setTimeout(() => icon.classList.remove('animate-spin'), 400);
+    }
+  }
+}
+
 // Global Exports
 window.loadRouteMatrix = loadRouteMatrix;
+window.refreshRouteMatrix = refreshRouteMatrix;
 window.setRouteViewMode = setRouteViewMode;
 window.handleIntentTab = handleIntentTab;
 window.handleSortChange = handleSortChange;

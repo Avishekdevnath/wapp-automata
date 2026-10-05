@@ -366,13 +366,16 @@ function seedBenchmarkRoutes(db, force = false) {
       return existingCount;
     }
 
+    const { evaluateRouteFraudRisk } = require('./server/fraud-detector');
     const now = Date.now();
+
     const insertRoute = db.prepare(`
       INSERT OR REPLACE INTO route_ticks (
         id, message_id, vendor_name, vendor_phone, company_name,
         country, route_type, billing_pulse, rate_per_min, ani_pass,
-        quality_notes, fas_free, intent, raw_text, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        quality_notes, fas_free, intent, raw_text, fraud_risk_score,
+        fraud_risk_level, fraud_flags, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const upsertVendor = db.prepare(`
@@ -392,10 +395,24 @@ function seedBenchmarkRoutes(db, force = false) {
     `);
 
     db.transaction(() => {
-      // 1. Seed Routes
-      for (const r of BENCHMARK_ROUTES) {
-        const routeId = `rt_bm_${r.country.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${r.route_type.replace(/[^a-z0-9]/g, '_').toLowerCase()}_${r.intent.toLowerCase()}_${Math.random().toString(36).slice(2, 6)}`;
+      // 1. Purge old benchmark records to prevent duplication ballooning
+      db.prepare("DELETE FROM route_ticks WHERE id LIKE 'rt_bm_%'").run();
+
+      // 2. Seed Routes with deterministic IDs
+      for (let i = 0; i < BENCHMARK_ROUTES.length; i++) {
+        const r = BENCHMARK_ROUTES[i];
+        const routeId = `rt_bm_${String(i).padStart(3, '0')}_${r.country.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
         const routeTime = now - Math.round((r.daysAgo || 0) * 86400000);
+        const fraud = evaluateRouteFraudRisk({
+          country: r.country,
+          route_type: r.route_type,
+          billing_pulse: r.billing_pulse,
+          rate_per_min: r.rate_per_min,
+          ani_pass: r.ani_pass,
+          quality_notes: r.quality_notes,
+          raw_text: r.raw_text
+        });
+
         insertRoute.run(
           routeId,
           `bm_msg_${routeId}`,
@@ -411,6 +428,9 @@ function seedBenchmarkRoutes(db, force = false) {
           r.fas_free ? 1 : 0,
           r.intent || 'WTS',
           r.raw_text,
+          fraud.risk_score,
+          fraud.risk_level,
+          JSON.stringify(fraud.flags),
           routeTime
         );
 

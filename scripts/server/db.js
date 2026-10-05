@@ -91,6 +91,18 @@ function getTradingDb() {
     try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_risk_level TEXT DEFAULT 'LOW';`); } catch (_) {}
     try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_flags TEXT;`); } catch (_) {}
 
+    // Deduplicate route_ticks to purge historical duplicate inflation
+    try {
+      db.exec(`
+        DELETE FROM route_ticks 
+        WHERE rowid NOT IN (
+          SELECT MAX(rowid) 
+          FROM route_ticks 
+          GROUP BY country, route_type, intent, vendor_phone, billing_pulse, rate_per_min
+        );
+      `);
+    } catch (_) {}
+
     tradingDb = db;
     seedBenchmarkRoutes(db);
     return db;

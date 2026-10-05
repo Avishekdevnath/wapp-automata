@@ -73,10 +73,42 @@ function handleRoutesGet(req, res, parsedUrl) {
   // Compute Active Route KPI summary stats
   const totalAll = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get()?.c || 0;
   const floorRow = db.prepare('SELECT MIN(rate_per_min) as min_rate FROM route_ticks WHERE rate_per_min IS NOT NULL AND rate_per_min > 0').get();
+  const bestTrustedRow = db.prepare(`
+    SELECT country, rate_per_min 
+    FROM route_ticks 
+    WHERE rate_per_min IS NOT NULL AND rate_per_min > 0 
+      AND (fas_free = 1 OR fraud_risk_level = 'LOW')
+      AND (intent = 'WTS' OR intent IS NULL)
+    ORDER BY rate_per_min ASC 
+    LIMIT 1
+  `).get();
   const wtsRow = db.prepare("SELECT COUNT(*) as c FROM route_ticks WHERE intent = 'WTS'").get()?.c || 0;
   const wtbRow = db.prepare("SELECT COUNT(*) as c FROM route_ticks WHERE intent = 'WTB'").get()?.c || 0;
   const fasRow = db.prepare('SELECT COUNT(*) as c FROM route_ticks WHERE fas_free = 1').get()?.c || 0;
   const destRow = db.prepare('SELECT COUNT(DISTINCT country) as c FROM route_ticks').get()?.c || 0;
+
+  // 1. Fetch Historical Corridor Benchmarks
+  const histRows = db.prepare(`
+    SELECT country, route_type,
+      ROUND(MIN(rate_per_min), 4) as min_rate,
+      ROUND(AVG(rate_per_min), 4) as avg_rate,
+      ROUND(MAX(rate_per_min), 4) as max_rate
+    FROM route_ticks 
+    WHERE rate_per_min IS NOT NULL AND rate_per_min > 0
+    GROUP BY country, route_type
+  `).all();
+  const histMap = new Map();
+  for (const h of histRows) {
+    histMap.set(`${(h.country || '').toLowerCase()}_${(h.route_type || '').toLowerCase()}`, h);
+  }
+
+  // 2. Fetch Active WhatsApp Outages & Regulatory News
+  const activeNewsRows = db.prepare(`
+    SELECT category, urgency, headline, affected_countries, raw_text, created_at 
+    FROM market_news 
+    ORDER BY created_at DESC 
+    LIMIT 30
+  `).all();
 
   const enrichedRows = rows.map(r => {
     let flags = [];
@@ -112,13 +144,51 @@ function handleRoutesGet(req, res, parsedUrl) {
       }
     }
 
+    // Historical price context
+    const key = `${(r.country || '').toLowerCase()}_${(r.route_type || '').toLowerCase()}`;
+    const hist = histMap.get(key);
+    const histAvg = hist ? hist.avg_rate : null;
+    const histMin = hist ? hist.min_rate : null;
+
+    let diffVsAvgPct = null;
+    let diffVsAvgText = null;
+    let isBestTrustedPrice = false;
+
+    if (r.rate_per_min !== null && histAvg !== null && histAvg > 0) {
+      const diff = r.rate_per_min - histAvg;
+      diffVsAvgPct = Math.round((diff / histAvg) * 1000) / 10;
+      diffVsAvgText = `${diff < 0 ? '-' : '+'}$${Math.abs(diff).toFixed(4)} (${diffVsAvgPct > 0 ? '+' : ''}${diffVsAvgPct}%)`;
+      if (r.rate_per_min <= (histMin || histAvg) && riskScore <= 25 && (r.intent === 'WTS' || !r.intent)) {
+        isBestTrustedPrice = true;
+      }
+    }
+
+    // Active WhatsApp incident / news context
+    const matchingNews = activeNewsRows.find(n => {
+      if (!n.affected_countries) return false;
+      const countries = n.affected_countries.toLowerCase().split(',').map(s => s.trim());
+      return countries.includes((r.country || '').toLowerCase()) || countries.includes('global');
+    });
+
     return {
       ...r,
       fraud_risk_score: riskScore,
       fraud_risk_level: riskLevel,
       fraud_badge: badge,
       fraud_color: color,
-      fraud_flags: flags
+      fraud_flags: flags,
+      historical_avg_rate: histAvg,
+      historical_floor_rate: histMin,
+      diff_vs_avg_pct: diffVsAvgPct,
+      diff_vs_avg_text: diffVsAvgText,
+      is_best_trusted_price: isBestTrustedPrice,
+      active_news: matchingNews ? {
+        category: matchingNews.category,
+        urgency: matchingNews.urgency,
+        headline: matchingNews.headline,
+        raw_text: matchingNews.raw_text,
+        created_at: matchingNews.created_at
+      } : null
     };
   });
 
@@ -129,10 +199,13 @@ function handleRoutesGet(req, res, parsedUrl) {
     stats: {
       total: totalAll,
       floorRate: floorRow?.min_rate || null,
+      bestTrustedFloor: bestTrustedRow?.rate_per_min || floorRow?.min_rate || null,
+      bestTrustedCountry: bestTrustedRow?.country || 'USA',
       wtsCount: wtsRow,
       wtbCount: wtbRow,
       fasFreeCount: fasRow,
-      destCount: destRow
+      destCount: destRow,
+      activeNewsCount: activeNewsRows.length
     },
     routes: enrichedRows
   }));

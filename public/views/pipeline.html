@@ -194,7 +194,7 @@
   </div>
 
   <!-- MODAL: Trace Inspection Drawer/Modal -->
-  <div id="modal-pipeline-inspect" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
+  <div id="modal-pipeline-inspect" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-overlay hidden" onclick="if (event.target === this) closePipelineInspectModal()">
     <div class="glass-modal rounded-2xl w-full max-w-2xl border border-dark-700 p-6 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-dark-700 pb-3">
         <div class="flex items-center gap-2">

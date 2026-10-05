@@ -4,7 +4,7 @@
 
 <!-- WhatsApp Device Manager Modal -->
 <div id="device-modal" class="fixed inset-0 z-50 overflow-hidden hidden" role="dialog" aria-modal="true">
-  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeDeviceModal()"></div>
+  <div class="absolute inset-0 modal-backdrop-overlay" onclick="closeDeviceModal()"></div>
   <div class="fixed inset-0 flex items-center justify-center p-4">
     <div class="glass-modal max-w-md w-full rounded-3xl p-6 sm:p-8 border border-dark-700 shadow-2xl space-y-5 text-center relative">
       
@@ -144,7 +144,7 @@
 </div>
 
 <!-- Storage Manager Modal -->
-<div id="modal-storage" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+<div id="storage-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-overlay hidden" onclick="if (event.target === this) closeStorageModal()">
   <div class="glass-modal max-w-md w-full rounded-3xl p-6 border border-dark-700 shadow-2xl space-y-6">
     <div class="flex items-center justify-between pb-3 border-b border-dark-700">
       <div class="flex items-center gap-2.5">
@@ -185,7 +185,7 @@
 </div>
 
 <!-- Route Detail Modal -->
-<div id="route-detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+<div id="route-detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-overlay hidden" onclick="if (event.target === this) closeRouteDetailModal()">
   <div class="glass-modal max-w-xl w-full rounded-3xl p-6 border border-dark-700 shadow-2xl space-y-5">
     <div class="flex items-center justify-between pb-3 border-b border-dark-700">
       <div class="flex items-center gap-3">
@@ -201,6 +201,9 @@
     </div>
 
     <div class="space-y-4 text-xs">
+      <!-- Live WhatsApp Incident / Alert Box (if applicable) -->
+      <div id="modal-route-news-box" class="hidden"></div>
+
       <!-- Specs Grid -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-dark-900 border border-dark-800">
         <div>
@@ -282,7 +285,7 @@
 </div>
 
 <!-- Post Route Modal -->
-<div id="modal-post-route" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+<div id="modal-post-route" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-overlay hidden" onclick="if (event.target === this) closePostRouteModal()">
   <div class="glass-modal max-w-lg w-full rounded-3xl p-6 border border-dark-700 shadow-2xl space-y-5">
     <div class="flex items-center justify-between pb-3 border-b border-dark-700">
       <div class="flex items-center gap-2.5">
@@ -380,7 +383,7 @@
 </div>
 
 <!-- Permanent Stream Purge Confirmation Modal -->
-<div id="modal-purge-stream" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+<div id="modal-purge-stream" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-overlay hidden" onclick="if (event.target === this) closePurgeStreamModal()">
   <div class="glass-modal max-w-md w-full rounded-3xl p-6 border border-dark-700 shadow-2xl space-y-5 text-center">
     <div class="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto shadow-lg shadow-rose-500/10">
       <i data-lucide="trash-2" class="w-7 h-7"></i>
@@ -415,7 +418,7 @@
 </div>
 
 <!-- AI Intelligence Configuration Modal -->
-<div id="modal-ai-settings" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+<div id="modal-ai-settings" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-overlay hidden" onclick="if (event.target === this) closeAiSettingsModal()">
   <div class="glass-modal max-w-lg w-full rounded-3xl p-6 border border-dark-700 shadow-2xl space-y-5">
     <div class="flex items-center justify-between pb-3 border-b border-dark-700">
       <div class="flex items-center gap-2.5">
