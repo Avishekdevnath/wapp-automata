@@ -154,12 +154,24 @@ function handleSystemApi(req, res, pathname, parsedUrl) {
     recentMessages.length = 0;
     saveMessagesToDisk(recentMessages);
 
+    stats.totalReceived = 0;
+    stats.validSignatures = 0;
+    stats.invalidSignatures = 0;
+    stats.groupsCount.clear();
+    stats.sendersCount.clear();
+
     let purgedCount = 0;
     const db = getTradingDb();
     if (db) {
       try {
         const info = db.prepare('DELETE FROM messages').run();
         purgedCount = info.changes;
+        if (parsedUrl?.query?.all === 'true' || parsedUrl?.query?.dummy === 'true') {
+          db.prepare('DELETE FROM route_ticks').run();
+          db.prepare('DELETE FROM vendors').run();
+          db.prepare('DELETE FROM market_news').run();
+          db.prepare('DELETE FROM ai_tasks').run();
+        }
         try { db.pragma('incremental_vacuum(100)'); } catch (_) {}
       } catch (err) {
         console.warn('[Purge Stream] SQLite messages table wipe notice:', err.message);
@@ -171,7 +183,7 @@ function handleSystemApi(req, res, pathname, parsedUrl) {
       status: 'ok', 
       cleared: true, 
       purgedCount,
-      message: 'Raw WhatsApp message stream permanently wiped. Parsed routes and vendors preserved.' 
+      message: 'Raw WhatsApp message stream permanently wiped. All dummy data cleared.' 
     }));
   }
 

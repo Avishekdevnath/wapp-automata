@@ -104,7 +104,9 @@ function getTradingDb() {
     } catch (_) {}
 
     tradingDb = db;
-    seedBenchmarkRoutes(db);
+    if (process.env.SEED_BENCHMARKS === 'true') {
+      seedBenchmarkRoutes(db);
+    }
     return db;
   } catch (err) {
     console.error('Failed to initialize trading SQLite DB:', err.message);
