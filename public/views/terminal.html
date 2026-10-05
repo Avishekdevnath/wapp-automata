@@ -57,24 +57,28 @@
     </div>
 
     <!-- Real-time Counters Grid -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 border-t border-dark-800">
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1 border-t border-dark-800">
       <div class="p-3 rounded-xl bg-dark-950/80 border border-dark-800">
         <span class="text-[11px] text-slate-400 block">Total Messages Captured</span>
         <span id="stat-total-streamed" class="text-lg font-mono font-bold text-white">0</span>
       </div>
       <div class="p-3 rounded-xl bg-dark-950/80 border border-dark-800">
-        <span class="text-[11px] text-slate-400 block">Active Groups Monitored</span>
+        <span class="text-[11px] text-slate-400 block">Active Groups</span>
         <span id="stat-groups-streamed" class="text-lg font-mono font-bold text-sky-400">0</span>
+      </div>
+      <div class="p-3 rounded-xl bg-dark-950/80 border border-dark-800">
+        <span class="text-[11px] text-slate-400 block">Archived Groups</span>
+        <span id="stat-archived-groups-streamed" class="text-lg font-mono font-bold text-amber-400">0</span>
       </div>
       <div class="p-3 rounded-xl bg-dark-950/80 border border-dark-800">
         <span class="text-[11px] text-slate-400 block">Unique Carriers / Senders</span>
         <span id="stat-senders-streamed" class="text-lg font-mono font-bold text-purple-400">0</span>
       </div>
-      <div class="p-3 rounded-xl bg-dark-950/80 border border-dark-800">
+      <div class="p-3 rounded-xl bg-dark-950/80 border border-dark-800 col-span-2 sm:col-span-1">
         <span class="text-[11px] text-slate-400 block">Stream Heartbeat</span>
         <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1 mt-1">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Active (Polling 3.5s)</span>
+          <span>Active (Zero-Loss)</span>
         </span>
       </div>
     </div>
@@ -91,14 +95,17 @@
           class="w-full pl-9 pr-4 py-2 bg-dark-950 border border-dark-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
         />
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
         <select id="client-filter-type" onchange="renderClientFeed()" class="bg-dark-950 border border-dark-800 text-xs text-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500">
           <option value="all">All Messages (Groups + DMs)</option>
-          <option value="group">Groups Only</option>
-          <option value="direct">Direct Messages Only</option>
-          <option value="media">With Media / Images Only</option>
+          <option value="group">Active Groups Only</option>
+          <option value="archived">Archived Groups Only</option>
+          <option value="direct">Direct DMs Only</option>
+          <option value="media">Media & Rate Sheets Only</option>
+          <option value="contact">Shared Contacts (vCards)</option>
+          <option value="sent">Sent by Me (Outbound)</option>
         </select>
-        <button onclick="renderClientFeed()" class="p-2 rounded-xl bg-dark-900 border border-dark-700 text-slate-300 hover:text-white" title="Refresh Feed">
+        <button onclick="renderClientFeed()" class="p-2 rounded-xl bg-dark-900 border border-dark-700 text-slate-300 hover:text-white shrink-0" title="Refresh Feed">
           <i data-lucide="refresh-cw" class="w-4 h-4"></i>
         </button>
       </div>

@@ -1,4 +1,4 @@
-import { NormalizedEnvelope, ChatType, MediaType, MediaMetadata, ReplyContext } from './types';
+import { NormalizedEnvelope, ChatType, MediaType, MediaMetadata, ReplyContext, SharedContact, SharedLocation } from './types';
 
 /**
  * Classifies remote JID into standard ChatType.
@@ -120,15 +120,24 @@ export function normalizeMessage(rawEvent: unknown): NormalizedEnvelope | null {
   }
 
   const chatType = classifyChatType(remoteJid);
-  const senderId = (typeof key.participant === 'string' && key.participant.trim() !== '')
+  const isFromMe = Boolean(key.fromMe);
+  const isArchived = Boolean((event as Record<string, unknown>).isArchived || (event as Record<string, unknown>).archived);
+
+  let senderId = (typeof key.participant === 'string' && key.participant.trim() !== '')
     ? key.participant.trim()
     : (typeof event.participant === 'string' && event.participant.trim() !== '')
       ? event.participant.trim()
       : remoteJid;
 
+  if (isFromMe && chatType === 'individual' && !key.participant) {
+    senderId = typeof (event as Record<string, unknown>).accountJid === 'string'
+      ? (event as Record<string, unknown>).accountJid as string
+      : 'me';
+  }
+
   const senderName = typeof event.pushName === 'string' && event.pushName.trim() !== ''
     ? event.pushName.trim()
-    : null;
+    : (isFromMe ? 'You' : null);
 
   const chatName = typeof event.chatName === 'string' && event.chatName.trim() !== ''
     ? event.chatName.trim()
@@ -140,6 +149,8 @@ export function normalizeMessage(rawEvent: unknown): NormalizedEnvelope | null {
   let hasMedia = false;
   let media: MediaMetadata | null = null;
   let replyTo: ReplyContext | null = null;
+  let contact: SharedContact | null = null;
+  let location: SharedLocation | null = null;
 
   if (event.message && typeof event.message === 'object') {
     const msg = unwrapMessage(event.message as Record<string, unknown>);
@@ -182,11 +193,16 @@ export function normalizeMessage(rawEvent: unknown): NormalizedEnvelope | null {
             ? Number(mediaObj.fileLength) || null
             : null;
 
+        const isVoiceNote = Boolean(mediaObj.ptt);
+        const durationSeconds = typeof mediaObj.seconds === 'number' ? mediaObj.seconds : null;
+
         media = {
           type: m.type,
           mimetype,
           fileName,
-          fileSize
+          fileSize,
+          durationSeconds,
+          isVoiceNote
         };
 
         if (!replyTo && mediaObj.contextInfo && typeof mediaObj.contextInfo === 'object') {
@@ -195,6 +211,63 @@ export function normalizeMessage(rawEvent: unknown): NormalizedEnvelope | null {
 
         break;
       }
+    }
+
+    // 4. Contact Cards (vCards)
+    if (!hasMedia && msg.contactMessage && typeof msg.contactMessage === 'object') {
+      const c = msg.contactMessage as Record<string, unknown>;
+      const name = typeof c.displayName === 'string' ? c.displayName : 'Shared Contact';
+      const vcard = typeof c.vcard === 'string' ? c.vcard : '';
+      let phone = '';
+      const waidMatch = vcard.match(/waid=(\d+)/i) || vcard.match(/TEL[^:]*:([^\r\n]+)/i);
+      if (waidMatch) phone = '+' + waidMatch[1].replace(/[^0-9]/g, '');
+      contact = { name, phone, vcard };
+      if (!text) text = `📇 Contact Card: ${name}${phone ? ` (${phone})` : ''}`;
+      hasMedia = true;
+      media = {
+        type: 'contact',
+        mimetype: 'text/vcard',
+        fileName: `${name}.vcf`,
+        fileSize: vcard.length
+      };
+    } else if (!hasMedia && msg.contactsArrayMessage && typeof msg.contactsArrayMessage === 'object') {
+      const ca = msg.contactsArrayMessage as Record<string, unknown>;
+      const contactsList = Array.isArray(ca.contacts) ? ca.contacts as Array<Record<string, unknown>> : [];
+      if (contactsList.length > 0) {
+        const first = contactsList[0];
+        const name = typeof first.displayName === 'string' ? first.displayName : (typeof ca.displayName === 'string' ? ca.displayName : 'Shared Contacts');
+        const vcard = typeof first.vcard === 'string' ? first.vcard : '';
+        let phone = '';
+        const waidMatch = vcard.match(/waid=(\d+)/i) || vcard.match(/TEL[^:]*:([^\r\n]+)/i);
+        if (waidMatch) phone = '+' + waidMatch[1].replace(/[^0-9]/g, '');
+        contact = { name, phone, vcard };
+        if (!text) text = `📇 Shared Contacts (${contactsList.length}): ${name}${phone ? ` (${phone})` : ''}`;
+        hasMedia = true;
+        media = {
+          type: 'contact',
+          mimetype: 'text/vcard',
+          fileName: `${name}.vcf`,
+          fileSize: vcard.length
+        };
+      }
+    }
+
+    // 5. Location Messages
+    else if (!hasMedia && msg.locationMessage && typeof msg.locationMessage === 'object') {
+      const loc = msg.locationMessage as Record<string, unknown>;
+      const lat = Number(loc.degreesLatitude) || 0;
+      const lng = Number(loc.degreesLongitude) || 0;
+      const locName = typeof loc.name === 'string' ? loc.name : null;
+      const locAddress = typeof loc.address === 'string' ? loc.address : null;
+      location = { latitude: lat, longitude: lng, name: locName, address: locAddress };
+      if (!text) text = `📍 Shared Location: ${[locName, locAddress].filter(Boolean).join(', ') || `${lat}, ${lng}`}`;
+      hasMedia = true;
+      media = {
+        type: 'location',
+        mimetype: 'application/geo+json',
+        fileName: null,
+        fileSize: null
+      };
     }
   }
 
@@ -222,6 +295,10 @@ export function normalizeMessage(rawEvent: unknown): NormalizedEnvelope | null {
     text,
     hasMedia,
     media,
+    contact,
+    location,
+    isFromMe,
+    isArchived,
     replyTo,
     rawPayload: event
   };

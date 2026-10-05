@@ -87,6 +87,23 @@ function processWebhookDelivery(body, headers) {
     return;
   }
 
+  const isArchived = Boolean(
+    parsed?.message?.is_archived ||
+    parsed?.message?.isArchived ||
+    parsed?.message?.raw_payload?.isArchived
+  );
+
+  const isFromMe = Boolean(
+    parsed?.message?.is_from_me ||
+    parsed?.message?.isFromMe ||
+    parsed?.message?.raw_payload?.key?.fromMe
+  );
+
+  const contact = parsed?.message?.contact || null;
+  const location = parsed?.message?.location || null;
+  const media = parsed?.message?.media || null;
+  const replyTo = parsed?.message?.reply_to || parsed?.message?.replyTo || null;
+
   const record = {
     id: messageId,
     delivery_id: deliveryId,
@@ -98,6 +115,12 @@ function processWebhookDelivery(body, headers) {
     chat_type: chatType,
     text,
     has_media: hasMedia,
+    media,
+    contact,
+    location,
+    is_archived: isArchived,
+    is_from_me: isFromMe,
+    reply_to: replyTo,
     timestamp: formatDateTime(occurredAt),
     occurred_at: occurredAt,
     latency_ms: latencyMs,

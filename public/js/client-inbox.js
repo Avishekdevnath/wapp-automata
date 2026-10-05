@@ -15,14 +15,23 @@ function renderClientFeed() {
   // 1. Update Real-time Stream Counters
   const totalEl = document.getElementById('stat-total-streamed');
   const groupsEl = document.getElementById('stat-groups-streamed');
+  const archivedGroupsEl = document.getElementById('stat-archived-groups-streamed');
   const sendersEl = document.getElementById('stat-senders-streamed');
   const streamBadge = document.getElementById('stream-count-badge');
 
   if (totalEl) totalEl.innerText = allMsgs.length;
   if (streamBadge) streamBadge.innerText = allMsgs.length;
   if (groupsEl) {
-    const uniqueGroups = new Set(allMsgs.filter(m => m.chat_type === 'group').map(m => m.chat_name || m.chat_jid));
-    groupsEl.innerText = uniqueGroups.size;
+    const uniqueActiveGroups = new Set(
+      allMsgs.filter(m => m.chat_type === 'group' && !m.is_archived).map(m => m.chat_name || m.chat_jid)
+    );
+    groupsEl.innerText = uniqueActiveGroups.size;
+  }
+  if (archivedGroupsEl) {
+    const uniqueArchivedGroups = new Set(
+      allMsgs.filter(m => m.is_archived).map(m => m.chat_name || m.chat_jid)
+    );
+    archivedGroupsEl.innerText = uniqueArchivedGroups.size;
   }
   if (sendersEl) {
     const uniqueSenders = new Set(allMsgs.map(m => m.sender_phone || m.sender_name).filter(Boolean));
@@ -35,12 +44,23 @@ function renderClientFeed() {
   const filterType = document.getElementById('client-filter-type')?.value || 'all';
 
   const filtered = allMsgs.filter(m => {
-    if (filterType === 'group' && m.chat_type !== 'group') return false;
-    if (filterType === 'direct' && m.chat_type !== 'direct') return false;
-    if (filterType === 'media' && !m.has_media) return false;
+    if (filterType === 'group' && (m.chat_type !== 'group' || m.is_archived)) return false;
+    if (filterType === 'archived' && !m.is_archived) return false;
+    if (filterType === 'direct' && m.chat_type !== 'direct' && m.chat_type !== 'individual') return false;
+    if (filterType === 'media' && !m.has_media && !m.media) return false;
+    if (filterType === 'contact' && !m.contact && m.media?.type !== 'contact') return false;
+    if (filterType === 'sent' && !m.is_from_me) return false;
 
     if (!searchQuery) return true;
-    const haystack = [m.text, m.sender_name, m.sender_phone, m.chat_name].join(' ').toLowerCase();
+    const haystack = [
+      m.text,
+      m.sender_name,
+      m.sender_phone,
+      m.chat_name,
+      m.contact?.name,
+      m.contact?.phone,
+      m.media?.fileName
+    ].filter(Boolean).join(' ').toLowerCase();
     return haystack.includes(searchQuery);
   });
 
@@ -53,8 +73,8 @@ function renderClientFeed() {
         <div class="w-12 h-12 mx-auto rounded-2xl bg-dark-900 border border-dark-700 flex items-center justify-center text-slate-500 mb-3">
           <i data-lucide="radio" class="w-6 h-6 text-emerald-400"></i>
         </div>
-        <h4 class="text-sm font-semibold text-white">No messages matched stream filter</h4>
-        <p class="text-xs text-slate-400 mt-1">Live incoming WhatsApp messages from connected groups will stream here in real-time.</p>
+        <h4 class="text-sm font-semibold text-white">No messages matched filter</h4>
+        <p class="text-xs text-slate-400 mt-1">Live incoming messages from all active and archived WhatsApp groups will stream here in real-time.</p>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
@@ -71,8 +91,12 @@ function renderClientFeed() {
   const esc = typeof escapeHtml === 'function' ? escapeHtml : (s) => String(s || '');
 
   container.innerHTML = pageMessages.map(m => {
-    const initials = typeof getInitials === 'function' ? getInitials(m.sender_name || m.sender_phone) : 'WA';
-    const avatarGradient = typeof getAvatarColor === 'function' ? getAvatarColor(m.sender_phone || m.sender_name) : 'from-emerald-500 to-teal-700';
+    const isOutbound = Boolean(m.is_from_me);
+    const isArchived = Boolean(m.is_archived);
+    const initials = isOutbound ? 'YOU' : (typeof getInitials === 'function' ? getInitials(m.sender_name || m.sender_phone) : 'WA');
+    const avatarGradient = isOutbound
+      ? 'from-indigo-500 to-purple-700'
+      : (typeof getAvatarColor === 'function' ? getAvatarColor(m.sender_phone || m.sender_name) : 'from-emerald-500 to-teal-700');
     const isGroup = m.chat_type === 'group';
     const formattedTime = typeof formatDateTime === 'function' ? formatDateTime(m.occurred_at || m.timestamp) : (m.timestamp || '');
     const cleanPhone = (m.sender_phone || '').replace(/[^0-9]/g, '');
@@ -85,16 +109,159 @@ function renderClientFeed() {
          </div>`
       : `<div class="msg-avatar w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0">${esc(initials)}</div>`;
 
-    const mediaType = m.raw_envelope?.message?.media?.type ||
+    const mediaObj = m.media || m.raw_envelope?.message?.media;
+    const mediaType = mediaObj?.type ||
       (m.raw_envelope?.message?.raw_payload?.message?.imageMessage ? 'image' :
        m.raw_envelope?.message?.raw_payload?.message?.videoMessage ? 'video' :
        m.raw_envelope?.message?.raw_payload?.message?.audioMessage ? 'audio' :
        m.raw_envelope?.message?.raw_payload?.message?.documentMessage ? 'document' :
        (m.has_media ? 'image' : null));
 
-    const knockUrl = cleanPhone 
+    const knockUrl = (!isOutbound && cleanPhone) 
       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hi, inquiring about your wholesale route offer.')}`
       : null;
+
+    // Quoted reply box
+    const replyContext = m.reply_to || m.raw_envelope?.message?.reply_to;
+    let replyHtml = '';
+    if (replyContext) {
+      const qSender = replyContext.senderId
+        ? (replyContext.senderId.includes('@s.whatsapp.net') ? '+' + replyContext.senderId.split('@')[0] : replyContext.senderId)
+        : 'Message';
+      replyHtml = `
+        <div class="p-2 mb-1.5 rounded-lg bg-dark-900/90 border-l-2 border-emerald-500 text-[11px] text-slate-300">
+          <div class="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+            <i data-lucide="reply" class="w-3 h-3"></i>
+            <span>Replying to ${esc(qSender)}</span>
+          </div>
+          ${replyContext.quotedText ? `<div class="italic text-slate-400 truncate mt-0.5">${esc(replyContext.quotedText)}</div>` : ''}
+        </div>
+      `;
+    }
+
+    // Rich Attachment Cards
+    let attachmentHtml = '';
+
+    // A. Audio / Voice Note
+    if (mediaType === 'audio') {
+      const durationSec = mediaObj?.durationSeconds;
+      const durationText = durationSec ? `${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, '0')}` : 'Voice Audio';
+      attachmentHtml = `
+        <div class="p-2.5 rounded-xl bg-dark-900/80 border border-dark-700/80 flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <i data-lucide="mic" class="w-4 h-4"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between text-[11px] text-slate-300 font-medium">
+              <span>${mediaObj?.isVoiceNote ? 'Voice Note' : 'Audio Attachment'}</span>
+              <span class="text-slate-400 font-mono text-[10px]">${durationText}</span>
+            </div>
+            ${m.media_id ? `
+              <audio controls src="/api/media/${m.media_id}" class="w-full mt-1.5 h-7"></audio>
+            ` : `
+              <div class="flex items-center gap-1.5 mt-1 text-[10px] text-slate-500">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Voice audio note</span>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    // B. Document / Rate Sheet
+    else if (mediaType === 'document') {
+      const docName = mediaObj?.fileName || 'ratesheet_document';
+      const docSize = mediaObj?.fileSize
+        ? (mediaObj.fileSize > 1048576 ? `${(mediaObj.fileSize / 1048576).toFixed(1)} MB` : `${Math.round(mediaObj.fileSize / 1024)} KB`)
+        : null;
+      attachmentHtml = `
+        <div class="p-2.5 rounded-xl bg-dark-900/80 border border-dark-700/80 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-slate-200 truncate">${esc(docName)}</div>
+              <div class="text-[10px] text-slate-400">${docSize ? esc(docSize) + ' • ' : ''}Rate Sheet Attachment</div>
+            </div>
+          </div>
+          ${m.media_id ? `
+            <a href="/api/media/${m.media_id}" target="_blank" download class="btn btn-secondary btn-sm shrink-0 flex items-center gap-1 text-[10px]">
+              <i data-lucide="download" class="w-3 h-3"></i>
+              <span>Download</span>
+            </a>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // C. Shared Contact (vCard)
+    else if (m.contact || mediaType === 'contact') {
+      const contactObj = m.contact || {};
+      const cCleanPhone = (contactObj.phone || '').replace(/[^0-9]/g, '');
+      const cKnock = cCleanPhone ? `https://wa.me/${cCleanPhone}` : null;
+      attachmentHtml = `
+        <div class="p-2.5 rounded-xl bg-dark-900/80 border border-dark-700/80 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+              <i data-lucide="user-check" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-slate-200 truncate">${esc(contactObj.name || 'Shared Contact')}</div>
+              <div class="text-[10px] font-mono text-emerald-400">${esc(contactObj.phone || 'Phone attached')}</div>
+            </div>
+          </div>
+          ${cKnock ? `
+            <a href="${cKnock}" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] flex items-center gap-1 shadow-sm transition-all shrink-0">
+              <i data-lucide="message-circle" class="w-3 h-3"></i>
+              <span>Chat Vendor</span>
+            </a>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // D. Shared Location
+    else if (m.location || mediaType === 'location') {
+      const locObj = m.location || {};
+      const mapUrl = `https://maps.google.com/?q=${locObj.latitude || 0},${locObj.longitude || 0}`;
+      attachmentHtml = `
+        <div class="p-2.5 rounded-xl bg-dark-900/80 border border-dark-700/80 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+              <i data-lucide="map-pin" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-slate-200 truncate">${esc(locObj.name || 'Shared Location')}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${locObj.latitude ? `${locObj.latitude.toFixed(4)}, ${locObj.longitude.toFixed(4)}` : 'Coordinates'}</div>
+            </div>
+          </div>
+          <a href="${mapUrl}" target="_blank" class="btn btn-secondary btn-sm shrink-0 flex items-center gap-1 text-[10px]">
+            <i data-lucide="external-link" class="w-3 h-3"></i>
+            <span>Open Maps</span>
+          </a>
+        </div>
+      `;
+    }
+
+    // E. General Image / Video Media
+    else if (m.has_media) {
+      attachmentHtml = `
+        <div class="flex items-center gap-2 pt-0.5">
+          <span class="px-2 py-0.5 rounded bg-dark-900 border border-dark-700 text-[10px] text-slate-300 flex items-center gap-1">
+            <i data-lucide="${mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'paperclip'}" class="w-3 h-3 text-emerald-400"></i>
+            <span class="capitalize">${mediaType || 'Media Attachment'}</span>
+          </span>
+          ${m.media_id ? `
+            <a href="/api/media/${m.media_id}" target="_blank" class="text-[11px] text-emerald-400 hover:underline flex items-center gap-1">
+              <span>View Full Media</span>
+              <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
+            </a>
+          ` : ''}
+        </div>
+      `;
+    }
 
     return `
       <div class="glass-card rounded-xl p-2.5 sm:p-3 border border-dark-700/70 hover:border-emerald-500/30 transition-all shadow-sm group">
@@ -105,20 +272,38 @@ function renderClientFeed() {
             <!-- Header Row -->
             <div class="msg-header flex flex-wrap items-center justify-between gap-1.5">
               <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tracking-tight leading-none">${esc(m.sender_name || 'Carrier Contact')}</span>
-                ${m.sender_phone ? `
+                <span class="text-xs sm:text-sm font-bold ${isOutbound ? 'text-indigo-400' : 'text-emerald-400'} tracking-tight leading-none">
+                  ${esc(m.sender_name || (isOutbound ? 'You' : 'Carrier Contact'))}
+                </span>
+
+                ${isOutbound ? `
+                  <span class="msg-badge px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-medium flex items-center gap-1">
+                    <i data-lucide="corner-down-right" class="w-2.5 h-2.5"></i>
+                    <span>Sent by You</span>
+                  </span>
+                ` : ''}
+
+                ${m.sender_phone && !isOutbound ? `
                   <span class="msg-badge px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 text-slate-300 font-mono text-[10px]">
                     ${esc(m.sender_phone)}
                   </span>
                 ` : ''}
+
                 ${isGroup ? `
-                  <span class="msg-badge px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 dark:text-sky-300 text-[10px] font-medium flex items-center gap-1">
+                  <span class="msg-badge px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-medium flex items-center gap-1">
                     <i data-lucide="users" class="w-2.5 h-2.5"></i>
                     <span class="truncate max-w-[180px]">${esc(m.chat_name || 'Group Chat')}</span>
                   </span>
                 ` : `
-                  <span class="msg-badge px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 dark:text-emerald-300 text-[10px] font-medium">Direct DM</span>
+                  <span class="msg-badge px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">Direct DM</span>
                 `}
+
+                ${isArchived ? `
+                  <span class="msg-badge px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-semibold flex items-center gap-1" title="Captured from an Archived Group">
+                    <i data-lucide="archive" class="w-2.5 h-2.5"></i>
+                    <span>Archived Group</span>
+                  </span>
+                ` : ''}
               </div>
 
               <div class="flex items-center gap-2 text-slate-400 text-[11px]">
@@ -132,26 +317,18 @@ function renderClientFeed() {
               </div>
             </div>
 
-            <!-- Message Body -->
-            <div class="msg-body p-2 px-2.5 rounded-lg bg-dark-950/70 border border-dark-800/80 text-xs text-slate-200 font-mono leading-relaxed whitespace-pre-wrap break-words selection:bg-emerald-500 selection:text-white">
-              ${esc(m.text || '')}
-            </div>
+            <!-- Quoted Reply (if any) -->
+            ${replyHtml}
 
-            <!-- Media Preview if Available -->
-            ${m.has_media ? `
-              <div class="flex items-center gap-2 pt-0.5">
-                <span class="px-2 py-0.5 rounded bg-dark-900 border border-dark-700 text-[10px] text-slate-300 flex items-center gap-1">
-                  <i data-lucide="${mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'paperclip'}" class="w-3 h-3 text-emerald-400"></i>
-                  <span class="capitalize">${mediaType || 'Media'}</span>
-                </span>
-                ${m.media_id ? `
-                  <a href="/api/media/${m.media_id}" target="_blank" class="text-[11px] text-emerald-400 hover:underline flex items-center gap-1">
-                    <span>View Media</span>
-                    <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
-                  </a>
-                ` : ''}
+            <!-- Message Body (if text exists) -->
+            ${m.text ? `
+              <div class="msg-body p-2 px-2.5 rounded-lg bg-dark-950/70 border border-dark-800/80 text-xs text-slate-200 font-mono leading-relaxed whitespace-pre-wrap break-words selection:bg-emerald-500 selection:text-white">
+                ${esc(m.text)}
               </div>
             ` : ''}
+
+            <!-- Rich Attachment Card (if present) -->
+            ${attachmentHtml}
 
             <!-- Bottom Metadata & Raw Inspector -->
             <div class="msg-footer flex items-center justify-between text-[10px] text-slate-500 pt-0.5">

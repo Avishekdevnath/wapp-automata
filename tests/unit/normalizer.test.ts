@@ -151,5 +151,74 @@ describe('Phase 4 Message Normalizer Tests', () => {
     };
     assert.equal(normalizeMessage(emptyEvent), null);
   });
+
+  it('should normalize contact cards (vCards) with display name and phone number', () => {
+    const vCardEvent = {
+      key: { id: 'VCARD_123', remoteJid: '120363025512345678@g.us', participant: '447700900123@s.whatsapp.net' },
+      isArchived: true,
+      message: {
+        contactMessage: {
+          displayName: 'John Telecom Broker',
+          vcard: 'BEGIN:VCARD\nVERSION:3.0\nFN:John Telecom Broker\nTEL;waid=14155552671:+1 415 555 2671\nEND:VCARD'
+        }
+      },
+      messageTimestamp: 1727915700
+    };
+
+    const envelope = normalizeMessage(vCardEvent);
+    assert.ok(envelope !== null);
+    assert.equal(envelope.hasMedia, true);
+    assert.equal(envelope.media?.type, 'contact');
+    assert.equal(envelope.isArchived, true);
+    assert.ok(envelope.contact !== null);
+    assert.equal(envelope.contact?.name, 'John Telecom Broker');
+    assert.equal(envelope.contact?.phone, '+14155552671');
+  });
+
+  it('should normalize location messages with latitude, longitude and label', () => {
+    const locEvent = {
+      key: { id: 'LOC_123', remoteJid: '447700900123@s.whatsapp.net' },
+      message: {
+        locationMessage: {
+          degreesLatitude: 23.8103,
+          degreesLongitude: 90.4125,
+          name: 'Dhaka Datacenter',
+          address: 'Motijheel, Dhaka'
+        }
+      },
+      messageTimestamp: 1727915800
+    };
+
+    const envelope = normalizeMessage(locEvent);
+    assert.ok(envelope !== null);
+    assert.equal(envelope.hasMedia, true);
+    assert.equal(envelope.media?.type, 'location');
+    assert.ok(envelope.location !== null);
+    assert.equal(envelope.location?.latitude, 23.8103);
+    assert.equal(envelope.location?.longitude, 90.4125);
+    assert.equal(envelope.location?.name, 'Dhaka Datacenter');
+  });
+
+  it('should normalize voice notes with duration and voiceNote flag', () => {
+    const pttEvent = {
+      key: { id: 'AUDIO_123', remoteJid: '447700900123@s.whatsapp.net', fromMe: true },
+      message: {
+        audioMessage: {
+          mimetype: 'audio/ogg; codecs=opus',
+          seconds: 42,
+          ptt: true
+        }
+      },
+      messageTimestamp: 1727915900
+    };
+
+    const envelope = normalizeMessage(pttEvent);
+    assert.ok(envelope !== null);
+    assert.equal(envelope.hasMedia, true);
+    assert.equal(envelope.media?.type, 'audio');
+    assert.equal(envelope.media?.isVoiceNote, true);
+    assert.equal(envelope.media?.durationSeconds, 42);
+    assert.equal(envelope.isFromMe, true);
+  });
 });
 

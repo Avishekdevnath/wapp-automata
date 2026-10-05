@@ -43,6 +43,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
   private reconnectTimer: NodeJS.Timeout | null = null;
   private groupCache = new Map<string, { subject: string }>();
   private lidToPhoneGlobal = new Map<string, string>();
+  private archivedChats = new Set<string>();
   private readonly sessionPath: string;
   private readonly printQR: boolean;
   private readonly reconnectIntervalMs: number;
@@ -52,6 +53,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     this.printQR = options?.printQRInTerminal ?? true;
     this.reconnectIntervalMs = options?.reconnectIntervalMs ?? 5000;
     this.loadLidCache();
+    this.loadArchivedChatsCache();
   }
 
   public async start(): Promise<void> {
@@ -116,7 +118,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     const sock = makeWASocket({
       auth: state,
       browser: Browsers.macOS('Desktop'),
-      syncFullHistory: false,
+      syncFullHistory: true,
       markOnlineOnConnect: true,
       generateHighQualityLinkPreview: false,
       logger: pino({ level: 'silent' }),
@@ -319,11 +321,89 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       }
     });
 
+    sock.ev.on('chats.upsert', (chats) => {
+      let updated = false;
+      if (Array.isArray(chats)) {
+        for (const c of chats) {
+          const raw = c as unknown as Record<string, unknown>;
+          if (c.id && (raw.archived || raw.archive)) {
+            this.archivedChats.add(c.id);
+            updated = true;
+          }
+        }
+      }
+      if (updated) this.saveArchivedChatsCache();
+    });
+
+    sock.ev.on('chats.update', (updates) => {
+      let updated = false;
+      if (Array.isArray(updates)) {
+        for (const u of updates) {
+          const raw = u as unknown as Record<string, unknown>;
+          if (u.id) {
+            if (raw.archived === true || raw.archive === true) {
+              this.archivedChats.add(u.id);
+              updated = true;
+            } else if (raw.archived === false || raw.archive === false) {
+              this.archivedChats.delete(u.id);
+              updated = true;
+            }
+          }
+        }
+      }
+      if (updated) this.saveArchivedChatsCache();
+    });
+
+    sock.ev.on('messaging-history.set', async ({ chats, messages, isLatest }) => {
+      logger.info('WhatsApp messaging-history sync received', {
+        chatsCount: chats?.length || 0,
+        messagesCount: messages?.length || 0,
+        isLatest
+      });
+      let updated = false;
+      if (Array.isArray(chats)) {
+        for (const c of chats) {
+          const raw = c as unknown as Record<string, unknown>;
+          if (c.id && (raw.archived || raw.archive)) {
+            this.archivedChats.add(c.id);
+            updated = true;
+          }
+        }
+      }
+      if (updated) this.saveArchivedChatsCache();
+
+      if (Array.isArray(messages) && messages.length > 0) {
+        const recentHistory = messages.slice(-100);
+        for (const msg of recentHistory) {
+          const remoteJid = msg.key?.remoteJid;
+          if (remoteJid && this.archivedChats.has(remoteJid)) {
+            (msg as unknown as Record<string, unknown>).isArchived = true;
+          }
+          if (this.accountJid) {
+            (msg as unknown as Record<string, unknown>).accountJid = this.accountJid;
+          }
+          for (const handler of this.messageHandlers) {
+            try {
+              await handler(msg);
+            } catch (err) {
+              logger.debug('Error in historical message handler', { error: err });
+            }
+          }
+        }
+      }
+    });
+
     sock.ev.on('messages.upsert', async (upsert) => {
       if (!upsert.messages || upsert.messages.length === 0) return;
 
       for (const msg of upsert.messages) {
         const remoteJid = msg.key?.remoteJid;
+        if (remoteJid && this.archivedChats.has(remoteJid)) {
+          (msg as unknown as Record<string, unknown>).isArchived = true;
+        }
+        if (this.accountJid) {
+          (msg as unknown as Record<string, unknown>).accountJid = this.accountJid;
+        }
 
         // Automatically resolve group name and map participant LID to phone number
         if (remoteJid && remoteJid.endsWith('@g.us')) {
@@ -471,6 +551,33 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       fs.writeFileSync(cachePath, JSON.stringify(obj, null, 2), 'utf8');
     } catch (err) {
       logger.debug('Could not save lid cache', { error: err });
+    }
+  }
+
+  private loadArchivedChatsCache(): void {
+    try {
+      const cachePath = path.join(this.sessionPath, 'archived_chats.json');
+      if (fs.existsSync(cachePath)) {
+        const raw = fs.readFileSync(cachePath, 'utf8');
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          this.archivedChats = new Set(list);
+        }
+      }
+    } catch (err) {
+      logger.debug('Could not load archived chats cache', { error: err });
+    }
+  }
+
+  private saveArchivedChatsCache(): void {
+    try {
+      if (!fs.existsSync(this.sessionPath)) {
+        fs.mkdirSync(this.sessionPath, { recursive: true });
+      }
+      const cachePath = path.join(this.sessionPath, 'archived_chats.json');
+      fs.writeFileSync(cachePath, JSON.stringify(Array.from(this.archivedChats), null, 2), 'utf8');
+    } catch (err) {
+      logger.debug('Could not save archived chats cache', { error: err });
     }
   }
 
