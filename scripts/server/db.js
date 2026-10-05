@@ -61,6 +61,29 @@ function getTradingDb() {
         avatar_url TEXT NOT NULL,
         updated_at INTEGER NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS ai_tasks (
+        id TEXT PRIMARY KEY,
+        message_id TEXT NOT NULL,
+        sender_name TEXT,
+        sender_phone TEXT,
+        chat_name TEXT,
+        chat_type TEXT,
+        raw_text TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        priority INTEGER DEFAULT 1,
+        status TEXT DEFAULT 'pending',
+        retry_count INTEGER DEFAULT 0,
+        next_retry_at INTEGER DEFAULT 0,
+        error_message TEXT,
+        latency_ms INTEGER DEFAULT 0,
+        result_json TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_ai_tasks_queue ON ai_tasks (status, next_retry_at, priority DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_tasks_hash ON ai_tasks (content_hash);
+      CREATE INDEX IF NOT EXISTS idx_ai_tasks_created ON ai_tasks (created_at DESC);
     `);
     tradingDb = db;
     seedBenchmarkRoutes(db);

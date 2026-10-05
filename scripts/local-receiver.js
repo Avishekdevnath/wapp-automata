@@ -14,6 +14,7 @@ const { handlePipelineApi } = require('./server/pipeline-api');
 const { serveStaticFile } = require('./server/static');
 const { backfillHistoricalTelecomData } = require('./server/db');
 const { recentMessages } = require('./server/store');
+const { startQueueWorker } = require('./server/ai-queue');
 
 const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -115,5 +116,6 @@ server.listen(PORT, HOST, () => {
   console.log(`🔑 Password Gate:                            "${DASHBOARD_PASSWORD}"`);
   console.log(`📡 Ingestion Endpoint:                        ${displayUrl}webhook\n`);
 
+  startQueueWorker();
   setTimeout(() => backfillHistoricalTelecomData(recentMessages), 1000);
 });

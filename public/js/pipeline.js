@@ -34,7 +34,16 @@ async function loadPipelineStatus() {
     const providerTag = document.getElementById('pipeline-active-provider-tag');
 
     if (statIngested) statIngested.innerText = data.summary.totalIngested;
-    if (statQueue) statQueue.innerText = `${data.stages.queue.pending} msgs`;
+    if (statQueue) {
+      const q = data.stages.queue;
+      if (q && q.processing > 0) {
+        statQueue.innerText = `${q.pending} pend (${q.processing} run)`;
+      } else if (q && q.pending > 0) {
+        statQueue.innerText = `${q.pending} pending`;
+      } else {
+        statQueue.innerText = `0 msgs (Idle)`;
+      }
+    }
     if (statAiModel) statAiModel.innerText = (data.stages.ai.provider || 'deepseek').toUpperCase();
     if (statAiLatency) statAiLatency.innerText = `${data.stages.ai.avgLatencyMs || 0}ms`;
     if (statRoutes) statRoutes.innerText = data.summary.totalRoutes;

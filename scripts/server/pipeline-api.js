@@ -7,6 +7,7 @@ const { getSetting } = require('./ai-settings');
 const { FORWARD_WEBHOOK_URL } = require('./config');
 const { recentMessages } = require('./store');
 const { getTradingDb } = require('./db');
+const { getQueueStats } = require('./ai-queue');
 
 const MAX_HISTORY = 50;
 const pipelineEvents = [];
@@ -146,12 +147,22 @@ function handlePipelineApi(req, res, pathname, parsedUrl) {
       } catch (_) {}
     }
 
+    const qStats = typeof getQueueStats === 'function' ? getQueueStats() : { pending: 0, processing: 0, completed: 0, failed: 0, skipped: 0 };
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({
       status: 'ok',
       stages: {
         ingest: { status: 'healthy', label: 'Inbound Stream', count: totalIngested },
-        queue: { status: 'healthy', label: 'SQLite Queue', pending: 0 },
+        queue: {
+          status: 'healthy',
+          label: 'SQLite Task Queue',
+          pending: qStats.pending,
+          processing: qStats.processing,
+          completed: qStats.completed,
+          failed: qStats.failed,
+          skipped: qStats.skipped
+        },
         ai: {
           status: 'healthy',
           label: 'AI Intelligence Engine',
@@ -174,6 +185,8 @@ function handlePipelineApi(req, res, pathname, parsedUrl) {
       },
       summary: {
         totalIngested,
+        queuePending: qStats.pending,
+        queueProcessing: qStats.processing,
         totalTelecom: Math.max(pipelineMetrics.totalTelecom, pipelineEvents.length),
         totalNoise: pipelineMetrics.totalNoise,
         totalRoutes,

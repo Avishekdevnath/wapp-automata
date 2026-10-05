@@ -242,6 +242,45 @@ const AI_ENDPOINTS = {
   }
 };
 
+/**
+ * Scans raw text for all numeric candidates (handling $, decimals, commas, cents, ports)
+ */
+function extractNumericCandidates(rawText) {
+  if (!rawText || typeof rawText !== 'string') return [];
+  const candidates = [];
+  const matches = rawText.match(/(?:[\$€£])?\b\d+\.\d+\b|(?:\s|^)\.\d+\b|\b\d+,\d+\b|\b\d+(?:\.\d+)?\s*(?:c|cents?)\b|\b\d+\b/gi) || [];
+  for (const m of matches) {
+    const trimmed = m.trim();
+    if (/c|cent/i.test(trimmed)) {
+      const n = parseFloat(trimmed.replace(/[^0-9.]/g, ''));
+      if (!isNaN(n)) candidates.push(n / 100);
+    } else {
+      const clean = trimmed.replace(/[\$€£]/g, '').replace(',', '.');
+      const v = parseFloat(clean);
+      if (!isNaN(v)) candidates.push(v);
+    }
+  }
+  return candidates;
+}
+
+/**
+ * Validates that an extracted rate actually exists in the raw text within float tolerance
+ */
+function verifyRatePresence(rate, candidates) {
+  if (rate === null || rate === undefined) return null;
+  if (typeof rate !== 'number' || isNaN(rate)) return null;
+  // Rates per min in wholesale voice are never negative and realistically never > $5.00/min
+  if (rate <= 0 || rate > 5.0) return null;
+
+  for (const c of candidates) {
+    if (Math.abs(rate - c) < 0.00005) {
+      return rate;
+    }
+  }
+  // If not mathematically found in text, reject as hallucination
+  return null;
+}
+
 async function extractTelecomWithAI(rawText, senderPhone = '', senderName = '') {
   const provider = (getSettingFn('AI_PROVIDER', process.env.AI_PROVIDER || 'deepseek')).toLowerCase();
   
@@ -257,32 +296,28 @@ async function extractTelecomWithAI(rawText, senderPhone = '', senderName = '') 
     return parseTelecomMessage(rawText, senderPhone, senderName);
   }
 
-  const prompt = `You are a Wholesale Telecom Route Analyst. Extract structured data from this WhatsApp message into JSON.
-Format required:
-{
-  "isTelecom": boolean,
-  "intent": "WTS" | "WTB",
-  "company": string | null,
-  "vendor_name": string | null,
-  "routes": [
-    {
-      "country": string,
-      "route_type": "CLI" | "CC CLI" | "IVR" | "Non-CLI" | "CRTP" | "ORTP",
-      "billing_pulse": "1/1" | "60/1" | "60/60",
-      "rate_per_min": number | null,
-      "ani_pass": string | null,
-      "quality_notes": string | null,
-      "fas_free": boolean
-    }
-  ],
-  "news": {
-    "category": "OUTAGE" | "REGULATION" | "MAINTENANCE" | "SCAM_WARNING",
-    "headline": string,
-    "affected_countries": string,
-    "urgency": "LOW" | "MEDIUM" | "HIGH"
-  } | null
-}
-Return ONLY pure JSON. No markdown ticks.`;
+  const prompt = `You are a Wholesale Telecom Voice Trading Analyst. Extract verified structured routes from the message into pure JSON.
+
+STRICT ZERO-HALLUCINATION RULES:
+1. ZERO INVENTIONS: If rate, pulse, or ANI is NOT explicitly stated in text, you MUST output null. NEVER guess or assume defaults.
+2. PORTS VS RATES: Numbers with "ports", "channels", or integers > 10 (e.g. 500 ports) are CAPACITY, NEVER the rate_per_min.
+3. QUALITY METRICS: Percentages (e.g. 45% ASR) and duration (e.g. 3.5m ACD) are quality metrics, NEVER the rate_per_min.
+4. RATE VALUES: Rate per minute is in USD decimals (e.g. 0.0062). If formatted as cents (e.g. "1.2c"), convert to 0.012. If unstated, rate_per_min MUST be null.
+5. INTENT: "WTS" if selling/available/offering. "WTB" if buying/need/looking for.
+6. ROUTE TYPE: Must strictly be one of: ["CLI", "CC CLI", "IVR", "Non-CLI", "CRTP", "ORTP"]. Default to "CLI" if ambiguous.
+7. BILLING PULSE: Must strictly be one of: ["1/1", "60/1", "60/60"] or null.
+
+FEW-SHOT EXAMPLES:
+Input: "Direct Colombia CC CLI 1/1 clean 86xx at $0.0062/min LatinTel Carlos"
+Output: {"isTelecom":true,"intent":"WTS","company":"LatinTel","vendor_name":"Carlos","routes":[{"country":"Colombia","route_type":"CC CLI","billing_pulse":"1/1","rate_per_min":0.0062,"ani_pass":"86xx","quality_notes":"clean","fas_free":true}],"news":null}
+
+Input: "Need 500 ports USA CC CLI 1/1 target 0.0070 VoxTel Sarah"
+Output: {"isTelecom":true,"intent":"WTB","company":"VoxTel","vendor_name":"Sarah","routes":[{"country":"USA","route_type":"CC CLI","billing_pulse":"1/1","rate_per_min":0.0070,"ani_pass":null,"quality_notes":"500 ports capacity","fas_free":true}],"news":null}
+
+Input: "Good morning team, please send payment receipt for invoice 492"
+Output: {"isTelecom":false,"intent":"WTS","company":null,"vendor_name":null,"routes":[],"news":null}
+
+Return ONLY valid JSON.`;
 
   try {
     const res = await fetch(endpointCfg.url, {
@@ -304,19 +339,39 @@ Return ONLY pure JSON. No markdown ticks.`;
 
     if (res.ok) {
       const json = await res.json();
-      const resultText = json.choices?.[0]?.message?.content || '';
+      let resultText = json.choices?.[0]?.message?.content || '';
+      // Strip any markdown code fences if emitted
+      resultText = resultText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+
       if (resultText) {
         const parsed = JSON.parse(resultText);
+        const candidates = extractNumericCandidates(rawText);
+
         if (Array.isArray(parsed.routes)) {
-          parsed.routes = parsed.routes.map(r => ({
-            ...r,
-            fas_free: r.fas_free ? 1 : 0,
-            intent: parsed.intent || 'WTS',
-            vendor_name: parsed.vendor_name || senderName || 'Vendor',
-            vendor_phone: senderPhone,
-            company_name: parsed.company || null,
-            raw_text: rawText.slice(0, 100)
-          }));
+          const allowedTypes = ['CLI', 'CC CLI', 'IVR', 'Non-CLI', 'CRTP', 'ORTP'];
+          const allowedPulses = ['1/1', '60/1', '60/60'];
+
+          parsed.routes = parsed.routes.map(r => {
+            // Guardrail 1: Numeric float presence check
+            const verifiedRate = verifyRatePresence(r.rate_per_min, candidates);
+
+            // Guardrail 2: Strict enum sanitization
+            let cleanType = allowedTypes.includes(r.route_type) ? r.route_type : 'CLI';
+            let cleanPulse = allowedPulses.includes(r.billing_pulse) ? r.billing_pulse : (r.billing_pulse ? '1/1' : null);
+
+            return {
+              ...r,
+              route_type: cleanType,
+              billing_pulse: cleanPulse,
+              rate_per_min: verifiedRate,
+              fas_free: r.fas_free ? 1 : 0,
+              intent: parsed.intent || 'WTS',
+              vendor_name: parsed.vendor_name || senderName || 'Vendor',
+              vendor_phone: senderPhone,
+              company_name: parsed.company || null,
+              raw_text: rawText.slice(0, 100)
+            };
+          });
         }
         return parsed;
       }
@@ -332,6 +387,8 @@ Return ONLY pure JSON. No markdown ticks.`;
 module.exports = {
   parseTelecomMessage,
   extractTelecomWithAI,
+  extractNumericCandidates,
+  verifyRatePresence,
   COUNTRY_MAP
 };
 
