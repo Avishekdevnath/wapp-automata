@@ -254,12 +254,13 @@ async function fetchMessages() {
     if (!res.ok) return;
     const data = await res.json();
     
+    const validData = Array.isArray(data) ? data.filter(m => (m.text && m.text.trim()) || m.has_media) : [];
     const previousLength = window.messagesCache.length;
-    window.messagesCache = data;
+    window.messagesCache = validData;
 
     // Update Stream badge in sidebar
     const streamBadge = document.getElementById('stream-count-badge');
-    if (streamBadge) streamBadge.innerText = data.length;
+    if (streamBadge) streamBadge.innerText = validData.length;
 
     if (previousLength > 0 && data.length > previousLength) {
       playChime();

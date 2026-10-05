@@ -22,7 +22,10 @@ function loadSavedMessages() {
       const data = fs.readFileSync(HISTORY_FILE, 'utf8');
       const list = JSON.parse(data);
       if (Array.isArray(list) && list.length > 0) {
-        return list;
+        const valid = list.filter(m => (m.text && m.text.trim()) || m.has_media);
+        if (valid.length > 0) {
+          return valid;
+        }
       }
     }
   } catch (err) {
@@ -37,6 +40,7 @@ function loadSavedMessages() {
       const rows = db.prepare(`
         SELECT id, chat_id, sender_id, chat_type, source_name, message_timestamp, message_text, has_media, created_at, status
         FROM messages
+        WHERE (message_text IS NOT NULL AND trim(message_text) != '') OR has_media = 1
         ORDER BY created_at DESC
         LIMIT 100
       `).all();

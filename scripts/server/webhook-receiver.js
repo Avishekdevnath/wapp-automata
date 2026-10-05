@@ -82,6 +82,11 @@ function processWebhookDelivery(body, headers) {
     if (senderPhone) stats.sendersCount.add(senderPhone);
   }
 
+  // Discard internal protocol handshake notifications or contentless messages
+  if ((!text || text.trim() === '') && !hasMedia) {
+    return;
+  }
+
   const record = {
     id: messageId,
     delivery_id: deliveryId,

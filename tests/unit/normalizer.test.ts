@@ -118,4 +118,38 @@ describe('Phase 4 Message Normalizer Tests', () => {
     assert.equal((envelope as unknown as Record<string, unknown>).price, undefined);
     assert.equal((envelope as unknown as Record<string, unknown>).currency, undefined);
   });
+
+  it('should return null for WhatsApp internal protocol messages and empty events', () => {
+    // Protocol message: HISTORY_SYNC_NOTIFICATION
+    const historySyncEvent = {
+      key: { id: 'SYNC_123', remoteJid: '233328510783593@lid' },
+      message: {
+        protocolMessage: {
+          type: 'HISTORY_SYNC_NOTIFICATION',
+          historySyncNotification: { fileSha256: 'abc...' }
+        }
+      },
+      messageTimestamp: 1727915600
+    };
+    assert.equal(normalizeMessage(historySyncEvent), null);
+
+    // Protocol message: senderKeyDistributionMessage
+    const keyDistEvent = {
+      key: { id: 'KEY_123', remoteJid: '120363025512345678@g.us' },
+      message: {
+        senderKeyDistributionMessage: { groupId: '120363025512345678@g.us' }
+      },
+      messageTimestamp: 1727915600
+    };
+    assert.equal(normalizeMessage(keyDistEvent), null);
+
+    // Empty event with no message content
+    const emptyEvent = {
+      key: { id: 'EMPTY_123', remoteJid: '447700900123@s.whatsapp.net' },
+      message: {},
+      messageTimestamp: 1727915600
+    };
+    assert.equal(normalizeMessage(emptyEvent), null);
+  });
 });
+

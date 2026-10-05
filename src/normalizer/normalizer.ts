@@ -198,6 +198,19 @@ export function normalizeMessage(rawEvent: unknown): NormalizedEnvelope | null {
     }
   }
 
+  // Explicitly reject internal protocol events or encryption key exchanges
+  if (event.message && typeof event.message === 'object') {
+    const rawMsg = event.message as Record<string, unknown>;
+    if (rawMsg.protocolMessage || rawMsg.senderKeyDistributionMessage) {
+      return null;
+    }
+  }
+
+  // Reject contentless events that have neither text nor media (e.g. status/handshake pings)
+  if ((!text || text.trim() === '') && !hasMedia) {
+    return null;
+  }
+
   return {
     id,
     chatId: remoteJid,

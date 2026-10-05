@@ -137,7 +137,12 @@ export class BaileysAdapter implements IWhatsAppAdapter {
           fs.rmSync(pairFile, { force: true });
           const parsed = JSON.parse(raw);
           if (parsed && parsed.phone && !state.creds?.registered) {
-            const clean = String(parsed.phone).replace(/[^0-9]/g, '');
+            let clean = String(parsed.phone).replace(/[^0-9]/g, '');
+            if (clean.startsWith('00')) clean = clean.substring(2);
+            // Auto-normalize Bangladeshi local mobile prefix (01XXXXXXXXX -> 8801XXXXXXXXX)
+            if (clean.startsWith('01') && clean.length === 11) {
+              clean = '880' + clean.substring(1);
+            }
             if (clean.length >= 8) {
               logger.info('Requesting WhatsApp 8-digit pairing code', { phone: clean });
               const code = await sock.requestPairingCode(clean);

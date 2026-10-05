@@ -10,7 +10,7 @@ function renderClientFeed() {
   const container = document.getElementById('client-messages-container') || document.getElementById('client-messages-feed');
   if (!container) return;
 
-  const allMsgs = window.messagesCache || [];
+  const allMsgs = (window.messagesCache || []).filter(m => (m.text && m.text.trim()) || m.has_media);
 
   // 1. Update Real-time Stream Counters
   const totalEl = document.getElementById('stat-total-streamed');
@@ -35,9 +35,6 @@ function renderClientFeed() {
   const filterType = document.getElementById('client-filter-type')?.value || 'all';
 
   const filtered = allMsgs.filter(m => {
-    // Hide internal protocol messages with no content
-    if (!m.text && !m.has_media) return false;
-
     if (filterType === 'group' && m.chat_type !== 'group') return false;
     if (filterType === 'direct' && m.chat_type !== 'direct') return false;
     if (filterType === 'media' && !m.has_media) return false;
