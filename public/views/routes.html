@@ -71,11 +71,11 @@
           <div class="glass-card rounded-2xl p-4 border border-dark-700/80 space-y-3 shadow-sm">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <!-- Intent Tabs (All, Selling WTS, Buying WTB) -->
-              <div class="inline-flex items-center p-1 rounded-xl bg-dark-900 border border-dark-700">
+              <div class="inline-flex items-center p-1 rounded-xl bg-dark-900 border border-dark-700 max-w-full overflow-x-auto">
                 <button 
                   id="tab-intent-all"
                   onclick="handleIntentTab('')"
-                  class="route-intent-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow-sm transition-all flex items-center gap-1.5"
+                  class="route-intent-tab px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow-sm transition-all flex items-center gap-1.5 shrink-0"
                 >
                   <i data-lucide="layers" class="w-3.5 h-3.5"></i>
                   <span>All Routes</span>
@@ -84,7 +84,7 @@
                 <button 
                   id="tab-intent-wts"
                   onclick="handleIntentTab('WTS')"
-                  class="route-intent-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5"
+                  class="route-intent-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5 shrink-0"
                 >
                   <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                   <span>Selling (WTS)</span>
@@ -93,7 +93,7 @@
                 <button 
                   id="tab-intent-wtb"
                   onclick="handleIntentTab('WTB')"
-                  class="route-intent-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5"
+                  class="route-intent-tab px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5 shrink-0"
                 >
                   <span class="w-2 h-2 rounded-full bg-amber-400"></span>
                   <span>Buying (WTB)</span>
@@ -102,7 +102,7 @@
               </div>
 
               <!-- Action Buttons -->
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <!-- Post Route Button -->
                 <button 
                   onclick="openPostRouteModal()"
@@ -152,7 +152,7 @@
               </div>
 
               <!-- Country Select -->
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <select 
                   id="route-country-select"
                   onchange="handleCountryFilter(this.value)"

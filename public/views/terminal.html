@@ -13,7 +13,7 @@
       </div>
 
       <!-- Action Controls -->
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
         <!-- Stream Density Controls (Compact vs Comfortable) -->
         <div class="inline-flex items-center p-0.5 rounded-xl bg-dark-900 border border-dark-700 shrink-0" title="Toggle Message Density">
           <button 
@@ -36,22 +36,22 @@
           </button>
         </div>
 
-        <button onclick="toggleStreamAutoScroll()" id="btn-stream-autoscroll" class="btn btn-secondary btn-sm">
+        <button onclick="toggleStreamAutoScroll()" id="btn-stream-autoscroll" class="btn btn-secondary btn-sm shrink-0">
           <i data-lucide="chevrons-down" class="w-3.5 h-3.5 text-emerald-400"></i>
-          <span id="label-stream-autoscroll">Auto-Scroll: ON</span>
+          <span id="label-stream-autoscroll" class="hidden sm:inline">Auto-Scroll: ON</span>
         </button>
-        <button onclick="exportMessagesJson()" class="btn btn-secondary btn-sm">
+        <button onclick="exportMessagesJson()" class="btn btn-secondary btn-sm shrink-0" title="Export JSON">
           <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span>Export JSON</span>
+          <span class="hidden sm:inline">Export JSON</span>
         </button>
-        <button onclick="exportMessagesCsv()" class="btn btn-secondary btn-sm">
+        <button onclick="exportMessagesCsv()" class="btn btn-secondary btn-sm shrink-0" title="Export CSV">
           <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-          <span>Export CSV</span>
+          <span class="hidden sm:inline">Export CSV</span>
         </button>
         <!-- Purge Stream Button -->
-        <button onclick="openPurgeStreamModal()" class="btn btn-danger btn-sm" title="Permanently delete raw WhatsApp message stream (preserves analyzed routes & vendors)">
+        <button onclick="openPurgeStreamModal()" class="btn btn-danger btn-sm shrink-0" title="Permanently delete raw WhatsApp message stream (preserves analyzed routes & vendors)">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-          <span>Purge Stream</span>
+          <span class="hidden sm:inline">Purge</span>
         </button>
       </div>
     </div>

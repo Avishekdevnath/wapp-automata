@@ -14,18 +14,18 @@
           </div>
 
           <!-- Right: Controls -->
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <!-- WhatsApp Device Manager Trigger Pill -->
-            <button onclick="openDeviceModal()" id="btn-device-status" class="btn btn-secondary btn-sm">
-              <span id="nav-device-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span id="nav-device-phone" class="text-slate-200 font-medium font-mono text-[11px] truncate max-w-[130px]">+880...</span>
-              <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+            <button onclick="openDeviceModal()" id="btn-device-status" class="btn btn-secondary btn-sm" title="WhatsApp Connection Status">
+              <span id="nav-device-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span id="nav-device-phone" class="text-slate-200 font-medium font-mono text-[11px] truncate max-w-[100px] hidden sm:inline">+880...</span>
+              <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 shrink-0"></i>
             </button>
 
             <!-- AI Engine Settings Trigger Pill -->
             <button onclick="openAiSettingsModal()" id="btn-ai-settings" class="btn btn-secondary btn-sm" title="Configure AI Intelligence (DeepSeek, ChatGPT, Grok)">
-              <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-400"></i>
-              <span id="header-ai-provider-badge" class="font-mono text-[11px] text-slate-300">DeepSeek</span>
+              <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-400 shrink-0"></i>
+              <span id="header-ai-provider-badge" class="font-mono text-[11px] text-slate-300 hidden md:inline">DeepSeek</span>
             </button>
 
             <!-- Sound Alert Toggle -->
@@ -38,8 +38,8 @@
               <i id="icon-theme" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
             </button>
 
-            <!-- Trader Keyboard Shortcuts Modal Trigger (?) -->
-            <button onclick="openShortcutsModal()" class="btn-icon btn-ghost" title="Trader Keyboard Shortcuts (?)">
+            <!-- Trader Keyboard Shortcuts Modal Trigger (?) - Shown on iPad/Desktop with physical keyboards -->
+            <button onclick="openShortcutsModal()" class="btn-icon btn-ghost hidden md:inline-flex" title="Trader Keyboard Shortcuts (?)">
               <i data-lucide="keyboard" class="w-4 h-4 text-slate-400 hover:text-emerald-400"></i>
             </button>
 
