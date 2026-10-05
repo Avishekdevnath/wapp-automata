@@ -1371,10 +1371,11 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`\n🚀 Wholesale Telecom Trading Terminal running at: http://${HOST}:${PORT}/`);
+  const displayUrl = (HOST === '0.0.0.0' || HOST === '::') ? `http://localhost:${PORT}/` : `http://${HOST}:${PORT}/`;
+  console.log(`\n🚀 Wholesale Telecom Trading Terminal running at: ${displayUrl}`);
   console.log(`📁 Serving frontend components from:         ${PUBLIC_DIR}`);
   console.log(`🔑 Password Gate:                            "${DASHBOARD_PASSWORD}"`);
-  console.log(`📡 Ingestion Endpoint:                        http://${HOST}:${PORT}/webhook\n`);
+  console.log(`📡 Ingestion Endpoint:                        ${displayUrl}webhook\n`);
 
   // Backfill telecom data from existing history
   setTimeout(backfillHistoricalTelecomData, 1000);
