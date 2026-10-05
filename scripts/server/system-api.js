@@ -25,10 +25,17 @@ const MIME_TYPES = {
   '.bin': 'application/octet-stream'
 };
 
-function handleSystemApi(req, res, pathname, parsedUrl) {
+async function handleSystemApi(req, res, pathname, parsedUrl) {
   if (req.method === 'GET' && pathname === '/api/session/status') {
+    const state = getSessionState();
+    if (state && state.qr && !state.qrDataUrl) {
+      try {
+        const QRCode = require('qrcode');
+        state.qrDataUrl = await QRCode.toDataURL(state.qr, { margin: 2, scale: 6 });
+      } catch (_) {}
+    }
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify(getSessionState()));
+    return res.end(JSON.stringify(state));
   }
 
   if (req.method === 'POST' && pathname === '/api/session/reset') {

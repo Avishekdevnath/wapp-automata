@@ -79,9 +79,9 @@ async function pollSessionStatus() {
       if (connectedSection) connectedSection.classList.add('hidden');
       if (scanSection) scanSection.classList.remove('hidden');
 
-      if (session.qr) {
-        if (session.qr !== lastRenderedQR) {
-          renderQrCode(session.qr);
+      if (session.qr || session.qrDataUrl) {
+        if (session.qr !== lastRenderedQR || (session.qrDataUrl && !lastRenderedQR)) {
+          renderQrCode(session);
           lastRenderedQR = session.qr;
         }
       } else {
@@ -106,14 +106,28 @@ async function pollSessionStatus() {
   }
 }
 
-function renderQrCode(qrString) {
+function renderQrCode(session) {
   const container = document.getElementById('qrcode-canvas');
   const spinner = document.getElementById('qr-loading-spinner');
   if (spinner) spinner.classList.add('hidden');
   if (!container) return;
   container.innerHTML = '';
 
-  if (window.QRCode) {
+  const qrString = typeof session === 'string' ? session : (session && session.qr);
+  const qrDataUrl = typeof session === 'object' && session ? session.qrDataUrl : null;
+
+  // 1. High-Performance Instant DataURL (Zero-latency local SVG/PNG with no external network request)
+  if (qrDataUrl) {
+    const img = document.createElement('img');
+    img.src = qrDataUrl;
+    img.className = 'w-[220px] h-[220px] rounded-xl shadow-md mx-auto block select-none bg-white p-2';
+    img.alt = 'WhatsApp QR Code';
+    container.appendChild(img);
+    return;
+  }
+
+  // 2. Client-side QRCode fallback with Level L for long Baileys payload support
+  if (window.QRCode && qrString) {
     try {
       new QRCode(container, {
         text: qrString,
@@ -121,7 +135,7 @@ function renderQrCode(qrString) {
         height: 220,
         colorDark: "#000000",
         colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.M
+        correctLevel: QRCode.CorrectLevel.L
       });
       return;
     } catch (e) {
@@ -129,11 +143,14 @@ function renderQrCode(qrString) {
     }
   }
 
-  const img = document.createElement('img');
-  img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(qrString);
-  img.className = 'rounded-xl shadow mx-auto';
-  img.alt = 'WhatsApp QR Code';
-  container.appendChild(img);
+  // 3. Remote fallback
+  if (qrString) {
+    const img = document.createElement('img');
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(qrString);
+    img.className = 'w-[220px] h-[220px] rounded-xl shadow mx-auto bg-white p-2';
+    img.alt = 'WhatsApp QR Code';
+    container.appendChild(img);
+  }
 }
 
 function openDeviceModal() {

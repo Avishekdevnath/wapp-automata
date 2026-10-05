@@ -7,6 +7,7 @@ import makeWASocket, {
   Browsers
 } from '@whiskeysockets/baileys';
 import qrcode from 'qrcode-terminal';
+import QRCode from 'qrcode';
 import pino from 'pino';
 import {
   IWhatsAppAdapter,
@@ -131,15 +132,6 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     const resolvedSessionDir = initSessionDirectory(this.sessionPath);
     let { state, saveCreds } = await useMultiFileAuthState(resolvedSessionDir);
 
-    // If session credentials on disk are explicitly unregistered, purge stale credentials to allow fresh pairing
-    if (state.creds && state.creds.registered === false && state.creds.me) {
-      logger.warn('WhatsApp session on disk has registered=false (unlinked/invalidated). Purging stale auth files for clean pairing...');
-      this.purgeSessionFiles(resolvedSessionDir);
-      const freshAuth = await useMultiFileAuthState(resolvedSessionDir);
-      state = freshAuth.state;
-      saveCreds = freshAuth.saveCreds;
-    }
-
     const sock = makeWASocket({
       auth: state,
       browser: Browsers.ubuntu('Chrome'),
@@ -207,15 +199,22 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('connection.update', (update) => {
+    sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
         this.lastQR = qr;
         this.transitionState('auth_required');
+
+        let qrDataUrl: string | null = null;
+        try {
+          qrDataUrl = await QRCode.toDataURL(qr, { margin: 2, scale: 6 });
+        } catch (_) {}
+
         this.writeSessionState({
           status: 'scan_qr',
           qr,
+          qrDataUrl,
           updatedAt: Date.now()
         });
         if (this.printQR) {
@@ -257,16 +256,16 @@ export class BaileysAdapter implements IWhatsAppAdapter {
         if (statusCode === 428) {
           this.consecutive428Errors++;
           logger.warn(`WhatsApp socket closed with statusCode 428 (consecutive: ${this.consecutive428Errors})`);
-        } else {
+        } else if (statusCode !== 515) {
           this.consecutive428Errors = 0;
         }
 
-        const isUnregistered = Boolean(state.creds && state.creds.registered === false);
-        const shouldPurgeStaleSession = isLoggedOut || (this.consecutive428Errors >= 3 && isUnregistered);
+        // Only purge if explicitly logged out by WhatsApp, or if stuck in repeated 428 loops without connecting
+        const shouldPurgeStaleSession = isLoggedOut || (this.consecutive428Errors >= 10);
 
         if (shouldPurgeStaleSession) {
           this.transitionState('auth_required');
-          logger.warn('WhatsApp session invalidated or unlinked on device. Purging stale auth credentials and generating fresh pairing...');
+          logger.warn('WhatsApp session logged out or invalidated. Purging auth credentials and generating fresh pairing...');
           this.purgeSessionFiles(resolvedSessionDir);
           this.writeSessionState({
             status: 'scan_qr',
