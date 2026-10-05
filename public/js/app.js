@@ -154,9 +154,16 @@ function switchView(viewName, updateHash = true) {
   // Close mobile sidebar if open
   closeMobileSidebar();
 
-  // Reset scroll position of content view to top
-  const scrollEl = document.getElementById('app-main-content');
-  if (scrollEl) scrollEl.scrollTop = 0;
+  // Reset scroll position and toggle fixed terminal viewport lock
+  const scrollEl = document.getElementById('main-content-scroll') || document.getElementById('app-main-content');
+  if (scrollEl) {
+    if (viewName === 'terminal') {
+      scrollEl.classList.add('terminal-view-active');
+    } else {
+      scrollEl.classList.remove('terminal-view-active');
+      scrollEl.scrollTop = 0;
+    }
+  }
 
   if (window.lucide) lucide.createIcons();
 }

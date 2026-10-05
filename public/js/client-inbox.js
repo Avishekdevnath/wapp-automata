@@ -98,16 +98,32 @@ function renderClientFeed() {
       ? 'from-indigo-500 to-purple-700'
       : (typeof getAvatarColor === 'function' ? getAvatarColor(m.sender_phone || m.sender_name) : 'from-emerald-500 to-teal-700');
     const isGroup = m.chat_type === 'group';
-    const formattedTime = typeof formatDateTime === 'function' ? formatDateTime(m.occurred_at || m.timestamp) : (m.timestamp || '');
+
+    // Time formatting: 03:05:12 and date Oct 6
+    let timeStr = '';
+    let dateStr = '';
+    if (m.occurred_at || m.timestamp) {
+      try {
+        const d = new Date(m.occurred_at || m.timestamp);
+        if (!isNaN(d.getTime())) {
+          timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+          dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+      } catch {}
+    }
+    if (!timeStr) {
+      timeStr = m.timestamp || '--:--';
+    }
+
     const cleanPhone = (m.sender_phone || '').replace(/[^0-9]/g, '');
 
     const avatarUrl = m.sender_avatar_url || m.avatar_url;
     const avatarHtml = avatarUrl
-      ? `<div class="msg-avatar relative w-7 h-7 sm:w-8 sm:h-8 shrink-0">
-          <img src="${esc(avatarUrl)}" alt="${esc(initials)}" class="w-full h-full rounded-lg object-cover shadow-sm border border-dark-700/80" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-          <div class="w-full h-full rounded-lg bg-gradient-to-tr ${avatarGradient} items-center justify-center text-white font-bold text-[10px] shadow-sm" style="display:none;">${esc(initials)}</div>
+      ? `<div class="w-6 h-6 rounded-md overflow-hidden shrink-0 border border-dark-700">
+          <img src="${esc(avatarUrl)}" alt="${esc(initials)}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div class="w-full h-full bg-gradient-to-tr ${avatarGradient} items-center justify-center text-white font-bold text-[9px]" style="display:none;">${esc(initials)}</div>
          </div>`
-      : `<div class="msg-avatar w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0">${esc(initials)}</div>`;
+      : `<div class="w-6 h-6 rounded-md bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-[9px] shadow-xs shrink-0">${esc(initials)}</div>`;
 
     const mediaObj = m.media || m.raw_envelope?.message?.media;
     const mediaType = mediaObj?.type ||
@@ -117,233 +133,103 @@ function renderClientFeed() {
        m.raw_envelope?.message?.raw_payload?.message?.documentMessage ? 'document' :
        (m.has_media ? 'image' : null));
 
+    // Media Pill
+    let mediaPill = '';
+    if (mediaType === 'audio') {
+      const dur = mediaObj?.durationSeconds ? `${Math.floor(mediaObj.durationSeconds / 60)}:${String(mediaObj.durationSeconds % 60).padStart(2, '0')}` : '';
+      mediaPill = `<span class="shrink-0 px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-purple-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+        <i data-lucide="mic" class="w-2.5 h-2.5"></i>
+        <span>Voice Note${dur ? ` (${dur})` : ''}</span>
+      </span>`;
+    } else if (mediaType === 'document') {
+      const docName = mediaObj?.fileName || 'Document';
+      mediaPill = `<span class="shrink-0 px-2 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/30 text-sky-300 font-mono text-[10px] flex items-center gap-1 font-semibold max-w-[140px] truncate" title="${esc(docName)}">
+        <i data-lucide="file-spreadsheet" class="w-2.5 h-2.5"></i>
+        <span class="truncate">${esc(docName)}</span>
+      </span>`;
+    } else if (m.contact || mediaType === 'contact') {
+      const cName = m.contact?.name || 'Contact';
+      mediaPill = `<span class="shrink-0 px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+        <i data-lucide="user-check" class="w-2.5 h-2.5"></i>
+        <span>vCard: ${esc(cName)}</span>
+      </span>`;
+    } else if (m.location || mediaType === 'location') {
+      mediaPill = `<span class="shrink-0 px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+        <i data-lucide="map-pin" class="w-2.5 h-2.5"></i>
+        <span>Location</span>
+      </span>`;
+    } else if (m.has_media) {
+      mediaPill = `<span class="shrink-0 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+        <i data-lucide="paperclip" class="w-2.5 h-2.5"></i>
+        <span class="capitalize">${mediaType || 'Media'}</span>
+      </span>`;
+    }
+
+    // Context Badges
+    const badges = [];
+    if (isOutbound) {
+      badges.push(`<span class="px-1.5 py-0.2 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[9px] font-semibold">You</span>`);
+    }
+    if (isArchived) {
+      badges.push(`<span class="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[9px] font-semibold flex items-center gap-0.5"><i data-lucide="archive" class="w-2.5 h-2.5"></i><span>Archived</span></span>`);
+    }
+    if (isGroup) {
+      badges.push(`<span class="px-1.5 py-0.2 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[9px] font-semibold truncate max-w-[120px]" title="${esc(m.chat_name || 'Group')}"><i data-lucide="users" class="w-2.5 h-2.5 inline mr-0.5"></i>${esc(m.chat_name || 'Group')}</span>`);
+    } else if (!isOutbound) {
+      badges.push(`<span class="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-medium">Direct</span>`);
+    }
+
     const knockUrl = (!isOutbound && cleanPhone) 
       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hi, inquiring about your wholesale route offer.')}`
       : null;
 
-    // Quoted reply box
-    const replyContext = m.reply_to || m.raw_envelope?.message?.reply_to;
-    let replyHtml = '';
-    if (replyContext) {
-      const qSender = replyContext.senderId
-        ? (replyContext.senderId.includes('@s.whatsapp.net') ? '+' + replyContext.senderId.split('@')[0] : replyContext.senderId)
-        : 'Message';
-      replyHtml = `
-        <div class="p-2 mb-1.5 rounded-lg bg-dark-900/90 border-l-2 border-emerald-500 text-[11px] text-slate-300">
-          <div class="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-            <i data-lucide="reply" class="w-3 h-3"></i>
-            <span>Replying to ${esc(qSender)}</span>
-          </div>
-          ${replyContext.quotedText ? `<div class="italic text-slate-400 truncate mt-0.5">${esc(replyContext.quotedText)}</div>` : ''}
-        </div>
-      `;
-    }
-
-    // Rich Attachment Cards
-    let attachmentHtml = '';
-
-    // A. Audio / Voice Note
-    if (mediaType === 'audio') {
-      const durationSec = mediaObj?.durationSeconds;
-      const durationText = durationSec ? `${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, '0')}` : 'Voice Audio';
-      attachmentHtml = `
-        <div class="p-2.5 rounded-xl bg-dark-900/80 border border-dark-700/80 flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-            <i data-lucide="mic" class="w-4 h-4"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between text-[11px] text-slate-300 font-medium">
-              <span>${mediaObj?.isVoiceNote ? 'Voice Note' : 'Audio Attachment'}</span>
-              <span class="text-slate-400 font-mono text-[10px]">${durationText}</span>
-            </div>
-            ${m.media_id ? `
-              <audio controls src="/api/media/${m.media_id}" class="w-full mt-1.5 h-7"></audio>
-            ` : `
-              <div class="flex items-center gap-1.5 mt-1 text-[10px] text-slate-500">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Voice audio note</span>
-              </div>
-            `}
-          </div>
-        </div>
-      `;
-    }
-
-    // B. Document / Rate Sheet
-    else if (mediaType === 'document') {
-      const docName = mediaObj?.fileName || 'ratesheet_document';
-      const docSize = mediaObj?.fileSize
-        ? (mediaObj.fileSize > 1048576 ? `${(mediaObj.fileSize / 1048576).toFixed(1)} MB` : `${Math.round(mediaObj.fileSize / 1024)} KB`)
-        : null;
-      attachmentHtml = `
-        <div class="p-2.5 rounded-xl bg-dark-900/80 border border-dark-700/80 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
-              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-xs font-semibold text-slate-200 truncate">${esc(docName)}</div>
-              <div class="text-[10px] text-slate-400">${docSize ? esc(docSize) + ' • ' : ''}Rate Sheet Attachment</div>
-            </div>
-          </div>
-          ${m.media_id ? `
-            <a href="/api/media/${m.media_id}" target="_blank" download class="btn btn-secondary btn-sm shrink-0 flex items-center gap-1 text-[10px]">
-              <i data-lucide="download" class="w-3 h-3"></i>
-              <span>Download</span>
-            </a>
-          ` : ''}
-        </div>
-      `;
-    }
-
-    // C. Shared Contact (vCard)
-    else if (m.contact || mediaType === 'contact') {
-      const contactObj = m.contact || {};
-      const cCleanPhone = (contactObj.phone || '').replace(/[^0-9]/g, '');
-      const cKnock = cCleanPhone ? `https://wa.me/${cCleanPhone}` : null;
-      attachmentHtml = `
-        <div class="p-2.5 rounded-xl bg-dark-900/80 border border-dark-700/80 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
-              <i data-lucide="user-check" class="w-4 h-4"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-xs font-bold text-slate-200 truncate">${esc(contactObj.name || 'Shared Contact')}</div>
-              <div class="text-[10px] font-mono text-emerald-400">${esc(contactObj.phone || 'Phone attached')}</div>
-            </div>
-          </div>
-          ${cKnock ? `
-            <a href="${cKnock}" target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] flex items-center gap-1 shadow-sm transition-all shrink-0">
-              <i data-lucide="message-circle" class="w-3 h-3"></i>
-              <span>Chat Vendor</span>
-            </a>
-          ` : ''}
-        </div>
-      `;
-    }
-
-    // D. Shared Location
-    else if (m.location || mediaType === 'location') {
-      const locObj = m.location || {};
-      const mapUrl = `https://maps.google.com/?q=${locObj.latitude || 0},${locObj.longitude || 0}`;
-      attachmentHtml = `
-        <div class="p-2.5 rounded-xl bg-dark-900/80 border border-dark-700/80 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
-              <i data-lucide="map-pin" class="w-4 h-4"></i>
-            </div>
-            <div class="min-w-0">
-              <div class="text-xs font-semibold text-slate-200 truncate">${esc(locObj.name || 'Shared Location')}</div>
-              <div class="text-[10px] text-slate-400 font-mono">${locObj.latitude ? `${locObj.latitude.toFixed(4)}, ${locObj.longitude.toFixed(4)}` : 'Coordinates'}</div>
-            </div>
-          </div>
-          <a href="${mapUrl}" target="_blank" class="btn btn-secondary btn-sm shrink-0 flex items-center gap-1 text-[10px]">
-            <i data-lucide="external-link" class="w-3 h-3"></i>
-            <span>Open Maps</span>
-          </a>
-        </div>
-      `;
-    }
-
-    // E. General Image / Video Media
-    else if (m.has_media) {
-      attachmentHtml = `
-        <div class="flex items-center gap-2 pt-0.5">
-          <span class="px-2 py-0.5 rounded bg-dark-900 border border-dark-700 text-[10px] text-slate-300 flex items-center gap-1">
-            <i data-lucide="${mediaType === 'image' ? 'image' : mediaType === 'video' ? 'video' : 'paperclip'}" class="w-3 h-3 text-emerald-400"></i>
-            <span class="capitalize">${mediaType || 'Media Attachment'}</span>
-          </span>
-          ${m.media_id ? `
-            <a href="/api/media/${m.media_id}" target="_blank" class="text-[11px] text-emerald-400 hover:underline flex items-center gap-1">
-              <span>View Full Media</span>
-              <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
-            </a>
-          ` : ''}
-        </div>
-      `;
-    }
+    // Single-line text preview
+    const cleanPreview = (m.text || '').replace(/\r?\n+/g, ' ').trim();
 
     return `
-      <div class="glass-card rounded-xl p-2.5 sm:p-3 border border-dark-700/70 hover:border-emerald-500/30 transition-all shadow-sm group">
-        <div class="flex items-start gap-2.5 sm:gap-3">
+      <div class="table-msg-row flex items-center px-3 sm:px-4 py-2 hover:bg-dark-800/60 transition-colors cursor-pointer group text-xs gap-2 sm:gap-3" onclick="openMessageDetailModal('${m.id}')">
+        <!-- Col 1: Time (w-24 sm:w-28 shrink-0) -->
+        <div class="w-24 sm:w-28 shrink-0 select-none">
+          <div class="font-mono text-[11px] text-slate-200 font-semibold tracking-tight">${esc(timeStr)}</div>
+          ${dateStr ? `<div class="text-[10px] text-slate-500">${esc(dateStr)}</div>` : ''}
+        </div>
+
+        <!-- Col 2: Sender & Chat (w-44 sm:w-56 md:w-64 shrink-0 flex items-center gap-2 min-w-0) -->
+        <div class="w-44 sm:w-56 md:w-64 shrink-0 flex items-center gap-2 min-w-0">
           ${avatarHtml}
-
-          <div class="flex-1 min-w-0 space-y-1.5">
-            <!-- Header Row -->
-            <div class="msg-header flex flex-wrap items-center justify-between gap-1.5">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-xs sm:text-sm font-bold ${isOutbound ? 'text-indigo-400' : 'text-emerald-400'} tracking-tight leading-none">
-                  ${esc(m.sender_name || (isOutbound ? 'You' : 'Carrier Contact'))}
-                </span>
-
-                ${isOutbound ? `
-                  <span class="msg-badge px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-medium flex items-center gap-1">
-                    <i data-lucide="corner-down-right" class="w-2.5 h-2.5"></i>
-                    <span>Sent by You</span>
-                  </span>
-                ` : ''}
-
-                ${m.sender_phone && !isOutbound ? `
-                  <span class="msg-badge px-1.5 py-0.5 rounded bg-dark-950 border border-dark-700 text-slate-300 font-mono text-[10px]">
-                    ${esc(m.sender_phone)}
-                  </span>
-                ` : ''}
-
-                ${isGroup ? `
-                  <span class="msg-badge px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-medium flex items-center gap-1">
-                    <i data-lucide="users" class="w-2.5 h-2.5"></i>
-                    <span class="truncate max-w-[180px]">${esc(m.chat_name || 'Group Chat')}</span>
-                  </span>
-                ` : `
-                  <span class="msg-badge px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium">Direct DM</span>
-                `}
-
-                ${isArchived ? `
-                  <span class="msg-badge px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-semibold flex items-center gap-1" title="Captured from an Archived Group">
-                    <i data-lucide="archive" class="w-2.5 h-2.5"></i>
-                    <span>Archived Group</span>
-                  </span>
-                ` : ''}
-              </div>
-
-              <div class="flex items-center gap-2 text-slate-400 text-[11px]">
-                <span>${esc(formattedTime)}</span>
-                ${knockUrl ? `
-                  <a href="${knockUrl}" target="_blank" class="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] flex items-center gap-1 shadow-sm transition-all" title="Message on WhatsApp">
-                    <i data-lucide="message-circle" class="w-3 h-3"></i>
-                    <span>Knock</span>
-                  </a>
-                ` : ''}
-              </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 truncate">
+              <span class="font-bold text-white truncate text-xs ${isOutbound ? 'text-indigo-300' : 'text-slate-100'}">
+                ${esc(m.sender_name || (isOutbound ? 'You' : (m.sender_phone || 'Carrier')))}
+              </span>
             </div>
-
-            <!-- Quoted Reply (if any) -->
-            ${replyHtml}
-
-            <!-- Message Body (if text exists) -->
-            ${m.text ? `
-              <div class="msg-body p-2 px-2.5 rounded-lg bg-dark-950/70 border border-dark-800/80 text-xs text-slate-200 font-mono leading-relaxed whitespace-pre-wrap break-words selection:bg-emerald-500 selection:text-white">
-                ${esc(m.text)}
-              </div>
-            ` : ''}
-
-            <!-- Rich Attachment Card (if present) -->
-            ${attachmentHtml}
-
-            <!-- Bottom Metadata & Raw Inspector -->
-            <div class="msg-footer flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
-              <span class="font-mono">ID: ${esc(m.id || '--')}</span>
-              <button onclick="toggleRawEnvelope('${m.id}')" class="hover:text-slate-300 flex items-center gap-1 transition-colors">
-                <i data-lucide="code" class="w-3 h-3"></i>
-                <span>Raw Envelope</span>
-              </button>
-            </div>
-
-            <!-- Expandable Raw Envelope JSON -->
-            <div id="raw-env-${m.id}" class="hidden p-2 rounded-lg bg-dark-950 border border-dark-800 text-[10px] text-slate-400 font-mono overflow-x-auto max-h-60">
-              <pre>${esc(JSON.stringify(m.raw_envelope || m, null, 2))}</pre>
+            <div class="flex items-center gap-1 text-[10px] flex-wrap mt-0.5">
+              ${badges.join('')}
+              ${m.sender_phone && !isOutbound ? `<span class="text-slate-400 font-mono text-[10px] truncate">${esc(m.sender_phone)}</span>` : ''}
             </div>
           </div>
+        </div>
+
+        <!-- Col 3: Message & Attachments (flex-1 min-w-0 pr-3 flex items-center gap-2) -->
+        <div class="flex-1 min-w-0 pr-3 flex items-center gap-2">
+          ${mediaPill}
+          ${m.reply_to ? `<span class="shrink-0 text-slate-500 flex items-center gap-0.5 text-[10px]" title="Quoted reply"><i data-lucide="reply" class="w-2.5 h-2.5"></i></span>` : ''}
+          <span class="truncate font-mono text-[11px] text-slate-300 leading-snug group-hover:text-white transition-colors">
+            ${cleanPreview ? esc(cleanPreview) : (mediaPill ? '' : '<span class="italic text-slate-600">[No text preview]</span>')}
+          </span>
+        </div>
+
+        <!-- Col 4: Actions (w-24 sm:w-32 text-right shrink-0 flex items-center justify-end gap-1.5) -->
+        <div class="w-24 sm:w-32 text-right shrink-0 flex items-center justify-end gap-1.5" onclick="event.stopPropagation()">
+          <button onclick="openMessageDetailModal('${m.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white font-semibold text-[11px] flex items-center gap-1 shadow-xs transition-all border border-emerald-500/30" title="View Full Message as it is">
+            <i data-lucide="eye" class="w-3 h-3"></i>
+            <span>View</span>
+          </button>
+          ${knockUrl ? `
+            <a href="${knockUrl}" target="_blank" class="p-1 rounded-lg bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-400 hover:text-emerald-400 transition-colors" title="Chat on WhatsApp">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+            </a>
+          ` : ''}
         </div>
       </div>
     `;
@@ -352,20 +238,295 @@ function renderClientFeed() {
   applyStreamDensity();
   if (window.lucide) lucide.createIcons();
 
-  // Auto-scroll to top if enabled and first page
+  // Auto-scroll to top of table body if enabled and first page
   if (window.streamAutoScroll && streamPage === 1) {
-    const scrollEl = document.getElementById('main-content-scroll');
-    if (scrollEl && scrollEl.scrollTop > 60) {
+    const scrollEl = document.getElementById('client-messages-container');
+    if (scrollEl && scrollEl.scrollTop > 40) {
       scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 }
 
-function toggleRawEnvelope(msgId) {
-  const el = document.getElementById('raw-env-' + msgId);
-  if (el) el.classList.toggle('hidden');
+/**
+ * Message Detail Inspector Modal (View full message verbatim with all rich media)
+ */
+window.openMessageDetailModal = function(msgId) {
+  const allMsgs = window.messagesCache || [];
+  const m = allMsgs.find(item => String(item.id) === String(msgId));
+  const modal = document.getElementById('message-detail-modal');
+  if (!m || !modal) return;
+
+  const esc = typeof escapeHtml === 'function' ? escapeHtml : (s) => String(s || '');
+  const isOutbound = Boolean(m.is_from_me);
+  const isArchived = Boolean(m.is_archived);
+  const initials = isOutbound ? 'YOU' : (typeof getInitials === 'function' ? getInitials(m.sender_name || m.sender_phone) : 'WA');
+  const avatarGradient = isOutbound
+    ? 'from-indigo-500 to-purple-700'
+    : (typeof getAvatarColor === 'function' ? getAvatarColor(m.sender_phone || m.sender_name) : 'from-emerald-500 to-teal-700');
+  const cleanPhone = (m.sender_phone || '').replace(/[^0-9]/g, '');
+
+  // Populate Header
+  const idEl = document.getElementById('modal-msg-id');
+  if (idEl) idEl.innerText = `ID: ${m.id || '--'}`;
+
+  // Populate Avatar & Sender
+  const avatarEl = document.getElementById('modal-msg-avatar');
+  if (avatarEl) {
+    avatarEl.className = `w-10 h-10 rounded-xl bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0`;
+    avatarEl.innerText = initials;
+  }
+
+  const senderEl = document.getElementById('modal-msg-sender');
+  if (senderEl) {
+    senderEl.innerText = m.sender_name || (isOutbound ? 'You' : 'Carrier Contact');
+  }
+
+  const phoneEl = document.getElementById('modal-msg-phone');
+  if (phoneEl) {
+    phoneEl.innerText = m.sender_phone ? m.sender_phone : (isOutbound ? 'Your Account' : 'Direct JID');
+  }
+
+  const timeEl = document.getElementById('modal-msg-time');
+  if (timeEl) {
+    timeEl.innerText = typeof formatDateTime === 'function' ? formatDateTime(m.occurred_at || m.timestamp) : (m.timestamp || '');
+  }
+
+  // Badges
+  const badgesEl = document.getElementById('modal-msg-badges');
+  if (badgesEl) {
+    const bList = [];
+    if (isOutbound) {
+      bList.push(`<span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold">Sent by You</span>`);
+    }
+    if (isArchived) {
+      bList.push(`<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-semibold flex items-center gap-1"><i data-lucide="archive" class="w-3 h-3"></i><span>Archived Group</span></span>`);
+    }
+    if (m.chat_type === 'group') {
+      bList.push(`<span class="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-semibold flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i><span>${esc(m.chat_name || 'Group Chat')}</span></span>`);
+    } else if (!isOutbound) {
+      bList.push(`<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold">Direct DM</span>`);
+    }
+    badgesEl.innerHTML = bList.join('');
+  }
+
+  // Knock URL
+  const knockUrl = (!isOutbound && cleanPhone) 
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hi, inquiring about your wholesale message.')}`
+    : null;
+
+  const knockContainer = document.getElementById('modal-msg-knock-container');
+  if (knockContainer) {
+    knockContainer.innerHTML = knockUrl ? `
+      <a href="${knockUrl}" target="_blank" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all">
+        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+        <span>Chat on WhatsApp</span>
+      </a>
+    ` : '';
+  }
+
+  const footerChat = document.getElementById('modal-footer-chat-btn');
+  if (footerChat) {
+    footerChat.innerHTML = knockUrl ? `
+      <a href="${knockUrl}" target="_blank" class="btn btn-primary btn-sm flex items-center gap-1.5">
+        <i data-lucide="message-circle" class="w-4 h-4"></i>
+        <span>Knock Vendor on WhatsApp</span>
+      </a>
+    ` : '';
+  }
+
+  // Quoted reply box
+  const replyContext = m.reply_to || m.raw_envelope?.message?.reply_to;
+  const replyBox = document.getElementById('modal-msg-reply-container');
+  if (replyBox) {
+    if (replyContext) {
+      replyBox.classList.remove('hidden');
+      const qSender = replyContext.senderId
+        ? (replyContext.senderId.includes('@s.whatsapp.net') ? '+' + replyContext.senderId.split('@')[0] : replyContext.senderId)
+        : 'Message';
+      replyBox.innerHTML = `
+        <div class="p-3 rounded-xl bg-dark-900 border-l-4 border-emerald-500 text-xs text-slate-300 space-y-1">
+          <div class="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5">
+            <i data-lucide="reply" class="w-3.5 h-3.5"></i>
+            <span>In Reply to ${esc(qSender)}</span>
+          </div>
+          ${replyContext.quotedText ? `<div class="italic text-slate-400 whitespace-pre-wrap">${esc(replyContext.quotedText)}</div>` : ''}
+        </div>
+      `;
+    } else {
+      replyBox.classList.add('hidden');
+      replyBox.innerHTML = '';
+    }
+  }
+
+  // Rich Media Attachments
+  const mediaContainer = document.getElementById('modal-msg-media-container');
+  const mediaObj = m.media || m.raw_envelope?.message?.media;
+  const mediaType = mediaObj?.type ||
+    (m.raw_envelope?.message?.raw_payload?.message?.imageMessage ? 'image' :
+     m.raw_envelope?.message?.raw_payload?.message?.videoMessage ? 'video' :
+     m.raw_envelope?.message?.raw_payload?.message?.audioMessage ? 'audio' :
+     m.raw_envelope?.message?.raw_payload?.message?.documentMessage ? 'document' :
+     (m.has_media ? 'image' : null));
+
+  if (mediaContainer) {
+    if (mediaType === 'audio') {
+      mediaContainer.classList.remove('hidden');
+      const durationSec = mediaObj?.durationSeconds;
+      const durationText = durationSec ? `${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, '0')}` : 'Voice Note';
+      mediaContainer.innerHTML = `
+        <div class="p-3.5 rounded-xl bg-dark-950 border border-dark-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-xs font-bold text-slate-200">
+              <i data-lucide="mic" class="w-4 h-4 text-purple-400"></i>
+              <span>${mediaObj?.isVoiceNote ? 'Voice Audio Note' : 'Audio Message'}</span>
+            </div>
+            <span class="text-xs font-mono text-purple-400">${durationText}</span>
+          </div>
+          ${m.media_id ? `
+            <audio controls src="/api/media/${m.media_id}" class="w-full h-8 mt-1"></audio>
+          ` : `
+            <div class="p-2 rounded-lg bg-dark-900 text-xs text-slate-400 flex items-center gap-2">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>Audio file recorded on WhatsApp (Duration: ${durationText})</span>
+            </div>
+          `}
+        </div>
+      `;
+    } else if (mediaType === 'document') {
+      mediaContainer.classList.remove('hidden');
+      const docName = mediaObj?.fileName || 'ratesheet_document';
+      const docSize = mediaObj?.fileSize
+        ? (mediaObj.fileSize > 1048576 ? `${(mediaObj.fileSize / 1048576).toFixed(1)} MB` : `${Math.round(mediaObj.fileSize / 1024)} KB`)
+        : 'File attachment';
+      mediaContainer.innerHTML = `
+        <div class="p-3.5 rounded-xl bg-dark-950 border border-dark-800 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+              <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-slate-200 truncate">${esc(docName)}</div>
+              <div class="text-[11px] text-slate-400 font-mono mt-0.5">${esc(docSize)} • Rate Sheet</div>
+            </div>
+          </div>
+          ${m.media_id ? `
+            <a href="/api/media/${m.media_id}" target="_blank" download class="btn btn-secondary btn-sm flex items-center gap-1.5 shrink-0">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Download File</span>
+            </a>
+          ` : ''}
+        </div>
+      `;
+    } else if (m.contact || mediaType === 'contact') {
+      mediaContainer.classList.remove('hidden');
+      const c = m.contact || {};
+      const cClean = (c.phone || '').replace(/[^0-9]/g, '');
+      const cKnock = cClean ? `https://wa.me/${cClean}` : null;
+      mediaContainer.innerHTML = `
+        <div class="p-3.5 rounded-xl bg-dark-950 border border-dark-800 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+              <i data-lucide="user-check" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-slate-200 truncate">${esc(c.name || 'Shared Contact')}</div>
+              <div class="text-[11px] font-mono text-emerald-400 mt-0.5">${esc(c.phone || 'Phone number attached')}</div>
+            </div>
+          </div>
+          ${cKnock ? `
+            <a href="${cKnock}" target="_blank" class="btn btn-primary btn-sm flex items-center gap-1.5 shrink-0">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+              <span>Knock Contact</span>
+            </a>
+          ` : ''}
+        </div>
+      `;
+    } else if (m.location || mediaType === 'location') {
+      mediaContainer.classList.remove('hidden');
+      const loc = m.location || {};
+      const mapUrl = `https://maps.google.com/?q=${loc.latitude || 0},${loc.longitude || 0}`;
+      mediaContainer.innerHTML = `
+        <div class="p-3.5 rounded-xl bg-dark-950 border border-dark-800 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+              <i data-lucide="map-pin" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-slate-200 truncate">${esc(loc.name || 'Shared Location')}</div>
+              <div class="text-[11px] text-slate-400 font-mono mt-0.5">${loc.latitude ? `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}` : 'Coordinates'}</div>
+            </div>
+          </div>
+          <a href="${mapUrl}" target="_blank" class="btn btn-secondary btn-sm flex items-center gap-1.5 shrink-0">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span>Google Maps</span>
+          </a>
+        </div>
+      `;
+    } else {
+      mediaContainer.classList.add('hidden');
+      mediaContainer.innerHTML = '';
+    }
+  }
+
+  // Verbatim message text
+  const textEl = document.getElementById('modal-msg-text');
+  if (textEl) {
+    textEl.innerText = m.text || '[No text content]';
+  }
+
+  // Raw JSON
+  const rawEl = document.getElementById('modal-msg-raw-json');
+  if (rawEl) {
+    rawEl.innerText = JSON.stringify(m.raw_envelope || m, null, 2);
+  }
+
+  modal.classList.remove('hidden');
   if (window.lucide) lucide.createIcons();
-}
+};
+
+window.closeMessageDetailModal = function() {
+  const modal = document.getElementById('message-detail-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  // Pause any audio playing inside the modal
+  const audios = modal.querySelectorAll('audio');
+  audios.forEach(a => { try { a.pause(); } catch {} });
+};
+
+window.copyModalMessageText = function() {
+  const textEl = document.getElementById('modal-msg-text');
+  const labelEl = document.getElementById('label-modal-copy-text');
+  if (!textEl) return;
+  const text = textEl.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    if (labelEl) {
+      const orig = labelEl.innerText;
+      labelEl.innerText = 'Copied!';
+      setTimeout(() => { labelEl.innerText = orig; }, 2000);
+    }
+    if (typeof showToast === 'function') showToast('Message text copied to clipboard', 'success');
+  }).catch(() => {
+    if (typeof showToast === 'function') showToast('Failed to copy text', 'error');
+  });
+};
+
+window.copyModalRawJson = function() {
+  const rawEl = document.getElementById('modal-msg-raw-json');
+  if (!rawEl) return;
+  navigator.clipboard.writeText(rawEl.innerText).then(() => {
+    if (typeof showToast === 'function') showToast('Raw JSON copied to clipboard', 'success');
+  });
+};
+
+// Global escape key listener for detail modal
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('message-detail-modal');
+    if (modal && !modal.classList.contains('hidden')) {
+      window.closeMessageDetailModal();
+    }
+  }
+});
 
 function toggleStreamAutoScroll() {
   window.streamAutoScroll = !window.streamAutoScroll;
@@ -575,6 +736,10 @@ async function confirmPurgeStream() {
 
 // Global exports
 window.renderClientFeed = renderClientFeed;
+window.openMessageDetailModal = openMessageDetailModal;
+window.closeMessageDetailModal = closeMessageDetailModal;
+window.copyModalMessageText = copyModalMessageText;
+window.copyModalRawJson = copyModalRawJson;
 window.toggleRawEnvelope = toggleRawEnvelope;
 window.toggleStreamAutoScroll = toggleStreamAutoScroll;
 window.exportMessagesCsv = exportMessagesCsv;
@@ -585,3 +750,4 @@ window.openPurgeStreamModal = openPurgeStreamModal;
 window.closePurgeStreamModal = closePurgeStreamModal;
 window.confirmPurgeStream = confirmPurgeStream;
 window.setStreamDensity = setStreamDensity;
+
