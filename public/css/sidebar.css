@@ -6,6 +6,14 @@
   transition: all 0.15s ease-in-out !important;
   cursor: pointer;
   position: relative;
+  white-space: nowrap !important;
+}
+
+/* Desktop Sidebar Collapse State */
+@media (min-width: 1024px) {
+  #app-sidebar.sidebar-collapsed {
+    display: none !important;
+  }
 }
 
 /* Light Theme Sidebar */

@@ -161,17 +161,26 @@ function switchView(viewName, updateHash = true) {
   if (window.lucide) lucide.createIcons();
 }
 
-function toggleMobileSidebar() {
+// Universal Sidebar Controller (Desktop Collapse & Mobile Off-Canvas Drawer)
+function toggleSidebar() {
   const sidebar = document.getElementById('app-sidebar');
   const backdrop = document.getElementById('sidebar-backdrop');
   if (!sidebar) return;
 
-  const isClosed = sidebar.classList.contains('-translate-x-full');
-  if (isClosed) {
-    sidebar.classList.remove('-translate-x-full');
-    if (backdrop) backdrop.classList.remove('hidden');
+  const isDesktop = window.innerWidth >= 1024;
+  if (isDesktop) {
+    const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+    try {
+      localStorage.setItem('wapp_sidebar_collapsed', isCollapsed ? '1' : '0');
+    } catch {}
   } else {
-    closeMobileSidebar();
+    const isClosed = sidebar.classList.contains('-translate-x-full');
+    if (isClosed) {
+      sidebar.classList.remove('-translate-x-full');
+      if (backdrop) backdrop.classList.remove('hidden');
+    } else {
+      closeMobileSidebar();
+    }
   }
 }
 
@@ -183,6 +192,56 @@ function closeMobileSidebar() {
   }
   if (backdrop) backdrop.classList.add('hidden');
 }
+
+function initSidebarState() {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar) return;
+
+  if (window.innerWidth >= 1024) {
+    try {
+      if (localStorage.getItem('wapp_sidebar_collapsed') === '1') {
+        sidebar.classList.add('sidebar-collapsed');
+      } else {
+        sidebar.classList.remove('sidebar-collapsed');
+      }
+    } catch {}
+    sidebar.classList.remove('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
+  } else {
+    sidebar.classList.remove('sidebar-collapsed');
+    sidebar.classList.add('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
+  }
+}
+
+// Window resize listener to handle responsive transitions cleanly
+window.addEventListener('resize', () => {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar) return;
+
+  if (window.innerWidth >= 1024) {
+    sidebar.classList.remove('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
+    try {
+      if (localStorage.getItem('wapp_sidebar_collapsed') === '1') {
+        sidebar.classList.add('sidebar-collapsed');
+      }
+    } catch {}
+  } else {
+    sidebar.classList.remove('sidebar-collapsed');
+    if (!sidebar.classList.contains('-translate-x-full') && backdrop) {
+      backdrop.classList.remove('hidden');
+    }
+  }
+});
+
+// Explicit Global Exports
+window.toggleSidebar = toggleSidebar;
+window.toggleMobileSidebar = toggleSidebar;
+window.closeMobileSidebar = closeMobileSidebar;
+window.initSidebarState = initSidebarState;
 
 // Data Polling
 async function fetchMessages() {
@@ -493,12 +552,29 @@ window.toggleShortcutsModal = toggleShortcutsModal;
       toggleShortcutsModal();
       return;
     }
+
+    // 5. Press '\' or 'Ctrl+B' to toggle sidebar
+    if (e.key === '\\' || (e.key.toLowerCase() === 'b' && (e.ctrlKey || e.metaKey))) {
+      e.preventDefault();
+      toggleSidebar();
+      return;
+    }
+
+    // 6. Escape closes mobile sidebar drawer if open
+    if (e.key === 'Escape' && window.innerWidth < 1024) {
+      const sidebar = document.getElementById('app-sidebar');
+      if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+        closeMobileSidebar();
+        return;
+      }
+    }
   });
 })();
 
 // App Initialization
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initSidebarState();
 
   if (typeof checkAuth === 'function') {
     checkAuth();

@@ -16,8 +16,8 @@
             </div>
           </div>
           <!-- Close button for mobile -->
-          <button onclick="closeMobileSidebar()" class="p-1 rounded-lg text-slate-400 hover:text-white lg:hidden">
-            <i data-lucide="x" class="w-4 h-4"></i>
+          <button onclick="closeMobileSidebar()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-dark-800 transition-colors lg:hidden" title="Close Sidebar">
+            <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
 
@@ -26,92 +26,84 @@
           
           <!-- Route Matrix -->
           <button onclick="switchView('routes')" data-view="routes" class="sidebar-nav-btn active w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2">
-              <i data-lucide="table" class="w-4 h-4 text-emerald-400"></i>
-              <span>Route Matrix</span>
-              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">1</kbd>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <i data-lucide="table" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span class="whitespace-nowrap">Route Matrix</span>
             </div>
-            <span id="route-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
+            <span id="route-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">0</span>
           </button>
 
           <!-- Market Trends & Charts -->
           <button onclick="switchView('trends')" data-view="trends" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2">
-              <i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i>
-              <span>Market Trends</span>
-              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">2</kbd>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <i data-lucide="trending-up" class="w-4 h-4 text-blue-400 shrink-0"></i>
+              <span class="whitespace-nowrap">Market Trends</span>
             </div>
-            <span class="text-[10px] text-slate-500">Charts</span>
+            <span class="text-[10px] text-slate-500 shrink-0">Charts</span>
           </button>
 
           <!-- AI Insights & Arbitrage -->
           <button onclick="switchView('insights')" data-view="insights" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2">
-              <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
-              <span>AI Insights</span>
-              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">3</kbd>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <span class="whitespace-nowrap">AI Insights</span>
             </div>
-            <span class="sidebar-badge px-1.5 py-0.5 rounded text-[9px] font-semibold">Signals</span>
+            <span class="sidebar-badge px-1.5 py-0.5 rounded text-[9px] font-semibold shrink-0">Signals</span>
           </button>
 
           <!-- Telco News & Outages -->
           <button onclick="switchView('news')" data-view="news" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2">
-              <i data-lucide="newspaper" class="w-4 h-4 text-rose-400"></i>
-              <span>Telco News</span>
-              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">4</kbd>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <i data-lucide="newspaper" class="w-4 h-4 text-rose-400 shrink-0"></i>
+              <span class="whitespace-nowrap">Telco News</span>
             </div>
-            <span id="news-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
+            <span id="news-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">0</span>
           </button>
 
           <!-- Vendor Directory -->
           <button onclick="switchView('vendors')" data-view="vendors" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2">
-              <i data-lucide="users" class="w-4 h-4 text-purple-400"></i>
-              <span>Carriers & Vendors</span>
-              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">5</kbd>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <i data-lucide="users" class="w-4 h-4 text-purple-400 shrink-0"></i>
+              <span class="whitespace-nowrap">Carriers & Vendors</span>
             </div>
-            <span id="vendor-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
+            <span id="vendor-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">0</span>
           </button>
 
           <!-- Live WhatsApp Message Stream -->
           <button onclick="switchView('terminal')" data-view="terminal" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2">
-              <i data-lucide="radio" class="w-4 h-4 text-emerald-400 animate-pulse"></i>
-              <span>Live Messages Stream</span>
-              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">6</kbd>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <i data-lucide="radio" class="w-4 h-4 text-emerald-400 animate-pulse shrink-0"></i>
+              <span class="whitespace-nowrap">Live Messages Stream</span>
             </div>
-            <span id="stream-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold">0</span>
+            <span id="stream-count-badge" class="sidebar-badge px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">0</span>
           </button>
 
           <!-- System Pipeline & AI Inspector -->
           <button onclick="switchView('pipeline')" data-view="pipeline" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2">
-              <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i>
-              <span>System Pipeline</span>
-              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">7</kbd>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <i data-lucide="cpu" class="w-4 h-4 text-purple-400 shrink-0"></i>
+              <span class="whitespace-nowrap">System Pipeline</span>
             </div>
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 uppercase">Live AI</span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 uppercase shrink-0">Live AI</span>
           </button>
 
           <!-- Developer Studio -->
           <button onclick="switchView('dev')" data-view="dev" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
-            <div class="flex items-center gap-2">
-              <i data-lucide="code-2" class="w-4 h-4 text-sky-400"></i>
-              <span>Developer Studio</span>
-              <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-dark-950/70 border border-dark-700/60 font-mono text-[9px] text-slate-400">8</kbd>
+            <div class="flex items-center gap-2.5 min-w-0">
+              <i data-lucide="code-2" class="w-4 h-4 text-sky-400 shrink-0"></i>
+              <span class="whitespace-nowrap">Developer Studio</span>
             </div>
-            <span class="text-[10px] text-slate-500">API</span>
+            <span class="text-[10px] text-slate-500 shrink-0">API</span>
           </button>
 
           <!-- Explicit Link WhatsApp Phone (QR) Action -->
           <div class="pt-2 border-t border-dark-800/80">
             <button onclick="openDeviceModal()" class="w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-all shadow-sm">
-              <div class="flex items-center gap-2.5">
-                <i data-lucide="qr-code" class="w-4 h-4 text-amber-400"></i>
-                <span>Link WhatsApp</span>
+              <div class="flex items-center gap-2.5 min-w-0">
+                <i data-lucide="qr-code" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span class="whitespace-nowrap">Link WhatsApp</span>
               </div>
-              <span id="sidebar-device-badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 animate-pulse">Scan QR</span>
+              <span id="sidebar-device-badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 animate-pulse shrink-0">Scan QR</span>
             </button>
           </div>
 
