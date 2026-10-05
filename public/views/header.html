@@ -1,0 +1,42 @@
+      <!-- Top Header Navigation (Fixed at top) -->
+      <header class="shrink-0 z-20 border-b border-dark-700/80 bg-dark-950/90 backdrop-blur-xl">
+        <div class="px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+          
+          <!-- Left: Mobile toggle & Title -->
+          <div class="flex items-center gap-3 min-w-0">
+            <button onclick="toggleMobileSidebar()" class="p-2 rounded-xl bg-dark-900 border border-dark-700 text-slate-300 hover:text-white lg:hidden">
+              <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <div class="min-w-0">
+              <h1 id="view-header-title" class="font-bold text-base text-white tracking-tight truncate">Route Matrix & Rate Sheet</h1>
+              <p id="view-header-sub" class="text-xs text-slate-400 hidden sm:block truncate">Filter, compare, and knock carriers for active wholesale voice routes</p>
+            </div>
+          </div>
+
+          <!-- Right: Controls -->
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- WhatsApp Device Manager Trigger Pill -->
+            <button onclick="openDeviceModal()" id="btn-device-status" class="px-3 py-1.5 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-emerald-500/40 text-xs flex items-center gap-2 transition-all">
+              <span id="nav-device-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="nav-device-phone" class="text-slate-200 font-medium font-mono text-[11px] truncate max-w-[130px]">+880...</span>
+              <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+            </button>
+
+            <!-- Sound Alert Toggle -->
+            <button id="btn-sound" onclick="toggleSound()" class="p-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 hover:text-white transition-all text-xs" title="Toggle audio chime">
+              <i id="icon-sound" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+            </button>
+
+            <!-- Theme Toggle (Dark / Light WhatsApp Theme) -->
+            <button id="btn-theme" onclick="toggleTheme()" class="p-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 hover:text-white transition-all text-xs" title="Switch Theme (Dark / Light)">
+              <i id="icon-theme" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+            </button>
+
+            <!-- User / Lock Action -->
+            <button onclick="handleLogout()" class="p-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 hover:text-white transition-all text-xs" title="Lock Terminal (Sign Out)">
+              <i data-lucide="lock" class="w-4 h-4 text-slate-400"></i>
+            </button>
+          </div>
+
+        </div>
+      </header>

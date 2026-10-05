@@ -1,0 +1,133 @@
+/* ==========================================================================
+   WappAutomata • Components, Cards, Modals, Inputs & Buttons
+   ========================================================================== */
+
+/* Glass Cards & Containers */
+.glass-card {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--card-border) !important;
+  box-shadow: var(--card-shadow);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Modals */
+.glass-modal {
+  background-color: var(--modal-bg) !important;
+  border: 1px solid var(--modal-border) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+html:not(.dark) .glass-modal {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
+}
+
+/* Input Fields, Textareas, Selects */
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border: 1px solid var(--input-border) !important;
+  font-weight: 500 !important;
+}
+
+html:not(.dark) input:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus {
+  border-color: var(--brand-green) !important;
+  box-shadow: 0 0 0 3px rgba(0, 128, 105, 0.15) !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: var(--text-placeholder) !important;
+}
+
+/* Action Buttons & Secondary Controls in Light Mode */
+html:not(.dark) button:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-sky-600):not(.bg-rose-600):not(.bg-amber-600):not([type="submit"]):not(.filter-type):not(.filter-pulse):not(.btn-trends-period):not(.sidebar-nav-btn):not(.route-intent-tab),
+html:not(.dark) a.bg-dark-900 {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) button:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-sky-600):not(.bg-rose-600):not(.bg-amber-600):not([type="submit"]):not(.filter-type):not(.filter-pulse):not(.btn-trends-period):not(.sidebar-nav-btn):not(.route-intent-tab):hover,
+html:not(.dark) a.bg-dark-900:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #000000 !important;
+}
+
+/* Filter Pills (CLI, CC CLI, IVR, 1/1, 60/1) in Light Mode */
+html:not(.dark) .filter-type:not(.bg-emerald-600),
+html:not(.dark) .filter-pulse:not(.bg-emerald-600),
+html:not(.dark) .btn-trends-period:not(.bg-emerald-600) {
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .filter-type:not(.bg-emerald-600):hover,
+html:not(.dark) .filter-pulse:not(.bg-emerald-600):hover,
+html:not(.dark) .btn-trends-period:not(.bg-emerald-600):hover {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+/* Active Filter Buttons in Both Themes (Always crisp white text) */
+.bg-emerald-600,
+button.bg-emerald-600,
+.filter-type.bg-emerald-600,
+.filter-pulse.bg-emerald-600,
+.btn-trends-period.bg-emerald-600,
+.btn-primary,
+[type="submit"],
+html:not(.dark) .bg-emerald-600,
+html:not(.dark) button.bg-emerald-600,
+html:not(.dark) .filter-type.bg-emerald-600,
+html:not(.dark) .filter-pulse.bg-emerald-600,
+html:not(.dark) .btn-trends-period.bg-emerald-600,
+html:not(.dark) .btn-primary,
+html:not(.dark) [type="submit"] {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  background-color: var(--brand-green) !important;
+  border-color: var(--brand-green) !important;
+}
+
+/* Unlinked Account Banner in Light Mode */
+html:not(.dark) #unlinked-account-banner {
+  background-color: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+  color: #78350f !important;
+}
+
+html:not(.dark) #unlinked-account-banner h4 {
+  color: #92400e !important;
+}
+
+html:not(.dark) #unlinked-account-banner p {
+  color: #78350f !important;
+}
+
+/* WhatsApp Message Bubble Styling */
+.wapp-chat-bubble {
+  background-color: var(--brand-bubble) !important;
+  border: 1px solid var(--brand-bubble-border) !important;
+  color: var(--text-main) !important;
+}
+
+html:not(.dark) #client-messages-container .glass-card {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.08) !important;
+}
+
+html:not(.dark) #client-messages-container .glass-card:hover {
+  border-color: #008069 !important;
+}

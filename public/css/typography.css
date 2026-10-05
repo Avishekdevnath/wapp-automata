@@ -1,0 +1,138 @@
+/* ==========================================================================
+   WappAutomata • Typography & Color Contrast System (WCAG AAA)
+   ========================================================================== */
+
+html:not(.dark) {
+  color: var(--text-main);
+}
+
+/* Headings & Main Text in Light Mode */
+html:not(.dark) h1, 
+html:not(.dark) h2, 
+html:not(.dark) h3, 
+html:not(.dark) h4, 
+html:not(.dark) h5, 
+html:not(.dark) h6,
+html:not(.dark) .font-bold,
+html:not(.dark) .font-semibold {
+  color: var(--text-main) !important;
+}
+
+/* Standard Slate Typography in Light Mode */
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-300 {
+  color: var(--text-main) !important;
+}
+
+/* Exclude solid action buttons/badges from having text-white overridden */
+html:not(.dark) .text-white:not(.bg-emerald-600):not(.bg-emerald-500):not(.bg-blue-600):not(.bg-blue-500):not(.bg-sky-600):not(.bg-sky-500):not(.bg-rose-600):not(.bg-rose-500):not(.bg-amber-600):not(.bg-amber-500):not(.btn-primary):not([type="submit"]):not(.filter-type.bg-emerald-600):not(.filter-pulse.bg-emerald-600):not(.btn-trends-period.bg-emerald-600) {
+  color: var(--text-main) !important;
+}
+
+/* Secondary & Metadata Text in Light Mode */
+html:not(.dark) .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+
+/* Labels, Pulse & Timestamps in Light Mode */
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-slate-600 {
+  color: var(--text-dim) !important;
+  font-weight: 600 !important;
+}
+
+/* High Contrast Colored Text Utilities in Light Mode (Prevent washed-out pastels) */
+html:not(.dark) .text-emerald-400,
+html:not(.dark) .text-emerald-300 {
+  color: #047857 !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-blue-400,
+html:not(.dark) .text-blue-300 {
+  color: #1d4ed8 !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-sky-400,
+html:not(.dark) .text-sky-300 {
+  color: #0284c7 !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-purple-400,
+html:not(.dark) .text-purple-300 {
+  color: #7e22ce !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-amber-400,
+html:not(.dark) .text-amber-300,
+html:not(.dark) .text-yellow-400 {
+  color: #b45309 !important;
+  font-weight: 600;
+}
+
+html:not(.dark) .text-rose-400,
+html:not(.dark) .text-rose-300,
+html:not(.dark) .text-red-400 {
+  color: #be123c !important;
+  font-weight: 600;
+}
+
+/* Colored Badge Backgrounds & Borders in Light Mode */
+html:not(.dark) .bg-emerald-500\/10,
+html:not(.dark) .bg-emerald-500\/20 {
+  background-color: #dcfce7 !important;
+  border-color: #86efac !important;
+  color: #166534 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-blue-500\/10,
+html:not(.dark) .bg-blue-500\/20 {
+  background-color: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e40af !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-sky-500\/10,
+html:not(.dark) .bg-sky-500\/20 {
+  background-color: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  color: #0369a1 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-purple-500\/10,
+html:not(.dark) .bg-purple-500\/20 {
+  background-color: #f3e8ff !important;
+  border-color: #d8b4fe !important;
+  color: #6b21a8 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-amber-500\/10,
+html:not(.dark) .bg-amber-500\/20 {
+  background-color: #fef3c7 !important;
+  border-color: #fcd34d !important;
+  color: #92400e !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-rose-500\/10,
+html:not(.dark) .bg-rose-500\/20 {
+  background-color: #ffe4e6 !important;
+  border-color: #fecdd3 !important;
+  color: #9f1239 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-dark-800 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}

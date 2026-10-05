@@ -1,0 +1,41 @@
+<!-- VIEW 3: AI INSIGHTS & ARBITRAGE SIGNALS -->
+<div id="view-insights" class="space-y-6 hidden">
+  
+  <!-- Key Metrics -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="glass-card rounded-2xl p-4 border border-dark-700/80">
+      <span class="text-xs text-slate-400 block mb-1">Total Routes</span>
+      <span id="kpi-total-routes" class="text-xl font-bold font-mono text-emerald-400">0</span>
+    </div>
+    <div class="glass-card rounded-2xl p-4 border border-dark-700/80">
+      <span class="text-xs text-slate-400 block mb-1">Unique Destinations</span>
+      <span id="kpi-total-dest" class="text-xl font-bold font-mono text-blue-400">0</span>
+    </div>
+    <div class="glass-card rounded-2xl p-4 border border-dark-700/80">
+      <span class="text-xs text-slate-400 block mb-1">Active Carriers</span>
+      <span id="kpi-total-vendors" class="text-xl font-bold font-mono text-purple-400">0</span>
+    </div>
+    <div class="glass-card rounded-2xl p-4 border border-dark-700/80">
+      <span class="text-xs text-slate-400 block mb-1">Urgent Warnings</span>
+      <span id="kpi-urgent-news" class="text-xl font-bold font-mono text-rose-400">0</span>
+    </div>
+  </div>
+
+  <!-- Arbitrage Matchmaker Card -->
+  <div class="glass-card rounded-2xl p-6 border border-dark-700/80 space-y-4 shadow-xl">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="scale" class="w-4 h-4 text-amber-400"></i>
+          <span>Arbitrage Opportunities (Buy vs. Sell Matches)</span>
+        </h3>
+        <p class="text-xs text-slate-400">Matches buyers urgently seeking routes (WTB) with vendors supplying capacity (WTS)</p>
+      </div>
+    </div>
+
+    <div id="arbitrage-matches-list" class="space-y-3">
+      <!-- Injected via ai-insights.js -->
+    </div>
+  </div>
+
+</div>

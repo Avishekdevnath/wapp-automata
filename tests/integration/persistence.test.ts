@@ -32,15 +32,15 @@ describe('Phase 5 Persistence & Migrations Tests', () => {
     }
   });
 
-  it('should apply V1 migration atomically and record in _schema_versions', () => {
+  it('should apply migrations atomically and record in _schema_versions', () => {
     const db = createDatabaseConnection({ dbPath: ':memory:' });
 
     try {
       assert.equal(getCurrentSchemaVersion(db), 0);
 
       const applied = runMigrations(db);
-      assert.equal(applied, 1);
-      assert.equal(getCurrentSchemaVersion(db), 1);
+      assert.equal(applied, 2);
+      assert.equal(getCurrentSchemaVersion(db), 2);
 
       // Verify messages table exists
       const tableCheck = db
@@ -48,10 +48,16 @@ describe('Phase 5 Persistence & Migrations Tests', () => {
         .get() as { name: string };
       assert.equal(tableCheck.name, 'messages');
 
+      // Verify route_ticks table exists
+      const routeCheck = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='route_ticks'")
+        .get() as { name: string };
+      assert.equal(routeCheck.name, 'route_ticks');
+
       // Verify re-running migrations does not re-apply
       const secondRun = runMigrations(db);
       assert.equal(secondRun, 0);
-      assert.equal(getCurrentSchemaVersion(db), 1);
+      assert.equal(getCurrentSchemaVersion(db), 2);
     } finally {
       db.close();
     }

@@ -1,0 +1,268 @@
+        <!-- ============================================== -->
+        <!-- VIEW 1: ROUTE MATRIX (Searchable Rate Sheet)   -->
+        <!-- ============================================== -->
+        <div id="view-routes" class="space-y-4">
+          
+          <!-- Top KPI Strip -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- Total Active Routes -->
+            <div class="glass-card rounded-2xl p-4 border border-dark-700/80 flex items-center justify-between">
+              <div class="space-y-1">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Active Routes</span>
+                <div class="flex items-baseline gap-2">
+                  <span id="kpi-total-routes" class="text-2xl font-black font-mono text-emerald-400 tracking-tight">21</span>
+                  <span class="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Live
+                  </span>
+                </div>
+                <span id="kpi-dest-count" class="text-[10px] text-slate-500 block">Across 16 destinations</span>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <i data-lucide="radio" class="w-5 h-5"></i>
+              </div>
+            </div>
+
+            <!-- Floor Rate -->
+            <div class="glass-card rounded-2xl p-4 border border-dark-700/80 flex items-center justify-between">
+              <div class="space-y-1">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Wholesale Floor</span>
+                <div class="flex items-baseline gap-1.5">
+                  <span id="kpi-floor-rate" class="text-2xl font-black font-mono text-white tracking-tight">$0.0045</span>
+                  <span class="text-[10px] text-slate-400">/min</span>
+                </div>
+                <span class="text-[10px] text-emerald-400 font-medium block">Global lowest price</span>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                <i data-lucide="trending-down" class="w-5 h-5"></i>
+              </div>
+            </div>
+
+            <!-- Market Liquidity -->
+            <div class="glass-card rounded-2xl p-4 border border-dark-700/80 flex items-center justify-between">
+              <div class="space-y-1">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Market Liquidity</span>
+                <div class="flex items-baseline gap-1.5">
+                  <span id="kpi-liquidity" class="text-2xl font-black font-mono text-amber-300 tracking-tight">18 / 3</span>
+                </div>
+                <span class="text-[10px] text-slate-400 block"><strong class="text-emerald-400">18</strong> Selling • <strong class="text-amber-400">3</strong> Buying</span>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                <i data-lucide="repeat" class="w-5 h-5"></i>
+              </div>
+            </div>
+
+            <!-- Quality & FAS Free -->
+            <div class="glass-card rounded-2xl p-4 border border-dark-700/80 flex items-center justify-between">
+              <div class="space-y-1">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Quality Standard</span>
+                <div class="flex items-baseline gap-1.5">
+                  <span id="kpi-fas-quality" class="text-2xl font-black font-mono text-emerald-400 tracking-tight">100%</span>
+                  <span class="text-[10px] text-slate-400">FAS-Free</span>
+                </div>
+                <span class="text-[10px] text-slate-400 block">Zero false billing verified</span>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trading Intent Tabs & Action Toolbar -->
+          <div class="glass-card rounded-2xl p-4 border border-dark-700/80 space-y-3">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <!-- Intent Tabs (All, Selling WTS, Buying WTB) -->
+              <div class="inline-flex items-center p-1 rounded-xl bg-dark-900 border border-dark-700">
+                <button 
+                  id="tab-intent-all"
+                  onclick="handleIntentTab('')"
+                  class="route-intent-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                  <span>All Routes</span>
+                  <span id="intent-all-count" class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/30 text-white font-mono">21</span>
+                </button>
+                <button 
+                  id="tab-intent-wts"
+                  onclick="handleIntentTab('WTS')"
+                  class="route-intent-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5"
+                >
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span>Selling (WTS)</span>
+                  <span id="intent-wts-count" class="px-1.5 py-0.2 rounded-full text-[10px] bg-dark-800 text-slate-400 font-mono">18</span>
+                </button>
+                <button 
+                  id="tab-intent-wtb"
+                  onclick="handleIntentTab('WTB')"
+                  class="route-intent-tab px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5"
+                >
+                  <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                  <span>Buying (WTB)</span>
+                  <span id="intent-wtb-count" class="px-1.5 py-0.2 rounded-full text-[10px] bg-dark-800 text-slate-400 font-mono">3</span>
+                </button>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center gap-2">
+                <!-- Post Route Button -->
+                <button 
+                  onclick="openPostRouteModal()"
+                  class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all shrink-0"
+                  title="Manually post a route offer or demand"
+                >
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span>Post Route</span>
+                </button>
+
+                <!-- Re-seed Benchmark Data -->
+                <button 
+                  onclick="triggerSeedBenchmark()"
+                  class="px-3 py-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-slate-500 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-all shrink-0"
+                  title="Reload authentic wholesale market benchmark data"
+                >
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span class="hidden sm:inline">Refresh Data</span>
+                </button>
+
+                <!-- Export CSV -->
+                <button 
+                  onclick="exportRoutesCSV()" 
+                  class="px-3 py-2 rounded-xl bg-dark-900 hover:bg-dark-800 border border-dark-700 hover:border-slate-500 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-all shrink-0"
+                  title="Download full rate sheet as CSV"
+                >
+                  <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span class="hidden sm:inline">Export CSV</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search, Country Filter, Sort & View Mode Switcher -->
+            <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-2 border-t border-dark-800/80">
+              
+              <!-- Search Bar -->
+              <div class="relative flex-1">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input 
+                  type="text" 
+                  id="route-search-input" 
+                  oninput="handleRouteSearch(event)"
+                  placeholder="Search destination, prefix, carrier, notes (e.g. Colombia, 1/1, IVR, VoxTel)..."
+                  class="w-full bg-dark-900 border border-dark-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+
+              <!-- Country Select -->
+              <div class="flex items-center gap-2">
+                <select 
+                  id="route-country-select"
+                  onchange="handleCountryFilter(this.value)"
+                  class="bg-dark-900 border border-dark-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="">All Destinations (Global)</option>
+                  <option value="USA">🇺🇸 USA (+1)</option>
+                  <option value="Canada">🇨🇦 Canada (+1)</option>
+                  <option value="United Kingdom">🇬🇧 United Kingdom (+44)</option>
+                  <option value="Australia">🇦🇺 Australia (+61)</option>
+                  <option value="Germany">🇩🇪 Germany (+49)</option>
+                  <option value="Colombia">🇨🇴 Colombia (+57)</option>
+                  <option value="Mexico">🇲🇽 Mexico (+52)</option>
+                  <option value="Brazil">🇧🇷 Brazil (+55)</option>
+                  <option value="Singapore">🇸🇬 Singapore (+65)</option>
+                  <option value="Hong Kong">🇭🇰 Hong Kong (+852)</option>
+                  <option value="Japan">🇯🇵 Japan (+81)</option>
+                  <option value="UAE">🇦🇪 UAE (+971)</option>
+                  <option value="India">🇮🇳 India (+91)</option>
+                  <option value="Bangladesh">🇧🇩 Bangladesh (+880)</option>
+                  <option value="Taiwan">🇹🇼 Taiwan (+886)</option>
+                </select>
+
+                <!-- Sort Dropdown -->
+                <select 
+                  id="route-sort-select"
+                  onchange="handleSortChange(this.value)"
+                  class="bg-dark-900 border border-dark-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="price_asc">Lowest Price ($/min)</option>
+                  <option value="price_desc">Highest Price ($/min)</option>
+                  <option value="newest">Newest Feeds</option>
+                  <option value="country_asc">Destination (A-Z)</option>
+                </select>
+
+                <!-- View Mode Switcher (Table vs Grid Cards) -->
+                <div class="inline-flex items-center p-0.5 rounded-xl bg-dark-900 border border-dark-700 shrink-0">
+                  <button 
+                    id="btn-view-mode-table"
+                    onclick="setRouteViewMode('table')" 
+                    class="p-2 rounded-lg text-white bg-emerald-600 transition-all"
+                    title="Table View"
+                  >
+                    <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button 
+                    id="btn-view-mode-cards"
+                    onclick="setRouteViewMode('cards')" 
+                    class="p-2 rounded-lg text-slate-400 hover:text-white transition-all"
+                    title="Card Grid View"
+                  >
+                    <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Quick Filter Badges (Route Type & Billing Pulse) -->
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-dark-800 text-xs">
+              <span class="text-slate-500 text-[11px] mr-1">Route Type:</span>
+              <button onclick="handleTypeFilter(''); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-medium text-[11px] transition-all">All</button>
+              <button onclick="handleTypeFilter('CLI'); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">CLI</button>
+              <button onclick="handleTypeFilter('CC CLI'); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">CC CLI</button>
+              <button onclick="handleTypeFilter('Direct NCLI'); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">Direct NCLI</button>
+              <button onclick="handleTypeFilter('IVR'); this.parentElement.querySelectorAll('.filter-type').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-type px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">IVR</button>
+              
+              <span class="text-slate-600 mx-1">|</span>
+              <span class="text-slate-500 text-[11px] mr-1">Pulse:</span>
+              <button onclick="handlePulseFilter(''); this.parentElement.querySelectorAll('.filter-pulse').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-pulse px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-medium text-[11px] transition-all">All</button>
+              <button onclick="handlePulseFilter('1/1'); this.parentElement.querySelectorAll('.filter-pulse').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-pulse px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">1/1</button>
+              <button onclick="handlePulseFilter('60/1'); this.parentElement.querySelectorAll('.filter-pulse').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-pulse px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">60/1</button>
+              <button onclick="handlePulseFilter('60/60'); this.parentElement.querySelectorAll('.filter-pulse').forEach(b => b.classList.remove('bg-emerald-600', 'text-white')); this.classList.add('bg-emerald-600', 'text-white')" class="filter-pulse px-2.5 py-1 rounded-lg bg-dark-900 border border-dark-700 text-slate-400 hover:text-white font-medium text-[11px] transition-all">60/60</button>
+            </div>
+          </div>
+
+          <!-- CONTAINER 1: Rate Sheet Table View -->
+          <div id="route-matrix-table-container" class="glass-card rounded-2xl border border-dark-700/80 overflow-hidden shadow-xl">
+            <div class="px-5 py-3 border-b border-dark-700/80 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span id="route-total-count" class="font-bold text-xs text-white">21 Active Routes</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              </div>
+              <span class="text-[11px] text-slate-500">Live wholesale carrier feed • Auto-updating</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-dark-700 text-[11px] font-semibold text-slate-400 uppercase tracking-wider bg-dark-900/60">
+                    <th class="py-3 px-4">Destination</th>
+                    <th class="py-3 px-3">Intent</th>
+                    <th class="py-3 px-3">Route Type</th>
+                    <th class="py-3 px-3">Pulse</th>
+                    <th class="py-3 px-4">Rate ($/min)</th>
+                    <th class="py-3 px-4">Quality & FAS</th>
+                    <th class="py-3 px-4">Carrier / Vendor</th>
+                    <th class="py-3 px-4 text-right">Quick Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="route-matrix-tbody" class="divide-y divide-dark-800/60 text-xs">
+                  <!-- Injected via route-matrix.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- CONTAINER 2: Trading Cards Grid View (Hidden by default, switched via toolbar) -->
+          <div id="route-matrix-cards-container" class="hidden">
+            <div id="route-matrix-cards-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <!-- Injected via route-matrix.js -->
+            </div>
+          </div>
+
+        </div>

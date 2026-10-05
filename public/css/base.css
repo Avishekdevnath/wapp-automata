@@ -1,0 +1,78 @@
+/* ==========================================================================
+   WappAutomata • Base Layout, Scrollbars & Animations
+   ========================================================================== */
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Theme Surface Adaptation */
+.bg-dark-950, [class*="bg-dark-950"] {
+  background-color: var(--bg-app) !important;
+}
+
+.bg-dark-900, [class*="bg-dark-900"] {
+  background-color: var(--bg-surface) !important;
+}
+
+.bg-dark-850, [class*="bg-dark-850"] {
+  background-color: var(--bg-surface-subtle) !important;
+}
+
+.bg-dark-800, [class*="bg-dark-800"] {
+  background-color: var(--bg-hover) !important;
+}
+
+.border-dark-700, [class*="border-dark-700"],
+.border-dark-800, [class*="border-dark-800"] {
+  border-color: var(--border-color) !important;
+}
+
+/* Precision Scrollbars (Placed on right-most edge) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--bg-app);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #202c33;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #00a884;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background-color: #008069;
+}
+
+/* Status Animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.96);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}

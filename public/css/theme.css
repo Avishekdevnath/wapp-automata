@@ -1,0 +1,64 @@
+/* ==========================================================================
+   WappAutomata • Design System Theme Tokens
+   Dual-Mode Dark & Light Variables (WhatsApp Enterprise SaaS Theme)
+   ========================================================================== */
+
+:root {
+  /* WhatsApp Light Theme Tokens */
+  --bg-app: #f1f5f9;                  /* Slate 100 neutral shell */
+  --bg-surface: #ffffff;              /* Pure white cards & navigation */
+  --bg-surface-subtle: #f8fafc;       /* Slate 50 subtle elevation */
+  --bg-hover: #e2e8f0;                /* Slate 200 interactive hover */
+  --bg-active: #dcfce7;               /* Emerald 100 active state */
+  --border-color: #cbd5e1;            /* Slate 300 - Crisp, visible borders */
+  --border-subtle: #e2e8f0;
+  
+  /* High-Contrast Typography */
+  --text-main: #0f172a;               /* Slate 900 - Deep, rich, high contrast */
+  --text-muted: #334155;              /* Slate 700 - Sharp secondary text */
+  --text-dim: #475569;                /* Slate 600 - High-contrast labels */
+  --text-placeholder: #64748b;        /* Slate 500 - Legible placeholder */
+  
+  /* WhatsApp Brand Green Tokens */
+  --brand-green: #008069;             /* Official WhatsApp Business Deep Green */
+  --brand-teal: #00a884;              /* WhatsApp Teal accent */
+  --brand-lightgreen: #16a34a;        /* Vibrant green badge */
+  --brand-bubble: #f8fafc;            /* Inbound chat bubble surface */
+  --brand-bubble-border: #cbd5e1;     /* Inbound chat bubble border */
+  --card-bg: #ffffff;
+  --card-border: #cbd5e1;
+  --card-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.08);
+  --modal-bg: #ffffff;
+  --modal-border: #cbd5e1;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-text: #0f172a;
+}
+
+.dark {
+  /* WhatsApp Dark Theme Tokens (WhatsApp Web Official) */
+  --bg-app: #0b141a;                  /* Official WhatsApp Web deep dark background */
+  --bg-surface: #111b21;              /* WhatsApp Web chat list & sidebar surface */
+  --bg-surface-subtle: #182229;       /* WhatsApp Web elevated surface */
+  --bg-hover: #202c33;                /* WhatsApp Web item hover & active state */
+  --bg-active: #005c4b;               /* WhatsApp Web dark emerald green active */
+  --border-color: #222d34;            /* WhatsApp Web divider */
+  --border-subtle: #2a3942;
+  --text-main: #e9edef;               /* WhatsApp Web crisp white text */
+  --text-muted: #8696a0;              /* WhatsApp Web muted gray */
+  --text-dim: #667781;
+  --text-placeholder: #64748b;
+  --brand-green: #00a884;             /* WhatsApp Web Teal/Green primary */
+  --brand-teal: #25d366;              /* WhatsApp bright neon green */
+  --brand-lightgreen: #25d366;
+  --brand-bubble: #202c33;            /* Inbound chat card bubble */
+  --brand-bubble-border: #222d34;
+  --card-bg: rgba(17, 27, 33, 0.95);
+  --card-border: rgba(34, 45, 52, 0.9);
+  --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --modal-bg: rgba(17, 27, 33, 0.98);
+  --modal-border: rgba(42, 57, 66, 0.95);
+  --input-bg: #202c33;
+  --input-border: #2a3942;
+  --input-text: #e9edef;
+}

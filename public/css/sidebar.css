@@ -1,0 +1,87 @@
+/* ==========================================================================
+   WappAutomata • Sidebar Navigation & Active Route Highlight
+   ========================================================================== */
+
+.sidebar-nav-btn {
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Light Theme Sidebar */
+html:not(.dark) #app-sidebar {
+  background-color: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+/* Inactive Nav Links: Clean, transparent, zero white box clutter */
+html:not(.dark) .sidebar-nav-btn:not(.active) {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+html:not(.dark) .sidebar-nav-btn:not(.active):hover {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Active Nav Link: Prominent WhatsApp SaaS Green Highlight */
+html:not(.dark) .sidebar-nav-btn.active {
+  background-color: #dcfce7 !important;
+  border: 1.5px solid #008069 !important;
+  color: #008069 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px -1px rgba(0, 128, 105, 0.2) !important;
+}
+
+html:not(.dark) .sidebar-nav-btn.active i,
+html:not(.dark) .sidebar-nav-btn.active svg {
+  color: #008069 !important;
+}
+
+html:not(.dark) .sidebar-nav-btn.active span[id*="-badge"] {
+  background-color: #008069 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* Dark Theme Sidebar */
+.dark #app-sidebar {
+  background-color: #111b21 !important;
+  border-right: 1px solid #222d34 !important;
+}
+
+.dark .sidebar-nav-btn:not(.active) {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: #8696a0 !important;
+  font-weight: 500 !important;
+}
+
+.dark .sidebar-nav-btn:not(.active):hover {
+  background-color: #182229 !important;
+  border-color: #222d34 !important;
+  color: #e9edef !important;
+}
+
+.dark .sidebar-nav-btn.active {
+  background-color: rgba(0, 168, 132, 0.15) !important;
+  border: 1.5px solid #00a884 !important;
+  color: #00a884 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px -2px rgba(0, 168, 132, 0.3) !important;
+}
+
+.dark .sidebar-nav-btn.active i,
+.dark .sidebar-nav-btn.active svg {
+  color: #00a884 !important;
+}
+
+.dark .sidebar-nav-btn.active span[id*="-badge"] {
+  background-color: #00a884 !important;
+  color: #0b141a !important;
+  font-weight: 700 !important;
+}

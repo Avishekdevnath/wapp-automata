@@ -103,14 +103,12 @@ describe('Phase 2 Configuration Tests', () => {
     assert.equal(config.WEBHOOK_URL, 'http://127.0.0.1:4000/webhook');
   });
 
-  it('should throw ConfigurationError when WEBHOOK_SECRET is missing', () => {
-    const invalidEnv = { ...validBaseEnv };
-    delete invalidEnv.WEBHOOK_SECRET;
+  it('should allow optional WEBHOOK_SECRET when omitted', () => {
+    const validEnvNoSecret = { ...validBaseEnv };
+    delete validEnvNoSecret.WEBHOOK_SECRET;
 
-    assert.throws(
-      () => parseConfig(invalidEnv),
-      (err: Error) => err instanceof ConfigurationError && err.message.includes('WEBHOOK_SECRET is required')
-    );
+    const config = parseConfig(validEnvNoSecret);
+    assert.equal(config.WEBHOOK_SECRET, undefined);
   });
 
   it('should throw ConfigurationError when WEBHOOK_SECRET is shorter than 16 characters', () => {
