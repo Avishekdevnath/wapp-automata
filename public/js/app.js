@@ -6,10 +6,15 @@ window.messagesCache = [];
 window.currentView = localStorage.getItem('wapp_active_view') || 'routes';
 window.soundEnabled = true;
 
+window.escapeHtml = function escapeHtml(str) {
+  if (typeof str !== 'string') return String(str || '');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+};
+
 // Multi-View Navigation & Hash Router
 function getViewFromHash() {
   const hash = (window.location.hash || '').replace(/^#\/?/, '').trim().toLowerCase();
-  const validViews = ['routes', 'trends', 'insights', 'news', 'vendors', 'terminal', 'dev'];
+  const validViews = ['routes', 'trends', 'insights', 'news', 'vendors', 'terminal', 'pipeline', 'dev'];
   if (validViews.includes(hash)) return hash;
   if (hash === 'stream') return 'terminal';
   return null;

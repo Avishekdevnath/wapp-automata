@@ -5,6 +5,11 @@ let pipelineAutoRefresh = true;
 let pipelineRefreshTimer = null;
 let cachedPipelineEvents = [];
 
+const escapeHtml = window.escapeHtml || function(str) {
+  if (typeof str !== 'string') return String(str || '');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+};
+
 const PIPELINE_SAMPLES = {
   rate_sheet: `🔥 DIRECT ROUTE AVAILABLE 🔥\nColombia CC CLI 1/1 pulse\nClean 86xx / 1xx ANI passing, 100% FAS free\nAggressive rate: $0.0062 / min\nPing Carlos Morales — LatAm Telecom Bogota`,
   buying_demand: `WTB Urgent USA CC CLI routes\nLooking for 500 ports retail dialer traffic\nTarget price: $0.0070 / min, 1/1 pulse\nContact: Sarah Jenkins - VoxTel Enterprise NY`,
