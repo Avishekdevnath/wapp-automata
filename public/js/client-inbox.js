@@ -67,19 +67,115 @@ function renderClientFeed() {
   streamTotalCount = filtered.length;
   updateStreamPaginationUI(streamTotalCount);
 
+  const headerEl = document.getElementById('stream-table-header');
+  const paginationEl = document.getElementById('stream-pagination-bar');
+
   if (filtered.length === 0) {
-    container.innerHTML = `
-      <div class="glass-card rounded-2xl p-12 text-center border border-dashed border-dark-700">
-        <div class="w-12 h-12 mx-auto rounded-2xl bg-dark-900 border border-dark-700 flex items-center justify-center text-slate-500 mb-3">
-          <i data-lucide="radio" class="w-6 h-6 text-emerald-400"></i>
+    if (headerEl) headerEl.classList.add('hidden');
+    if (paginationEl) paginationEl.classList.add('hidden');
+
+    const isFilteredSearch = Boolean(searchQuery || filterType !== 'all');
+    const isConnected = Boolean(
+      window.isWhatsAppConnected || 
+      (window.deviceSessionCache && window.deviceSessionCache.status === 'authenticated') ||
+      (document.getElementById('nav-device-phone')?.innerText && !document.getElementById('nav-device-phone')?.innerText.includes('Scan QR'))
+    );
+
+    let emptyHtml = '';
+
+    if (isFilteredSearch) {
+      // 1. Search / Filter Mismatch State
+      emptyHtml = `
+        <div class="h-full min-h-[360px] flex flex-col items-center justify-center p-6 sm:p-12 text-center select-none">
+          <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 mb-4 shadow-inner">
+            <i data-lucide="search-x" class="w-7 h-7"></i>
+          </div>
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 mb-2 inline-flex items-center gap-1.5">
+            Filter Active
+          </span>
+          <h4 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+            ${searchQuery ? `No messages match "${esc(searchQuery)}"` : 'No messages match current filter'}
+          </h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-md leading-relaxed">
+            No live records in the buffer match your search terms or filter selection (${filterType}). Try adjusting keywords or reset to view all live streams.
+          </p>
+          <div class="flex items-center gap-2 mt-5">
+            <button onclick="clearClientFeedFilters()" class="btn btn-primary btn-sm flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Reset Filters</span>
+            </button>
+          </div>
         </div>
-        <h4 class="text-sm font-semibold text-white">No messages matched filter</h4>
-        <p class="text-xs text-slate-400 mt-1">Live incoming messages from all active and archived WhatsApp groups will stream here in real-time.</p>
-      </div>
-    `;
+      `;
+    } else if (!isConnected) {
+      // 2. WhatsApp Disconnected / Unlinked State
+      emptyHtml = `
+        <div class="h-full min-h-[360px] flex flex-col items-center justify-center p-6 sm:p-12 text-center select-none">
+          <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400 mb-4 shadow-inner">
+            <i data-lucide="qr-code" class="w-7 h-7"></i>
+          </div>
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 mb-2 inline-flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            Gateway Offline
+          </span>
+          <h4 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+            WhatsApp Gateway Not Linked
+          </h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-md leading-relaxed">
+            Link Telcia with your WhatsApp phone or Multi-Device to start capturing live carrier broadcasts, wholesale voice offers, and rate sheets in real time.
+          </p>
+          <div class="flex items-center justify-center gap-3 mt-5 flex-wrap">
+            <button onclick="openDeviceModal()" class="btn btn-primary btn-sm flex items-center gap-1.5 shadow-md">
+              <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+              <span>Link WhatsApp via QR</span>
+            </button>
+            <button onclick="injectTestMessage()" class="btn btn-secondary btn-sm flex items-center gap-1.5">
+              <i data-lucide="send" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Send Test Ping</span>
+            </button>
+          </div>
+        </div>
+      `;
+    } else {
+      // 3. Connected, Awaiting Live Carrier Traffic State
+      emptyHtml = `
+        <div class="h-full min-h-[360px] flex flex-col items-center justify-center p-6 sm:p-12 text-center select-none">
+          <div class="relative w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 shadow-lg shadow-emerald-500/10">
+            <span class="absolute inset-0 rounded-2xl border border-emerald-400/40 animate-ping opacity-30"></span>
+            <i data-lucide="radio" class="w-8 h-8 animate-pulse"></i>
+          </div>
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 mb-2 inline-flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Listening for Live Messages
+          </span>
+          <h4 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+            Awaiting Inbound WhatsApp Stream
+          </h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-md leading-relaxed">
+            Collector is connected with 100% durable local SQLite queuing. New carrier offers, rate sheets, and media will stream here automatically.
+          </p>
+          <div class="flex items-center justify-center gap-3 mt-5 flex-wrap">
+            <button onclick="injectTestMessage()" class="btn btn-primary btn-sm flex items-center gap-1.5 shadow-md">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Send Test Ping</span>
+            </button>
+            <button onclick="renderClientFeed()" class="btn btn-secondary btn-sm flex items-center gap-1.5">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Refresh Feed</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = emptyHtml;
     if (window.lucide) lucide.createIcons();
     return;
   }
+
+  // If filtered.length > 0:
+  if (headerEl) headerEl.classList.remove('hidden');
+  if (paginationEl) paginationEl.classList.remove('hidden');
 
   // Sliced page messages
   let pageMessages = filtered;
@@ -183,19 +279,33 @@ function renderClientFeed() {
       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hi, inquiring about your wholesale route offer.')}`
       : null;
 
-    // Single-line text preview
-    const cleanPreview = (m.text || '').replace(/\r?\n+/g, ' ').trim();
+    // Multi-line and Compact Text Preview
+    const rawText = (m.text || '').trim();
+    const normalizedText = rawText.replace(/\n\s*\n+/g, '\n').trim();
+    const isComfortable = (streamDensity === 'comfortable');
+
+    let textPreviewHtml = '';
+    if (normalizedText) {
+      if (isComfortable) {
+        textPreviewHtml = `<span class="line-clamp-2 whitespace-pre-line font-mono text-[11px] sm:text-xs text-slate-700 dark:text-slate-200 leading-snug break-words group-hover:text-slate-900 dark:group-hover:text-white transition-colors select-text">${esc(normalizedText)}</span>`;
+      } else {
+        const singleLineText = normalizedText.replace(/\r?\n+/g, ' • ');
+        textPreviewHtml = `<span class="truncate font-mono text-[11px] sm:text-xs text-slate-700 dark:text-slate-200 leading-snug group-hover:text-slate-900 dark:group-hover:text-white transition-colors select-text" title="${esc(normalizedText)}">${esc(singleLineText)}</span>`;
+      }
+    } else {
+      textPreviewHtml = mediaPill ? '' : '<span class="italic text-slate-400 dark:text-slate-600 text-xs">[No text preview]</span>';
+    }
 
     return `
-      <div class="table-msg-row flex items-center px-3 sm:px-4 py-2 hover:bg-slate-50 dark:hover:bg-dark-800/60 transition-colors cursor-pointer group text-xs gap-2 sm:gap-3" onclick="openMessageDetailModal('${m.id}')">
-        <!-- Col 1: Time & Date with Year (w-28 sm:w-32 shrink-0) -->
-        <div class="w-28 sm:w-32 shrink-0 select-none">
+      <div class="table-msg-row flex items-start sm:items-center px-3 sm:px-4 py-2 hover:bg-slate-50/80 dark:hover:bg-dark-800/60 transition-colors text-xs gap-2 sm:gap-3 group" ondblclick="openMessageDetailModal('${m.id}')">
+        <!-- Col 1: Time & Date (w-20 sm:w-28 shrink-0 select-none) -->
+        <div class="w-20 sm:w-28 shrink-0 select-none">
           <div class="font-mono text-[11px] text-slate-800 dark:text-slate-200 font-semibold tracking-tight">${esc(timeStr)}</div>
           ${dateStr ? `<div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono tracking-tight">${esc(dateStr)}</div>` : ''}
         </div>
 
-        <!-- Col 2: Sender & Chat (w-44 sm:w-56 md:w-64 shrink-0 flex items-center gap-2 min-w-0) -->
-        <div class="w-44 sm:w-56 md:w-64 shrink-0 flex items-center gap-2 min-w-0">
+        <!-- Col 2: Sender & Chat (w-36 sm:w-48 md:w-56 shrink-0 flex items-center gap-2 min-w-0) -->
+        <div class="w-36 sm:w-48 md:w-56 shrink-0 flex items-center gap-2 min-w-0">
           ${avatarHtml}
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5 truncate">
@@ -210,18 +320,20 @@ function renderClientFeed() {
           </div>
         </div>
 
-        <!-- Col 3: Message & Attachments (flex-1 min-w-0 pr-3 flex items-center gap-2) -->
-        <div class="flex-1 min-w-0 pr-3 flex items-center gap-2">
+        <!-- Col 3: Message & Attachments (flex-1 min-w-0 pr-3 flex items-start sm:items-center gap-2 select-text) -->
+        <div class="flex-1 min-w-0 pr-3 flex items-start sm:items-center gap-2 select-text">
           ${mediaPill}
           ${m.reply_to ? `<span class="shrink-0 text-slate-400 dark:text-slate-500 flex items-center gap-0.5 text-[10px]" title="Quoted reply"><i data-lucide="reply" class="w-2.5 h-2.5"></i></span>` : ''}
-          <span class="truncate font-mono text-[11px] text-slate-700 dark:text-slate-300 leading-snug group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-            ${cleanPreview ? esc(cleanPreview) : (mediaPill ? '' : '<span class="italic text-slate-400 dark:text-slate-600">[No text preview]</span>')}
-          </span>
+          ${textPreviewHtml}
         </div>
 
-        <!-- Col 4: Actions (w-24 sm:w-32 text-right shrink-0 flex items-center justify-end gap-1.5) -->
-        <div class="w-24 sm:w-32 text-right shrink-0 flex items-center justify-end gap-1.5" onclick="event.stopPropagation()">
-          <button onclick="openMessageDetailModal('${m.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600/15 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-white font-semibold text-[11px] flex items-center gap-1 shadow-xs transition-all border border-emerald-500/30" title="View Full Message as it is">
+        <!-- Col 4: Actions (w-24 sm:w-28 text-right shrink-0 flex items-center justify-end gap-1.5 select-none" onclick="event.stopPropagation()">
+        <div class="w-24 sm:w-28 text-right shrink-0 flex items-center justify-end gap-1.5 select-none" onclick="event.stopPropagation()">
+          <button onclick="copySingleMessageText('${m.id}', this)" class="p-1 sm:px-2 sm:py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-dark-900 dark:hover:bg-dark-800 border border-slate-200 dark:border-dark-700 text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all text-[11px] flex items-center gap-1 shadow-xs" title="Copy message text">
+            <i data-lucide="copy" class="w-3 h-3"></i>
+            <span class="hidden sm:inline font-medium">Copy</span>
+          </button>
+          <button onclick="openMessageDetailModal('${m.id}')" class="px-2 py-1 rounded-lg bg-emerald-600/15 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 hover:text-white font-semibold text-[11px] flex items-center gap-1 shadow-xs transition-all border border-emerald-500/30" title="View verbatim message">
             <i data-lucide="eye" class="w-3 h-3"></i>
             <span>View</span>
           </button>
@@ -584,6 +696,7 @@ function setStreamDensity(mode) {
   streamDensity = mode;
   localStorage.setItem('wapp_stream_density', mode);
   applyStreamDensity();
+  renderClientFeed();
 }
 
 function applyStreamDensity() {
@@ -735,8 +848,87 @@ async function confirmPurgeStream() {
   }
 }
 
+// Global stream helpers
+function clearClientFeedFilters() {
+  const searchInput = document.getElementById('client-search-input');
+  const filterType = document.getElementById('client-filter-type');
+  if (searchInput) searchInput.value = '';
+  if (filterType) filterType.value = 'all';
+  renderClientFeed();
+}
+
+function copySingleMessageText(msgId, btn) {
+  const allMsgs = window.messagesCache || [];
+  const m = allMsgs.find(item => String(item.id) === String(msgId));
+  if (!m || !m.text) {
+    if (typeof showToast === 'function') showToast('No text in this message to copy', 'info');
+    return;
+  }
+  navigator.clipboard.writeText(m.text).then(() => {
+    if (btn) {
+      const origHtml = btn.innerHTML;
+      btn.innerHTML = '<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i><span class="hidden sm:inline text-emerald-400 font-medium">Copied</span>';
+      if (window.lucide) lucide.createIcons();
+      setTimeout(() => {
+        btn.innerHTML = origHtml;
+        if (window.lucide) lucide.createIcons();
+      }, 1500);
+    }
+    if (typeof showToast === 'function') showToast('Message text copied to clipboard', 'success');
+  }).catch(() => {
+    if (typeof showToast === 'function') showToast('Failed to copy message text', 'error');
+  });
+}
+
+async function injectTestMessage() {
+  try {
+    if (typeof showToast === 'function') showToast('Injecting test wholesale rate ping...', 'info');
+    const samplePings = [
+      {
+        sender_name: 'Apex Telecom Global',
+        sender_phone: '+44 7700 900142',
+        chat_type: 'group',
+        chat_name: 'Wholesale Voice Traders BD & UK',
+        text: '🔥 HOT BUYING OFFER - VOICE WHOLESALE 🔥\nBD Mobile 88017 / 88019: $0.0215 (ACD 4+, ASR 45%)\nUK Mobile 447: $0.0125 Direct Pure CLI\nUSA CC Flat: $0.0068\nPayment: Weekly USDT or Wire. Send stats now!'
+      },
+      {
+        sender_name: 'FastRoute Carrier Desk',
+        sender_phone: '+1 202 555 0198',
+        chat_type: 'group',
+        chat_name: 'Asia Voice Hub',
+        text: 'DIRECT CLI ROUTES AVAILABLE:\nPakistan Jazz 92300: $0.0180 (120 Ports)\nIndia Airtel 9198: $0.0092 FAS Free Clean\nEgypt Vodafone: $0.0850 Stable Daily Volume'
+      },
+      {
+        sender_name: 'Direct Line Trader',
+        sender_phone: '+65 6789 0123',
+        chat_type: 'direct',
+        chat_name: 'Direct Conversation',
+        text: 'Hello desk, need urgent route for Philippines Globe & Smart.\nTarget rate: $0.0450. Daily 60k minutes ready to send today.'
+      }
+    ];
+    const ping = samplePings[Math.floor(Math.random() * samplePings.length)];
+    const res = await fetch('/api/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ping)
+    });
+    if (res.ok) {
+      if (typeof showToast === 'function') showToast('Test rate message injected successfully!', 'success');
+      if (typeof fetchMessages === 'function') await fetchMessages();
+      renderClientFeed();
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast(`Simulation failed: ${err.message}`, 'error');
+  }
+}
+
 // Global exports
 window.renderClientFeed = renderClientFeed;
+window.clearClientFeedFilters = clearClientFeedFilters;
+window.copySingleMessageText = copySingleMessageText;
+window.injectTestMessage = injectTestMessage;
 window.openMessageDetailModal = openMessageDetailModal;
 window.closeMessageDetailModal = closeMessageDetailModal;
 window.copyModalMessageText = copyModalMessageText;
@@ -751,4 +943,5 @@ window.openPurgeStreamModal = openPurgeStreamModal;
 window.closePurgeStreamModal = closePurgeStreamModal;
 window.confirmPurgeStream = confirmPurgeStream;
 window.setStreamDensity = setStreamDensity;
+
 

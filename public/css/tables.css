@@ -118,3 +118,15 @@ table.table-density-comfortable td,
   padding-left: 1rem !important;
   padding-right: 1rem !important;
 }
+
+/* Live WhatsApp Stream Density Modes */
+#client-messages-container.density-compact .table-msg-row {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+}
+
+#client-messages-container.density-comfortable .table-msg-row {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+

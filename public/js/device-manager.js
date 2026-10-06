@@ -19,6 +19,9 @@ async function pollSessionStatus() {
     const phone = session.phone || 'No Account Linked';
     const name = session.name || 'WhatsApp Account';
 
+    window.isWhatsAppConnected = isAuth;
+    window.deviceSessionCache = session;
+
     // 1. Update Nav Header Pill
     const navPhone = document.getElementById('nav-device-phone');
     const navDot = document.getElementById('nav-device-dot');
