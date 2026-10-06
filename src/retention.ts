@@ -8,7 +8,8 @@ const logger = rootLogger.forModule('retention');
  */
 export function runRetentionCleanup(queueRepo: IQueueRepository, days: number = 30): void {
   try {
-    const res = queueRepo.pruneOldPayloads(days);
+    // Lifetime Raw Text Storage (ADR-013): prune bulky payloads, but never delete message rows
+    const res = queueRepo.pruneOldPayloads(days, Date.now(), false);
     if (res.prunedCount > 0 || res.deletedCount > 0) {
       logger.info('Automated SQLite log retention cleanup completed', res);
     }

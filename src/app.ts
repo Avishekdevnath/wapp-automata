@@ -99,6 +99,24 @@ export function createApplication(options?: ApplicationOptions): ApplicationCont
           }
         }
 
+        // Selective Direct Message (DM) Recording (ADR-013):
+        // By default, 1-on-1 personal DMs are NOT recorded unless enabled in Settings.
+        const isGroupOrChannel = envelope.chatType === 'group' || envelope.chatType === 'channel' || envelope.chatId.endsWith('@g.us');
+        if (!isGroupOrChannel) {
+          try {
+            db.exec('CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)');
+            const row = db.prepare("SELECT value FROM system_settings WHERE key = 'record_direct_messages'").get() as { value?: string } | undefined;
+            const isDmRecordEnabled = row?.value === 'true';
+            if (!isDmRecordEnabled) {
+              logger.debug('Skipping direct message: DM recording is disabled by user setting', { id: envelope.id, chatId: envelope.chatId });
+              return;
+            }
+          } catch (settingErr) {
+            logger.debug('Skipping direct message by default', { error: settingErr });
+            return;
+          }
+        }
+
         const inserted = queueRepo.enqueue(envelope);
         if (inserted) {
           metrics.incrementIngested();

@@ -139,4 +139,47 @@ describe('Settings API & Data Management Integration Tests', () => {
     assert.equal(dataNews.status, 'ok');
     assert.equal(dataNews.target, 'news');
   });
+
+  it('GET /api/settings/dms should return default or current DM recording setting', async () => {
+    const res = await fetch(`${baseUrl}/api/settings/dms`);
+    assert.equal(res.status, 200);
+    const data = (await res.json()) as { status: string; record_direct_messages: boolean };
+    assert.equal(data.status, 'ok');
+    assert.ok(typeof data.record_direct_messages === 'boolean');
+  });
+
+  it('POST /api/settings/dms should toggle DM recording setting and persist', async () => {
+    // 1. Enable DMs
+    const resOn = await fetch(`${baseUrl}/api/settings/dms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ record_direct_messages: true })
+    });
+    assert.equal(resOn.status, 200);
+    const dataOn = (await resOn.json()) as { status: string; record_direct_messages: boolean };
+    assert.equal(dataOn.status, 'ok');
+    assert.equal(dataOn.record_direct_messages, true);
+
+    // Verify GET confirms true
+    const checkOn = await fetch(`${baseUrl}/api/settings/dms`);
+    const checkOnData = (await checkOn.json()) as { record_direct_messages: boolean };
+    assert.equal(checkOnData.record_direct_messages, true);
+
+    // 2. Disable DMs
+    const resOff = await fetch(`${baseUrl}/api/settings/dms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ record_direct_messages: false })
+    });
+    assert.equal(resOff.status, 200);
+    const dataOff = (await resOff.json()) as { status: string; record_direct_messages: boolean };
+    assert.equal(dataOff.status, 'ok');
+    assert.equal(dataOff.record_direct_messages, false);
+
+    // Verify GET confirms false
+    const checkOff = await fetch(`${baseUrl}/api/settings/dms`);
+    const checkOffData = (await checkOff.json()) as { record_direct_messages: boolean };
+    assert.equal(checkOffData.record_direct_messages, false);
+  });
 });
+

@@ -10,7 +10,7 @@ const { getSessionState } = require('./auth');
 const { getStorageStats, purgeMediaFiles, dismissStorageWarning } = require('./media');
 const { processWebhookDelivery } = require('./webhook-receiver');
 const { forwardWebhookToClient } = require('./forwarder');
-const { getTradingDb, pruneRawPayloads } = require('./db');
+const { getTradingDb, pruneRawPayloads, isDmRecordingEnabled, setDmRecordingEnabled } = require('./db');
 
 const MIME_TYPES = {
   '.jpg': 'image/jpeg',
@@ -213,7 +213,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
       retentionPolicy: {
         active: true,
         days: 30,
-        description: 'Auto-prunes raw WhatsApp envelopes older than 30–60 days, keeping parsed routes and carrier contacts forever'
+        description: 'Lifetime raw text messages preserved permanently in SQLite; bulky payloads pruned after 30 days.'
       },
       warning: s.warning
     }));
@@ -227,12 +227,12 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
       try { parsed = JSON.parse(body); } catch {}
       const days = Number(parsed.days) || 30;
       const db = getTradingDb();
-      const result = pruneRawPayloads(db, days);
+      const result = pruneRawPayloads(db, days, false);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({
         status: 'ok',
         ...result,
-        message: `Retention routine complete. Pruned ${result.prunedPayloads || 0} payloads (> ${days}d), purged ${result.deletedOldMessages || 0} delivered envelopes (> ${days * 2}d). Routes & vendors intact forever.`
+        message: `Retention routine complete. Pruned ${result.prunedPayloads || 0} bulky payloads (> ${days}d). Lifetime raw message text preserved permanently.`
       }));
     });
     return true;
@@ -281,6 +281,35 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         return res.end(JSON.stringify({ error: err.message }));
       }
+    });
+    return true;
+  }
+
+  // Settings API: Direct Message (DM) Recording Toggle (ADR-013)
+  if (req.method === 'GET' && pathname === '/api/settings/dms') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      status: 'ok',
+      record_direct_messages: isDmRecordingEnabled()
+    }));
+  }
+
+  if (req.method === 'POST' && pathname === '/api/settings/dms') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      let parsed = {};
+      try { parsed = JSON.parse(body || '{}'); } catch {}
+      const enabled = Boolean(parsed.record_direct_messages);
+      const success = setDmRecordingEnabled(enabled);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        status: success ? 'ok' : 'error',
+        record_direct_messages: isDmRecordingEnabled(),
+        message: enabled
+          ? 'Direct Message recording enabled. (Zero-Seen Guarantee: DMs will never be marked as read).'
+          : 'Direct Message recording disabled. Only group chats will be ingested.'
+      }));
     });
     return true;
   }

@@ -16,8 +16,9 @@ async function loadTelcoNews() {
   const countBadge = document.getElementById('news-count-badge');
   if (!container) return;
 
-  // Load Executive Brief in parallel
+  // Load Executive Brief and Arbitrage Signals in parallel
   loadExecutiveBrief(false);
+  loadArbitrageSignals();
 
   try {
     const res = await fetch('/api/news');
@@ -329,6 +330,113 @@ function formatTimeAgo(time) {
   return `${hours}h ago`;
 }
 
+/**
+ * Live Arbitrage & Spread Matching Signals (ADR-016)
+ */
+async function loadArbitrageSignals() {
+  const container = document.getElementById('arbitrage-signals-container');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/arbitrage');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const opportunities = data.opportunities || [];
+
+    if (opportunities.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full py-6 text-center text-slate-400 border border-dashed border-dark-800 rounded-xl">
+          <i data-lucide="scale" class="w-6 h-6 mx-auto text-slate-500 mb-1.5 opacity-60"></i>
+          <p class="text-xs font-semibold text-slate-300">No active arbitrage spreads detected yet</p>
+          <p class="text-[11px] text-slate-500 mt-0.5">As new WTS (offers) and WTB (needs) stream in, matched corridor spreads will appear here instantly.</p>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons({ root: container });
+      return;
+    }
+
+    container.innerHTML = opportunities.map(opp => {
+      const isProfitable = opp.isProfitable;
+      const profitBadge = isProfitable
+        ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">+${opp.marginPercent}% Spread</span>`
+        : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30">Neutral</span>`;
+
+      const buyerWa = opp.buyer_phone ? `https://wa.me/${opp.buyer_phone.replace(/[^0-9]/g, '')}` : null;
+      const sellerWa = opp.seller_phone ? `https://wa.me/${opp.seller_phone.replace(/[^0-9]/g, '')}` : null;
+
+      return `
+        <div class="p-4 rounded-xl bg-dark-950/60 border ${isProfitable ? 'border-emerald-500/30 hover:border-emerald-500/50' : 'border-dark-800'} transition-all space-y-3 flex flex-col justify-between shadow-sm">
+          <div class="space-y-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h5 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span class="inline-block w-2 h-2 rounded-full ${isProfitable ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}"></span>
+                  <span>${escapeHtml(opp.country)}</span>
+                </h5>
+                <span class="text-[10px] text-slate-400 font-mono uppercase tracking-wider">${escapeHtml(opp.route_type)} • Pulse: ${escapeHtml(opp.sell_pulse || '1/1')}</span>
+              </div>
+              ${profitBadge}
+            </div>
+
+            <!-- Price Comparison Grid -->
+            <div class="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-dark-900 border border-dark-800 text-[11px]">
+              <div>
+                <span class="text-[10px] text-slate-500 block uppercase font-bold">Sell Offer (WTS)</span>
+                <span class="font-mono font-bold text-slate-200 text-xs">$${opp.sell_rate.toFixed(4)}<span class="text-[9px] text-slate-400 font-normal">/m</span></span>
+                <span class="text-[10px] text-slate-400 truncate block mt-0.5" title="${escapeHtml(opp.seller_name)}">${escapeHtml(opp.seller_company || opp.seller_name)}</span>
+              </div>
+              <div class="border-l border-dark-800 pl-2">
+                <span class="text-[10px] text-slate-500 block uppercase font-bold">Buy Bid (WTB)</span>
+                <span class="font-mono font-bold text-emerald-400 text-xs">$${opp.buy_rate.toFixed(4)}<span class="text-[9px] text-slate-400 font-normal">/m</span></span>
+                <span class="text-[10px] text-slate-400 truncate block mt-0.5" title="${escapeHtml(opp.buyer_name)}">${escapeHtml(opp.buyer_company || opp.buyer_name)}</span>
+              </div>
+            </div>
+
+            <!-- Spread Margin Highlight -->
+            <div class="flex items-center justify-between text-xs px-1">
+              <span class="text-slate-400 text-[11px]">Gross Arbitrage Spread:</span>
+              <span class="font-mono font-bold ${isProfitable ? 'text-emerald-400' : 'text-slate-400'}">
+                ${opp.spread >= 0 ? '+' : ''}$${opp.spread.toFixed(4)}/min
+              </span>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="pt-2 border-t border-dark-800 flex items-center gap-1.5">
+            ${sellerWa ? `
+              <a href="${sellerWa}" target="_blank" class="flex-1 py-1 px-2 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 text-[11px] font-medium text-center transition-all flex items-center justify-center gap-1">
+                <i data-lucide="phone-outgoing" class="w-3 h-3 text-emerald-500"></i>
+                <span>Buy Route</span>
+              </a>
+            ` : ''}
+            ${buyerWa ? `
+              <a href="${buyerWa}" target="_blank" class="flex-1 py-1 px-2 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 text-[11px] font-medium text-center transition-all flex items-center justify-center gap-1">
+                <i data-lucide="phone-incoming" class="w-3 h-3 text-sky-400"></i>
+                <span>Sell Route</span>
+              </a>
+            ` : ''}
+            <button onclick="if(typeof openPitchModal==='function') openPitchModal('${escapeHtml(opp.country)}', '${escapeHtml(opp.route_type)}', '${escapeHtml(opp.seller_phone || opp.buyer_phone || '')}', ${opp.sell_rate});" class="py-1 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1" title="Generate Arbitrage Pitch">
+              <i data-lucide="sparkles" class="w-3 h-3"></i>
+              <span>Pitch</span>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) window.lucide.createIcons({ root: container });
+  } catch (err) {
+    console.error('Error loading arbitrage signals:', err);
+    if (container) {
+      container.innerHTML = `
+        <div class="col-span-full py-4 text-center text-rose-400 text-xs">
+          Failed to load live arbitrage spreads: ${escapeHtml(err.message)}
+        </div>
+      `;
+    }
+  }
+}
+
 // Global window exports
 window.loadTelcoNews = loadTelcoNews;
 window.handleNewsSearch = handleNewsSearch;
@@ -337,3 +445,4 @@ window.setNewsPageSize = setNewsPageSize;
 window.changeNewsPage = changeNewsPage;
 window.loadExecutiveBrief = loadExecutiveBrief;
 window.refreshExecutiveBrief = refreshExecutiveBrief;
+window.loadArbitrageSignals = loadArbitrageSignals;

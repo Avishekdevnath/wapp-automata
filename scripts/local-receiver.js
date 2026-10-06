@@ -7,7 +7,7 @@ const { PORT, HOST, DASHBOARD_PASSWORD, PUBLIC_DIR } = require('./server/config'
 const { isAuthenticated, generateAuthToken } = require('./server/auth');
 const { processWebhookDelivery } = require('./server/webhook-receiver');
 const { handleRoutesGet, handleRoutesPost, handleRoutesSeed, handleRoutesClear, handleRoutesExport } = require('./server/routes-api');
-const { handleTrendsGet, handleNewsGet, handleNewsClear, handleVendorsGet, handleInsightsGet, handlePitchPost, handleExecutiveBriefGet } = require('./server/market-api');
+const { handleTrendsGet, handleNewsGet, handleNewsClear, handleVendorsGet, handleInsightsGet, handlePitchPost, handleExecutiveBriefGet, handleArbitrageGet } = require('./server/market-api');
 const { handleSystemApi } = require('./server/system-api');
 const { handleAiSettingsApi } = require('./server/ai-settings');
 const { handlePipelineApi } = require('./server/pipeline-api');
@@ -92,6 +92,7 @@ const server = http.createServer(async (req, res) => {
     if ((req.method === 'POST' && pathname === '/api/news/clear') || (req.method === 'DELETE' && pathname === '/api/news')) return handleNewsClear(req, res);
     if (req.method === 'GET' && pathname === '/api/vendors') return handleVendorsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/insights') return handleInsightsGet(req, res);
+    if (req.method === 'GET' && pathname === '/api/arbitrage') return handleArbitrageGet(req, res);
     if (req.method === 'POST' && pathname === '/api/insights/pitch') return handlePitchPost(req, res);
 
     // Unified Data Clearance API

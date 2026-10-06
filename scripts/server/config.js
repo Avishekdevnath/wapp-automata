@@ -28,6 +28,7 @@ const SECRET = process.env.WEBHOOK_SECRET || 'local_dev_webhook_secret_key_12345
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'wapp2026';
 const FORWARD_WEBHOOK_URL = process.env.FORWARD_WEBHOOK_URL || 'https://n8n.srv1718993.hstgr.cloud/webhook/ispsaddamb491e-a770-231f11c5fdff';
 const FORWARD_FORMAT = process.env.FORWARD_FORMAT || 'clean';
+const MAX_HISTORY_MESSAGES = process.env.MAX_HISTORY_MESSAGES ? parseInt(process.env.MAX_HISTORY_MESSAGES, 10) : 10000;
 
 const DATA_DIR = fs.existsSync('/opt/wapp-automata/data') 
   ? '/opt/wapp-automata/data' 
@@ -97,6 +98,7 @@ module.exports = {
   SQLITE_FILE,
   PUBLIC_DIR,
   MEDIA_DIR,
+  MAX_HISTORY_MESSAGES,
   computeSignature,
   formatDateTime
 };

@@ -123,6 +123,7 @@
     syncThemeButtons();
     syncSettingsPageSize();
     updateSettingsAudioToggle();
+    await fetchDmRecordingSetting();
     await refreshSettingsStats();
     await fetchWhatsAppSettingsStatus();
     if (window.lucide) lucide.createIcons();
@@ -382,6 +383,79 @@
     } else {
       btn.innerText = 'Muted';
       btn.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-dark-800 text-slate-500 border border-slate-300 dark:border-dark-700 transition-all';
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // 6. Direct Message (DM) Ingestion Settings (ADR-013)
+  // -------------------------------------------------------------------------
+  async function fetchDmRecordingSetting() {
+    const input = document.getElementById('toggle-record-dms');
+    const label = document.getElementById('settings-dm-switch-label');
+    const badge = document.getElementById('settings-dm-status-badge');
+    if (!input) return;
+
+    try {
+      const res = await fetch('/api/settings/dms');
+      if (!res.ok) return;
+      const data = await res.json();
+      const isEnabled = Boolean(data.record_direct_messages);
+
+      input.checked = isEnabled;
+      if (label) label.innerText = isEnabled ? 'ON' : 'OFF';
+      if (label) label.className = isEnabled ? 'text-[11px] font-bold text-emerald-500' : 'text-[11px] font-bold text-slate-400';
+      if (badge) {
+        if (isEnabled) {
+          badge.innerText = 'DMs Recorded (Zero-Seen)';
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+        } else {
+          badge.innerText = 'DMs Ignored';
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30';
+        }
+      }
+    } catch (_) {}
+  }
+
+  window.toggleDmRecording = async function toggleDmRecording(checked) {
+    const input = document.getElementById('toggle-record-dms');
+    const label = document.getElementById('settings-dm-switch-label');
+    const badge = document.getElementById('settings-dm-status-badge');
+
+    try {
+      const res = await fetch('/api/settings/dms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ record_direct_messages: checked })
+      });
+      const data = await res.json();
+      const isEnabled = Boolean(data.record_direct_messages);
+
+      if (input) input.checked = isEnabled;
+      if (label) label.innerText = isEnabled ? 'ON' : 'OFF';
+      if (label) label.className = isEnabled ? 'text-[11px] font-bold text-emerald-500' : 'text-[11px] font-bold text-slate-400';
+      if (badge) {
+        if (isEnabled) {
+          badge.innerText = 'DMs Recorded (Zero-Seen)';
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+        } else {
+          badge.innerText = 'DMs Ignored';
+          badge.className = 'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30';
+        }
+      }
+
+      if (typeof showToast === 'function') {
+        showToast(
+          isEnabled
+            ? 'DM recording enabled. (Zero-Seen: DMs will never be marked as read)'
+            : 'DM recording disabled. Ingesting groups only.',
+          isEnabled ? 'success' : 'info'
+        );
+      }
+    } catch (err) {
+      if (typeof showToast === 'function') {
+        showToast('Failed to update DM setting: ' + err.message, 'error');
+      }
+      if (input) input.checked = !checked;
     }
   };
 

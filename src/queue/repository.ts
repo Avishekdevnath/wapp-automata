@@ -203,16 +203,20 @@ export class SQLiteQueueRepository implements IQueueRepository {
     return (row as QueueRecord) || null;
   }
 
-  public pruneOldPayloads(retentionDays: number = 30, nowMs: number = Date.now()): { prunedCount: number; deletedCount: number } {
+  public pruneOldPayloads(retentionDays: number = 30, nowMs: number = Date.now(), deleteDelivered: boolean = true): { prunedCount: number; deletedCount: number } {
     const cutoff = nowMs - (retentionDays * 24 * 60 * 60 * 1000);
     const delCutoff = nowMs - (retentionDays * 2 * 24 * 60 * 60 * 1000);
 
-    // 1. Permanently delete delivered messages older than 2x retention window (e.g. 60 days)
-    const delStmt = this.db.prepare(`
-      DELETE FROM messages
-      WHERE created_at < ? AND status = 'delivered'
-    `);
-    const delRes = delStmt.run(delCutoff);
+    let deletedCount = 0;
+    // 1. Delete delivered messages only if explicitly allowed (ADR-013 Lifetime Text Storage)
+    if (deleteDelivered) {
+      const delStmt = this.db.prepare(`
+        DELETE FROM messages
+        WHERE created_at < ? AND status = 'delivered'
+      `);
+      const delRes = delStmt.run(delCutoff);
+      deletedCount = delRes.changes;
+    }
 
     // 2. Prune bulky raw payloads on remaining messages older than retention window (e.g. 30 days)
     const pruneStmt = this.db.prepare(`
@@ -231,7 +235,7 @@ export class SQLiteQueueRepository implements IQueueRepository {
 
     return {
       prunedCount: pruneRes.changes,
-      deletedCount: delRes.changes
+      deletedCount
     };
   }
 }

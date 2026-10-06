@@ -155,6 +155,124 @@ async function handleExecutiveBriefGet(req, res, parsedUrl) {
   }
 }
 
+/**
+ * Live Arbitrage & Buy/Sell Spread Matching Engine (ADR-016)
+ * Calculates real-time spreads across Buy (WTB) and Sell (WTS) orders
+ */
+function handleArbitrageGet(req, res) {
+  const db = getTradingDb();
+  if (!db) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Database unavailable' }));
+  }
+
+  // Find corridors where both Sell (WTS) and Buy (WTB) ticks exist
+  const pairsQuery = `
+    SELECT 
+      sell.country,
+      sell.route_type,
+      sell.rate_per_min as sell_rate,
+      sell.vendor_name as seller_name,
+      sell.vendor_phone as seller_phone,
+      sell.company_name as seller_company,
+      sell.billing_pulse as sell_pulse,
+      sell.created_at as sell_time,
+      buy.rate_per_min as buy_rate,
+      buy.vendor_name as buyer_name,
+      buy.vendor_phone as buyer_phone,
+      buy.company_name as buyer_company,
+      buy.billing_pulse as buy_pulse,
+      buy.created_at as buy_time
+    FROM route_ticks sell
+    JOIN route_ticks buy 
+      ON LOWER(sell.country) = LOWER(buy.country)
+      AND LOWER(sell.route_type) = LOWER(buy.route_type)
+      AND (sell.intent = 'WTS' OR sell.intent = 'OFFER')
+      AND (buy.intent = 'WTB' OR buy.intent = 'BID' OR buy.intent = 'NEED')
+      AND sell.vendor_phone != buy.vendor_phone
+    WHERE sell.rate_per_min > 0 AND buy.rate_per_min > 0
+    ORDER BY (buy.rate_per_min - sell.rate_per_min) DESC, sell.created_at DESC
+    LIMIT 20
+  `;
+
+  let matches = [];
+  try {
+    const rawMatches = db.prepare(pairsQuery).all();
+    matches = rawMatches.map(m => {
+      const spread = Number((m.buy_rate - m.sell_rate).toFixed(5));
+      const marginPercent = m.sell_rate > 0 ? Number(((spread / m.sell_rate) * 100).toFixed(1)) : 0;
+      return {
+        country: m.country,
+        route_type: m.route_type,
+        sell_rate: m.sell_rate,
+        seller_name: m.seller_name || m.seller_phone,
+        seller_phone: m.seller_phone,
+        seller_company: m.seller_company || '',
+        sell_pulse: m.sell_pulse || '1/1',
+        sell_time: m.sell_time,
+        buy_rate: m.buy_rate,
+        buyer_name: m.buyer_name || m.buyer_phone,
+        buyer_phone: m.buyer_phone,
+        buyer_company: m.buyer_company || '',
+        buy_pulse: m.buy_pulse || '1/1',
+        buy_time: m.buy_time,
+        spread,
+        marginPercent,
+        isProfitable: spread > 0
+      };
+    });
+  } catch (err) {
+    console.warn('Arbitrage pairs query notice:', err.message);
+  }
+
+  // Fallback: If no opposite intent pairs exist, identify corridor price variance across all quotes
+  if (matches.length === 0) {
+    const spreadQuery = `
+      SELECT 
+        country,
+        route_type,
+        MIN(rate_per_min) as min_rate,
+        MAX(rate_per_min) as max_rate,
+        COUNT(*) as tick_count
+      FROM route_ticks
+      WHERE rate_per_min > 0
+      GROUP BY country, route_type
+      HAVING COUNT(*) > 1 AND MAX(rate_per_min) > MIN(rate_per_min)
+      ORDER BY (MAX(rate_per_min) - MIN(rate_per_min)) DESC
+      LIMIT 10
+    `;
+    try {
+      const spreads = db.prepare(spreadQuery).all();
+      matches = spreads.map(s => {
+        const spread = Number((s.max_rate - s.min_rate).toFixed(5));
+        const marginPercent = s.min_rate > 0 ? Number(((spread / s.min_rate) * 100).toFixed(1)) : 0;
+        return {
+          country: s.country,
+          route_type: s.route_type,
+          sell_rate: s.min_rate,
+          seller_name: 'Best Market Offer',
+          seller_phone: '',
+          seller_company: 'Market Vendor',
+          sell_pulse: '1/1',
+          sell_time: Date.now(),
+          buy_rate: s.max_rate,
+          buyer_name: 'Highest Market Bid',
+          buyer_phone: '',
+          buyer_company: 'Target Buyer',
+          buy_pulse: '1/1',
+          buy_time: Date.now(),
+          spread,
+          marginPercent,
+          isProfitable: spread > 0
+        };
+      });
+    } catch (_) {}
+  }
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  return res.end(JSON.stringify({ status: 'ok', opportunities: matches }));
+}
+
 module.exports = {
   handleTrendsGet,
   handleNewsGet,
@@ -162,5 +280,6 @@ module.exports = {
   handleVendorsGet,
   handleInsightsGet,
   handlePitchPost,
-  handleExecutiveBriefGet
+  handleExecutiveBriefGet,
+  handleArbitrageGet
 };

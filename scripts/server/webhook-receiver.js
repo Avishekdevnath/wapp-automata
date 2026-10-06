@@ -2,10 +2,10 @@
  * Incoming Webhook Processing & HMAC-SHA256 Signature Verification
  */
 const crypto = require('crypto');
-const { SECRET, FORWARD_WEBHOOK_URL, formatDateTime } = require('./config');
+const { SECRET, FORWARD_WEBHOOK_URL, MAX_HISTORY_MESSAGES, formatDateTime } = require('./config');
 const { recentMessages, stats, saveMessagesToDisk } = require('./store');
 const { processTelecomIntelligence } = require('./telecom-ingest');
-const { downloadMediaInBackground } = require('./media');
+const { isDmRecordingEnabled } = require('./db');
 const { forwardWebhookToClient } = require('./forwarder');
 
 function verifySignature(body, signatureHeader) {
@@ -129,16 +129,21 @@ function processWebhookDelivery(body, headers) {
     raw_envelope: parsed || { raw: body }
   };
 
+  // Selective Direct Message Recording (ADR-013):
+  // Check if incoming chat is a direct 1-on-1 message (not a group or channel)
+  const isGroupOrChannel = chatType === 'group' || chatType === 'channel' || chatDisplay.endsWith('@g.us') || (parsed?.message?.chat_id && parsed.message.chat_id.endsWith('@g.us'));
+  if (!isGroupOrChannel && !isDmRecordingEnabled()) {
+    return { isValid: isValidSig, skipped: true };
+  }
+
   recentMessages.unshift(record);
-  if (recentMessages.length > 500) recentMessages.pop();
+  if (recentMessages.length > MAX_HISTORY_MESSAGES) recentMessages.pop();
   saveMessagesToDisk(recentMessages);
 
   // Ingest into Telecom Intelligence Engine
   processTelecomIntelligence(record);
 
-  if (hasMedia && parsed && parsed.message && parsed.message.raw_payload) {
-    downloadMediaInBackground(messageId, parsed.message.raw_payload);
-  }
+  // ADR-014: Media Binary Deferral - Do NOT download media binaries to disk. Preserve metadata only.
 
   // Forward to client downstream webhook (n8n)
   if (FORWARD_WEBHOOK_URL) {

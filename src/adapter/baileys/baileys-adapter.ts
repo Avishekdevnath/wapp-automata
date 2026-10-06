@@ -454,12 +454,15 @@ export class BaileysAdapter implements IWhatsAppAdapter {
           }
         }
 
-        // Automatically mark incoming messages as read / seen (sends read receipt and clears unread badge)
-        if (msg.key && !msg.key.fromMe) {
+        // Selective Read Receipts (ADR-013):
+        // Automatically mark incoming messages as read ONLY for group chats (@g.us).
+        // Direct messages (1-on-1 chats / @s.whatsapp.net) must NEVER be auto-marked as read (Zero-Seen Guarantee).
+        const isGroupChat = Boolean(msg.key?.remoteJid?.endsWith('@g.us'));
+        if (msg.key && !msg.key.fromMe && isGroupChat) {
           try {
             await sock.readMessages([msg.key]);
           } catch (readErr) {
-            logger.debug('Could not send read receipt for message', { key: msg.key, error: readErr });
+            logger.debug('Could not send read receipt for group message', { key: msg.key, error: readErr });
           }
         }
       }

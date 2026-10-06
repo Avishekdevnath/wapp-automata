@@ -89,5 +89,5 @@ export interface IQueueRepository {
    * on non-pending messages, and purges delivered records older than 2x retentionDays.
    * Keeps parsed route_ticks, carrier contacts, and vendors intact forever.
    */
-  pruneOldPayloads(retentionDays?: number, nowMs?: number): { prunedCount: number; deletedCount: number };
+  pruneOldPayloads(retentionDays?: number, nowMs?: number, deleteDelivered?: boolean): { prunedCount: number; deletedCount: number };
 }

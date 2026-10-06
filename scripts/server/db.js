@@ -232,11 +232,13 @@ function backfillHistoricalTelecomData(recentMessages) {
 }
 
 /**
- * Automated SQLite Log Retention
- * Prunes bulky raw_payload envelopes older than retentionDays (30d) and purges delivered records older than 60d.
+/**
+ * Automated SQLite Log Retention (ADR-013 Lifetime Raw Text Storage)
+ * Prunes bulky raw_payload envelopes older than retentionDays (30d).
+ * Never deletes raw messages rows unless deleteDelivered is explicitly true (default: false).
  * Never touches parsed routes (route_ticks) or vendors!
  */
-function pruneRawPayloads(db, retentionDays = 30) {
+function pruneRawPayloads(db, retentionDays = 30, deleteDelivered = false) {
   if (!db) return { prunedPayloads: 0, deletedOldMessages: 0 };
   const cutoffMs = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
   const delCutoffMs = Date.now() - (retentionDays * 2 * 24 * 60 * 60 * 1000);
@@ -248,13 +250,15 @@ function pruneRawPayloads(db, retentionDays = 30) {
     // Check if messages table exists
     const hasMessages = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'").get();
     if (hasMessages) {
-      // 1. Permanently delete delivered messages older than 2x retention window (60d)
-      const delStmt = db.prepare(`
-        DELETE FROM messages
-        WHERE created_at < ? AND status = 'delivered'
-      `);
-      const delRes = delStmt.run(delCutoffMs);
-      deletedCount = delRes.changes;
+      // 1. Delete delivered messages only if explicitly allowed (default: false to keep lifetime text)
+      if (deleteDelivered) {
+        const delStmt = db.prepare(`
+          DELETE FROM messages
+          WHERE created_at < ? AND status = 'delivered'
+        `);
+        const delRes = delStmt.run(delCutoffMs);
+        deletedCount = delRes.changes;
+      }
 
       // 2. Prune bulky raw payloads of remaining messages older than retention window (30d)
       const pruneStmt = db.prepare(`
@@ -280,9 +284,43 @@ function pruneRawPayloads(db, retentionDays = 30) {
   }
 }
 
+/**
+ * Checks whether recording 1-on-1 direct messages (DMs) is enabled.
+ * Default is false (OFF).
+ */
+function isDmRecordingEnabled() {
+  try {
+    const db = getTradingDb();
+    if (!db) return false;
+    db.prepare(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`).run();
+    const row = db.prepare("SELECT value FROM system_settings WHERE key = 'record_direct_messages'").get();
+    return row?.value === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Updates setting to record or ignore 1-on-1 direct messages (DMs).
+ */
+function setDmRecordingEnabled(enabled) {
+  try {
+    const db = getTradingDb();
+    if (!db) return false;
+    db.prepare(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`).run();
+    db.prepare(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('record_direct_messages', ?)`).run(enabled ? 'true' : 'false');
+    return true;
+  } catch (err) {
+    console.error('Failed to update record_direct_messages setting:', err);
+    return false;
+  }
+}
+
 module.exports = {
   getTradingDb,
   saveParsedTelecom,
   backfillHistoricalTelecomData,
-  pruneRawPayloads
+  pruneRawPayloads,
+  isDmRecordingEnabled,
+  setDmRecordingEnabled
 };
