@@ -469,3 +469,11 @@ module.exports = {
   BENCHMARK_NEWS,
   seedBenchmarkRoutes
 };
+
+if (require.main === module) {
+  const { getTradingDb } = require('./server/db');
+  const db = getTradingDb();
+  if (db) {
+    seedBenchmarkRoutes(db, true);
+  }
+}
