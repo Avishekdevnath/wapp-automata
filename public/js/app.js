@@ -179,26 +179,33 @@ function toggleSidebar() {
   const backdrop = document.getElementById('sidebar-backdrop');
   if (!sidebar) return;
 
-  const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
-  try {
-    localStorage.setItem('wapp_sidebar_collapsed', isCollapsed ? '1' : '0');
-  } catch {}
-
-  if (sidebar.classList.contains('-translate-x-full')) {
+  if (window.innerWidth < 768) {
+    // Mobile mode (< 768px): toggle off-canvas drawer
+    const isHidden = sidebar.classList.contains('-translate-x-full');
+    if (isHidden) {
+      sidebar.classList.remove('-translate-x-full');
+      if (backdrop) backdrop.classList.remove('hidden');
+    } else {
+      sidebar.classList.add('-translate-x-full');
+      if (backdrop) backdrop.classList.add('hidden');
+    }
+  } else {
+    // Desktop / Tablet mode (>= 768px): toggle between Expanded (256px) and Collapsed Rail (68px)
+    // Both states participate in flex layout so content naturally flexes to the right
     sidebar.classList.remove('-translate-x-full');
-  }
-  if (backdrop) {
-    backdrop.classList.add('hidden');
+    const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+    try {
+      localStorage.setItem('wapp_sidebar_collapsed', isCollapsed ? '1' : '0');
+    } catch {}
+    if (backdrop) backdrop.classList.add('hidden');
   }
 }
 
 function closeMobileSidebar() {
   const sidebar = document.getElementById('app-sidebar');
   const backdrop = document.getElementById('sidebar-backdrop');
-  if (sidebar && window.innerWidth < 1024) {
-    if (!sidebar.classList.contains('sidebar-collapsed')) {
-      sidebar.classList.add('-translate-x-full');
-    }
+  if (sidebar && window.innerWidth < 768) {
+    sidebar.classList.add('-translate-x-full');
   }
   if (backdrop) backdrop.classList.add('hidden');
 }
@@ -214,7 +221,7 @@ function initSidebarState() {
       sidebar.classList.remove('-translate-x-full');
     } else {
       sidebar.classList.remove('sidebar-collapsed');
-      if (window.innerWidth < 1024) {
+      if (window.innerWidth < 768) {
         sidebar.classList.add('-translate-x-full');
       } else {
         sidebar.classList.remove('-translate-x-full');
@@ -231,13 +238,20 @@ window.addEventListener('resize', () => {
   if (!sidebar) return;
 
   try {
-    if (localStorage.getItem('wapp_sidebar_collapsed') === '1') {
-      sidebar.classList.add('sidebar-collapsed');
+    if (window.innerWidth >= 768) {
+      // In tablet/desktop mode, remove hidden translation so it participates in flex flow
       sidebar.classList.remove('-translate-x-full');
       if (backdrop) backdrop.classList.add('hidden');
-    } else if (window.innerWidth >= 1024) {
-      sidebar.classList.remove('-translate-x-full');
-      if (backdrop) backdrop.classList.add('hidden');
+      if (localStorage.getItem('wapp_sidebar_collapsed') === '1') {
+        sidebar.classList.add('sidebar-collapsed');
+      } else {
+        sidebar.classList.remove('sidebar-collapsed');
+      }
+    } else {
+      // In small mobile phone mode, hide drawer by default unless manually opened
+      if (!sidebar.classList.contains('-translate-x-full') && (!backdrop || backdrop.classList.contains('hidden'))) {
+        sidebar.classList.add('-translate-x-full');
+      }
     }
   } catch {}
 });

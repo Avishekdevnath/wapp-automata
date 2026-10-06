@@ -10,15 +10,38 @@
 }
 
 /* ==========================================================================
+   Responsive Flex Flow Rules for Desktop & Tablet (>= 768px)
+   The sidebar is a direct flex child of #main-app, pushing content to the right
+   ========================================================================== */
+@media (min-width: 768px) {
+  #app-sidebar {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    flex-shrink: 0 !important;
+    height: 100% !important;
+  }
+}
+
+/* ==========================================================================
    Icon-Only Rail Mode (Collapsed Sidebar)
    Shows logos only of menus when sidebar is toggled
    ========================================================================== */
 #app-sidebar.sidebar-collapsed {
   display: flex !important;
-  transform: translateX(0) !important;
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
   width: 68px !important;
   min-width: 68px !important;
   max-width: 68px !important;
+  flex-shrink: 0 !important;
+  height: 100% !important;
+  z-index: 30 !important;
   transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease !important;
   overflow-x: hidden !important;
 }
