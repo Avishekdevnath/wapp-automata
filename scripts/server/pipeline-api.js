@@ -241,12 +241,41 @@ function handlePipelineApi(req, res, pathname, parsedUrl) {
     return true;
   }
 
+  // POST /api/pipeline/clear or DELETE /api/pipeline (Clear AI Tasks & Telemetry)
+  if ((req.method === 'POST' && pathname === '/api/pipeline/clear') || (req.method === 'DELETE' && pathname === '/api/pipeline')) {
+    const db = getTradingDb();
+    let deletedCount = 0;
+    if (db) {
+      try {
+        const resDel = db.prepare('DELETE FROM ai_tasks').run();
+        deletedCount = resDel.changes;
+      } catch (_) {}
+    }
+    clearPipelineData();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ status: 'ok', deleted: deletedCount }));
+  }
+
   return false;
+}
+
+function clearPipelineData() {
+  pipelineEvents.length = 0;
+  pipelineMetrics.totalIngested = 0;
+  pipelineMetrics.totalProcessed = 0;
+  pipelineMetrics.totalTelecom = 0;
+  pipelineMetrics.totalNoise = 0;
+  pipelineMetrics.totalRoutes = 0;
+  pipelineMetrics.totalNews = 0;
+  pipelineMetrics.aiCalls = 0;
+  pipelineMetrics.latencySum = 0;
+  pipelineMetrics.lastLatencyMs = 0;
 }
 
 module.exports = {
   recordPipelineEvent,
   handlePipelineApi,
+  clearPipelineData,
   pipelineMetrics,
   pipelineEvents
 };

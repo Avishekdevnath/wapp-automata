@@ -207,6 +207,12 @@ function backfillHistoricalTelecomData(recentMessages) {
   try {
     const db = getTradingDb();
     if (!db) return;
+    try {
+      const isCleared = db.prepare("SELECT value FROM system_settings WHERE key = 'user_cleared_routes'").get()?.value;
+      if (isCleared === 'true') {
+        return; // User explicitly cleared routes; preserve empty state until new messages arrive or re-seed is triggered
+      }
+    } catch (_) {}
     const count = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get()?.c || 0;
     if (count === 0 && recentMessages && recentMessages.length > 0) {
       const { parseTelecomMessage } = require('../telecom-parser');

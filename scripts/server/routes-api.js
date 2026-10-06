@@ -279,9 +279,33 @@ function handleRoutesSeed(req, res) {
     res.writeHead(500, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ error: 'Database unavailable' }));
   }
+  try {
+    db.prepare(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`).run();
+    db.prepare(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('user_cleared_routes', 'false')`).run();
+  } catch (_) {}
   const count = seedBenchmarkRoutes(db, true);
   res.writeHead(200, { 'Content-Type': 'application/json' });
   return res.end(JSON.stringify({ status: 'ok', seeded: count }));
+}
+
+function handleRoutesClear(req, res) {
+  const db = getTradingDb();
+  if (!db) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Database unavailable' }));
+  }
+  try {
+    const result = db.prepare('DELETE FROM route_ticks').run();
+    try {
+      db.prepare(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`).run();
+      db.prepare(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('user_cleared_routes', 'true')`).run();
+    } catch (_) {}
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ status: 'ok', deleted: result.changes }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: err.message }));
+  }
 }
 
 function handleRoutesExport(req, res) {
@@ -310,5 +334,6 @@ module.exports = {
   handleRoutesGet,
   handleRoutesPost,
   handleRoutesSeed,
+  handleRoutesClear,
   handleRoutesExport
 };

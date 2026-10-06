@@ -52,6 +52,22 @@ function handleNewsGet(req, res) {
   return res.end(JSON.stringify({ status: 'ok', news: rows }));
 }
 
+function handleNewsClear(req, res) {
+  const db = getTradingDb();
+  if (!db) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Database unavailable' }));
+  }
+  try {
+    const resDel = db.prepare('DELETE FROM market_news').run();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ status: 'ok', deleted: resDel.changes }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: err.message }));
+  }
+}
+
 function handleVendorsGet(req, res) {
   const db = getTradingDb();
   if (!db) {
@@ -142,6 +158,7 @@ async function handleExecutiveBriefGet(req, res, parsedUrl) {
 module.exports = {
   handleTrendsGet,
   handleNewsGet,
+  handleNewsClear,
   handleVendorsGet,
   handleInsightsGet,
   handlePitchPost,

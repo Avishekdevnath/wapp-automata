@@ -6,8 +6,8 @@ const http = require('http');
 const { PORT, HOST, DASHBOARD_PASSWORD, PUBLIC_DIR } = require('./server/config');
 const { isAuthenticated, generateAuthToken } = require('./server/auth');
 const { processWebhookDelivery } = require('./server/webhook-receiver');
-const { handleRoutesGet, handleRoutesPost, handleRoutesSeed, handleRoutesExport } = require('./server/routes-api');
-const { handleTrendsGet, handleNewsGet, handleVendorsGet, handleInsightsGet, handlePitchPost, handleExecutiveBriefGet } = require('./server/market-api');
+const { handleRoutesGet, handleRoutesPost, handleRoutesSeed, handleRoutesClear, handleRoutesExport } = require('./server/routes-api');
+const { handleTrendsGet, handleNewsGet, handleNewsClear, handleVendorsGet, handleInsightsGet, handlePitchPost, handleExecutiveBriefGet } = require('./server/market-api');
 const { handleSystemApi } = require('./server/system-api');
 const { handleAiSettingsApi } = require('./server/ai-settings');
 const { handlePipelineApi } = require('./server/pipeline-api');
@@ -82,15 +82,51 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/routes') return handleRoutesGet(req, res, parsedUrl);
     if (req.method === 'POST' && pathname === '/api/routes') return handleRoutesPost(req, res);
     if (req.method === 'POST' && pathname === '/api/routes/seed') return handleRoutesSeed(req, res);
+    if ((req.method === 'POST' && pathname === '/api/routes/clear') || (req.method === 'DELETE' && pathname === '/api/routes')) return handleRoutesClear(req, res);
     if (req.method === 'GET' && pathname === '/api/export/routes') return handleRoutesExport(req, res);
 
     // Market & Intelligence APIs
     if (req.method === 'GET' && pathname === '/api/trends') return handleTrendsGet(req, res, parsedUrl);
     if (req.method === 'GET' && pathname === '/api/news/executive-brief') return handleExecutiveBriefGet(req, res, parsedUrl);
     if (req.method === 'GET' && pathname === '/api/news') return handleNewsGet(req, res);
+    if ((req.method === 'POST' && pathname === '/api/news/clear') || (req.method === 'DELETE' && pathname === '/api/news')) return handleNewsClear(req, res);
     if (req.method === 'GET' && pathname === '/api/vendors') return handleVendorsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/insights') return handleInsightsGet(req, res);
     if (req.method === 'POST' && pathname === '/api/insights/pitch') return handlePitchPost(req, res);
+
+    // Unified Data Clearance API
+    if (req.method === 'POST' && pathname === '/api/data/clear') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        let parsed = {};
+        try { parsed = JSON.parse(body || '{}'); } catch {}
+        const target = parsed.target || 'all';
+        const { getTradingDb } = require('./server/db');
+        const db = getTradingDb();
+        const results = {};
+        if (target === 'routes' || target === 'all') {
+          if (db) {
+            results.routes = db.prepare('DELETE FROM route_ticks').run().changes;
+            try {
+              db.prepare(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`).run();
+              db.prepare(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('user_cleared_routes', 'true')`).run();
+            } catch (_) {}
+          }
+        }
+        if (target === 'analysis' || target === 'all') {
+          if (db) results.analysis = db.prepare('DELETE FROM ai_tasks').run().changes;
+          const { clearPipelineData } = require('./server/pipeline-api');
+          clearPipelineData();
+        }
+        if (target === 'news' || target === 'all') {
+          if (db) results.news = db.prepare('DELETE FROM market_news').run().changes;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ status: 'ok', target, deleted: results }));
+      });
+      return;
+    }
 
     // AI Engine Settings APIs
     if (pathname.startsWith('/api/settings/ai')) {
