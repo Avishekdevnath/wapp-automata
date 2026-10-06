@@ -77,7 +77,7 @@ window.formatDateTime = function formatDateTime(val) {
 // Multi-View Navigation & Hash Router
 function getViewFromHash() {
   const hash = (window.location.hash || '').replace(/^#\/?/, '').trim().toLowerCase();
-  const validViews = ['routes', 'trends', 'insights', 'news', 'vendors', 'terminal', 'pipeline', 'dev'];
+  const validViews = ['routes', 'trends', 'insights', 'news', 'vendors', 'terminal', 'pipeline', 'dev', 'settings'];
   if (validViews.includes(hash)) return hash;
   if (hash === 'stream') return 'terminal';
   return null;
@@ -106,7 +106,8 @@ function switchView(viewName, updateHash = true) {
     'view-vendors',
     'view-terminal',
     'view-pipeline',
-    'view-dev'
+    'view-dev',
+    'view-settings'
   ];
 
   // Hide all views and show target view
@@ -131,7 +132,8 @@ function switchView(viewName, updateHash = true) {
     'vendors': { title: 'Carrier & Vendor Directory', sub: 'Registered telecom wholesale providers and account managers' },
     'terminal': { title: 'Live WhatsApp Messages Stream', sub: 'Continuous 24/7 capture of all incoming group broadcasts, rate sheets, and carrier DMs' },
     'pipeline': { title: 'System Pipeline & AI Inspector', sub: 'Real-time telemetry of message ingestion, AI entity extraction, queue, and market indexing' },
-    'dev': { title: 'Developer Studio & API Lab', sub: 'Webhook payload inspection, HMAC validation, and traffic simulator' }
+    'dev': { title: 'Developer Studio & API Lab', sub: 'Webhook payload inspection, HMAC validation, and traffic simulator' },
+    'settings': { title: 'Terminal Settings & Data Management', sub: 'WhatsApp account switching, terminal password, appearance themes, sidebar menu customization, and database purges' }
   };
 
   const currentMeta = titleMap[viewName] || titleMap['routes'];
@@ -148,6 +150,7 @@ function switchView(viewName, updateHash = true) {
   if (viewName === 'vendors' && typeof loadVendorDirectory === 'function') loadVendorDirectory();
   if (viewName === 'terminal' && typeof renderClientFeed === 'function') renderClientFeed();
   if (viewName === 'pipeline' && typeof loadPipelineStatus === 'function') loadPipelineStatus();
+  if (viewName === 'settings' && typeof loadSettingsView === 'function') loadSettingsView();
   if (viewName === 'dev') {
     if (typeof renderDevFeed === 'function') renderDevFeed();
     if (typeof renderAuditTable === 'function') renderAuditTable();
@@ -494,7 +497,8 @@ window.toggleShortcutsModal = toggleShortcutsModal;
     '5': 'vendors',
     '6': 'terminal',
     '7': 'pipeline',
-    '8': 'dev'
+    '8': 'dev',
+    '9': 'settings'
   };
 
   const SEARCH_INPUT_MAP = {
@@ -585,6 +589,9 @@ window.toggleShortcutsModal = toggleShortcutsModal;
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initSidebarState();
+  if (typeof initSidebarMenuToggles === 'function') {
+    initSidebarMenuToggles();
+  }
 
   if (typeof checkAuth === 'function') {
     checkAuth();

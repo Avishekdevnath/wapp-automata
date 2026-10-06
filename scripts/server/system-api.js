@@ -54,6 +54,14 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     return res.end(JSON.stringify({ status: 'ok', message: 'Session reset initiated' }));
   }
 
+  if (req.method === 'POST' && pathname === '/api/session/restart') {
+    exec('pm2 restart wapp-automata', (err) => {
+      if (err) console.error('Error restarting PM2 wapp-automata:', err);
+    });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ status: 'ok', message: 'WhatsApp background collector restart initiated' }));
+  }
+
   if (req.method === 'POST' && pathname === '/api/session/pair-code') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
@@ -248,6 +256,101 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     dismissStorageWarning();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ status: 'ok', dismissed: true }));
+  }
+
+  // Settings API: Password Change
+  if (req.method === 'POST' && pathname === '/api/settings/password') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { currentPassword, newPassword } = JSON.parse(body || '{}');
+        const { DASHBOARD_PASSWORD, setDashboardPassword } = require('./config');
+        if (!currentPassword || currentPassword !== DASHBOARD_PASSWORD) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ error: 'Current password does not match' }));
+        }
+        if (!newPassword || newPassword.length < 4) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ error: 'New password must be at least 4 characters long' }));
+        }
+        setDashboardPassword(newPassword);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ status: 'ok', message: 'Password updated successfully' }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return true;
+  }
+
+  // Settings API: Real-Time Intelligence & Storage Stats
+  if (req.method === 'GET' && pathname === '/api/settings/stats') {
+    const db = getTradingDb();
+    let routesCount = 0;
+    let aiTasksCount = 0;
+    let newsCount = 0;
+    let vendorsCount = 0;
+    if (db) {
+      try {
+        routesCount = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get()?.c || 0;
+        aiTasksCount = db.prepare('SELECT COUNT(*) as c FROM ai_tasks').get()?.c || 0;
+        newsCount = db.prepare('SELECT COUNT(*) as c FROM market_news').get()?.c || 0;
+        vendorsCount = db.prepare('SELECT COUNT(*) as c FROM vendors').get()?.c || 0;
+      } catch (_) {}
+    }
+    const storage = getStorageStats();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({
+      status: 'ok',
+      counts: {
+        routes: routesCount,
+        aiTasks: aiTasksCount,
+        news: newsCount,
+        vendors: vendorsCount,
+        messages: recentMessages.length
+      },
+      storage: {
+        disk: storage.disk,
+        media: storage.media
+      }
+    }));
+  }
+
+  // Unified Data Clearance API
+  if (req.method === 'POST' && pathname === '/api/data/clear') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      let parsed = {};
+      try { parsed = JSON.parse(body || '{}'); } catch {}
+      const target = parsed.target || 'all';
+      const db = getTradingDb();
+      const results = {};
+      if (target === 'routes' || target === 'all') {
+        if (db) {
+          results.routes = db.prepare('DELETE FROM route_ticks').run().changes;
+          try {
+            db.prepare(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`).run();
+            db.prepare(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('user_cleared_routes', 'true')`).run();
+          } catch (_) {}
+        }
+      }
+      if (target === 'analysis' || target === 'all') {
+        if (db) results.analysis = db.prepare('DELETE FROM ai_tasks').run().changes;
+        try {
+          const { clearPipelineData } = require('./pipeline-api');
+          clearPipelineData();
+        } catch (_) {}
+      }
+      if (target === 'news' || target === 'all') {
+        if (db) results.news = db.prepare('DELETE FROM market_news').run().changes;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ status: 'ok', target, deleted: results }));
+    });
+    return true;
   }
 
   if (req.method === 'GET' && pathname === '/api/forward/status') {

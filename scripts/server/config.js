@@ -64,11 +64,31 @@ function formatDateTime(d) {
   });
 }
 
+function setDashboardPassword(newPassword) {
+  process.env.DASHBOARD_PASSWORD = newPassword;
+  module.exports.DASHBOARD_PASSWORD = newPassword;
+  try {
+    const envPath = path.join(__dirname, '..', '..', '.env');
+    if (fs.existsSync(envPath)) {
+      let content = fs.readFileSync(envPath, 'utf8');
+      if (/^DASHBOARD_PASSWORD=/m.test(content)) {
+        content = content.replace(/^DASHBOARD_PASSWORD=.*$/m, `DASHBOARD_PASSWORD=${newPassword}`);
+      } else {
+        content += `\nDASHBOARD_PASSWORD=${newPassword}\n`;
+      }
+      fs.writeFileSync(envPath, content, 'utf8');
+    }
+  } catch (err) {
+    console.error('Failed to persist DASHBOARD_PASSWORD to .env:', err.message);
+  }
+}
+
 module.exports = {
   PORT,
   HOST,
   SECRET,
   DASHBOARD_PASSWORD,
+  setDashboardPassword,
   FORWARD_WEBHOOK_URL,
   FORWARD_FORMAT,
   DATA_DIR,

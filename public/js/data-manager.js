@@ -108,6 +108,7 @@
       }
       if (typeof window.loadMarketTrends === 'function') window.loadMarketTrends();
       if (typeof window.loadAiInsights === 'function') window.loadAiInsights();
+      if (typeof window.refreshSettingsStats === 'function') window.refreshSettingsStats();
 
     } catch (err) {
       if (typeof showToast === 'function') showToast(`Failed to clear data: ${err.message}`, 'error');

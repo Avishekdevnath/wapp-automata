@@ -1,0 +1,428 @@
+<!-- ==========================================================================
+     Telco Man • Dedicated Settings & Terminal Configuration View
+     Carrier Admin, Appearance, Sidebar Customization & Data Purge Center
+     ========================================================================== -->
+<div id="view-settings" class="space-y-6 hidden">
+
+  <!-- Top Hero Header Banner with Live Stats Badges -->
+  <div class="glass-card p-5 sm:p-6 rounded-2xl border border-dark-800 bg-dark-900/60 shadow-xl space-y-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#006a4e] via-emerald-600 to-[#004d38] p-[1.5px] shadow-lg shadow-emerald-950/40 shrink-0">
+          <div class="w-full h-full bg-slate-900 dark:bg-dark-950 rounded-[10px] flex items-center justify-center relative overflow-hidden">
+            <span class="absolute w-4 h-4 rounded-full bg-[#f42a41] opacity-90 shadow-[0_0_10px_rgba(244,42,65,0.8)]"></span>
+            <i data-lucide="settings" class="w-5 h-5 text-white relative z-10"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Terminal Settings & Control Center</h2>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">Carrier Admin</span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Manage carrier WhatsApp connections, access credentials, sidebar layout, themes, and database purges.</p>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="flex items-center gap-2">
+        <button onclick="refreshSettingsStats()" class="btn btn-secondary btn-sm" title="Refresh Live Database & Storage Counts">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-500"></i>
+          <span class="text-xs">Refresh Stats</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Badges Strip -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 border-t border-dark-800/80">
+      <div class="p-3 rounded-xl bg-dark-950/60 border border-dark-800">
+        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Active Routes</span>
+        <span id="settings-stat-routes" class="text-base font-extrabold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5 block">--</span>
+      </div>
+      <div class="p-3 rounded-xl bg-dark-950/60 border border-dark-800">
+        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">AI Tasks</span>
+        <span id="settings-stat-ai" class="text-base font-extrabold font-mono text-purple-600 dark:text-purple-400 mt-0.5 block">--</span>
+      </div>
+      <div class="p-3 rounded-xl bg-dark-950/60 border border-dark-800">
+        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Telco Outages</span>
+        <span id="settings-stat-news" class="text-base font-extrabold font-mono text-rose-600 dark:text-rose-400 mt-0.5 block">--</span>
+      </div>
+      <div class="p-3 rounded-xl bg-dark-950/60 border border-dark-800">
+        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Vendors</span>
+        <span id="settings-stat-vendors" class="text-base font-extrabold font-mono text-amber-600 dark:text-amber-400 mt-0.5 block">--</span>
+      </div>
+      <div class="p-3 rounded-xl bg-dark-950/60 border border-dark-800">
+        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Disk Space</span>
+        <span id="settings-stat-disk" class="text-base font-extrabold font-mono text-sky-600 dark:text-sky-400 mt-0.5 block">--</span>
+      </div>
+      <div class="p-3 rounded-xl bg-dark-950/60 border border-dark-800">
+        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Media Cache</span>
+        <span id="settings-stat-media" class="text-base font-extrabold font-mono text-slate-800 dark:text-slate-200 mt-0.5 block">-- MB</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Grid Layout: 2 Columns on desktop -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Card 1: 📱 WhatsApp Carrier Connection & Account Switcher -->
+    <div class="glass-card p-5 rounded-2xl border border-dark-800 bg-dark-900/60 shadow-lg space-y-4 flex flex-col justify-between">
+      <div class="space-y-3.5">
+        <div class="flex items-center justify-between pb-3 border-b border-dark-800">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <i data-lucide="smartphone" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-tight">WhatsApp Account Management</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Carrier ingestion multi-device connection & pairing</p>
+            </div>
+          </div>
+          <span id="settings-wp-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 dark:bg-dark-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-dark-700">Checking...</span>
+        </div>
+
+        <!-- Connection Details Info Box -->
+        <div class="p-3.5 rounded-xl bg-dark-950/60 border border-dark-800 space-y-2 text-xs">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500 dark:text-slate-400">Linked WhatsApp Number:</span>
+            <span id="settings-wp-phone" class="font-mono font-semibold text-slate-900 dark:text-white">--</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500 dark:text-slate-400">Profile Name / Platform:</span>
+            <span id="settings-wp-platform" class="font-medium text-slate-700 dark:text-slate-300">Baileys Multi-Device Socket</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500 dark:text-slate-400">Connection Engine:</span>
+            <span class="font-medium text-emerald-600 dark:text-emerald-400">Multi-Device Webhook Bridge</span>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+          Need to switch to a different business WhatsApp number or re-pair? Unlinking will remove current session tokens and immediately allow scanning a fresh QR code or 8-digit pairing code.
+        </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="pt-3 border-t border-dark-800/80 flex flex-wrap items-center gap-2.5">
+        <button onclick="handleSettingsUnlinkWp()" class="btn btn-danger btn-sm text-xs font-semibold flex items-center gap-1.5">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span>Switch Account / Unlink Device</span>
+        </button>
+        <button onclick="handleSettingsRestartWp()" class="btn btn-secondary btn-sm text-xs font-medium flex items-center gap-1.5" title="Restart WebSocket without clearing auth credentials">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-500"></i>
+          <span>Restart Socket</span>
+        </button>
+        <button onclick="openDeviceModal()" class="btn btn-secondary btn-sm text-xs font-medium flex items-center gap-1.5" title="Open QR Code Scanner">
+          <i data-lucide="qr-code" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>Show QR / Pair Modal</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 2: 🔐 Access Security & Terminal Password -->
+    <div class="glass-card p-5 rounded-2xl border border-dark-800 bg-dark-900/60 shadow-lg space-y-4 flex flex-col justify-between">
+      <div class="space-y-3.5">
+        <div class="flex items-center justify-between pb-3 border-b border-dark-800">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <i data-lucide="lock" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-tight">Terminal Password & Security</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Change dashboard gate password (persisted in .env)</p>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">Protected</span>
+        </div>
+
+        <form id="settings-password-form" onsubmit="handleSettingsPasswordChange(event)" class="space-y-2.5 text-xs">
+          <div>
+            <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Current Password</label>
+            <input type="password" id="input-curr-pwd" required placeholder="Enter current password" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-950 border border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:border-emerald-500">
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">New Password</label>
+              <input type="password" id="input-new-pwd" required minlength="4" placeholder="Min. 4 chars" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-950 border border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1">Confirm New Password</label>
+              <input type="password" id="input-confirm-pwd" required minlength="4" placeholder="Re-type new password" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-950 border border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+          <div id="pwd-change-feedback" class="hidden text-[11px] p-2.5 rounded-lg font-medium"></div>
+
+          <div class="pt-2 flex justify-end">
+            <button type="submit" id="btn-save-pwd" class="btn btn-primary btn-sm text-xs font-semibold flex items-center gap-1.5">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              <span>Save & Update Password</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Card 3: 🗂️ Sidebar Navigation Visibility (Menus On / Off) -->
+    <div class="glass-card p-5 rounded-2xl border border-dark-800 bg-dark-900/60 shadow-lg space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-dark-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-tight">Sidebar Navigation Menus</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Toggle visibility of navigation items on and off</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="enableAllSidebarMenus()" class="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold">Enable All</button>
+          <span class="text-slate-400">•</span>
+          <button onclick="resetSidebarMenus()" class="text-[11px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline font-medium">Reset</button>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Customize your trading workspace by turning off modules you rarely use. The Settings menu remains easily accessible at all times.
+      </p>
+
+      <!-- Menu Items Toggle Switches Grid -->
+      <div id="sidebar-menu-toggles-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+        <!-- Rendered dynamically via js/settings.js with interactive toggle switches -->
+      </div>
+    </div>
+
+    <!-- Card 4: 🎨 Appearance, Themes & Bangladesh Nuance -->
+    <div class="glass-card p-5 rounded-2xl border border-dark-800 bg-dark-900/60 shadow-lg space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-dark-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <i data-lucide="palette" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-tight">Appearance & Display Settings</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Theme mode, rate sheets pagination, and sovereign nuance</p>
+          </div>
+        </div>
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-[#006a4e]/20 text-emerald-600 dark:text-emerald-400 border border-[#006a4e]/30">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#f42a41] inline-block animate-pulse"></span>BD
+        </span>
+      </div>
+
+      <div class="space-y-3.5 text-xs">
+        <!-- Theme Radios -->
+        <div>
+          <label class="block text-slate-600 dark:text-slate-400 font-medium mb-1.5">Terminal Theme Mode</label>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="setThemeMode('dark')" id="theme-btn-dark" class="p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left">
+              <i data-lucide="moon" class="w-4 h-4 text-emerald-400"></i>
+              <div>
+                <span class="font-bold block text-slate-900 dark:text-white">Dark Terminal</span>
+                <span class="text-[10px] text-slate-500">Obsidian & Neon Green</span>
+              </div>
+            </button>
+            <button onclick="setThemeMode('light')" id="theme-btn-light" class="p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left">
+              <i data-lucide="sun" class="w-4 h-4 text-amber-500"></i>
+              <div>
+                <span class="font-bold block text-slate-900 dark:text-white">Light Mode</span>
+                <span class="text-[10px] text-slate-500">Eye-Soothing Slate (AAA)</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Page Size Preference -->
+        <div class="flex items-center justify-between p-3 rounded-xl bg-dark-950/60 border border-dark-800">
+          <div>
+            <span class="font-semibold text-slate-900 dark:text-white block">Route Matrix Page Size</span>
+            <span class="text-[11px] text-slate-500">Default rows rendered per table page</span>
+          </div>
+          <select id="select-settings-pagesize" onchange="handleSettingsPageSize(this.value)" class="px-2.5 py-1 rounded-lg bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none">
+            <option value="15">15 rows</option>
+            <option value="25">25 rows</option>
+            <option value="50">50 rows</option>
+            <option value="100">100 rows</option>
+          </select>
+        </div>
+
+        <!-- Audio Alert Preference -->
+        <div class="flex items-center justify-between p-3 rounded-xl bg-dark-950/60 border border-dark-800">
+          <div>
+            <span class="font-semibold text-slate-900 dark:text-white block">Inbound Audio Chimes</span>
+            <span class="text-[11px] text-slate-500">Play pleasant audio chime on live route capture</span>
+          </div>
+          <button onclick="toggleSound(); updateSettingsAudioToggle();" id="settings-audio-btn" class="px-3 py-1 rounded-lg text-xs font-semibold border transition-all">
+            Enabled
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Card 5: 🗑️ Data Management & Database Purge Center (All Delete Type Settings) -->
+  <div class="glass-card p-6 rounded-2xl border border-dark-800 bg-dark-900/60 shadow-xl space-y-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-dark-800">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shrink-0">
+          <i data-lucide="trash-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-base text-slate-900 dark:text-white leading-tight">Database & Intelligence Data Purge Center</h3>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/20">Data Lifecycle</span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Selective database cleaning, benchmark resets, and storage pruning</p>
+        </div>
+      </div>
+
+      <!-- Accidental Data Loss Badge -->
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+        <span>WhatsApp Session 100% Protected</span>
+      </span>
+    </div>
+
+    <!-- 6-Grid Modular Purge Blocks -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+
+      <!-- Module 1: Route Matrix Table -->
+      <div class="p-4 rounded-xl bg-dark-950/60 border border-dark-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="table" class="w-4 h-4 text-emerald-400"></i>
+              <span class="font-bold text-slate-900 dark:text-white">Route Matrix Data</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">table: route_ticks</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Deletes voice offers, destination corridors, and pricing cards. Raw chats stay untouched.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 pt-2 border-t border-dark-800">
+          <button onclick="executeDataClear('routes', false); setTimeout(refreshSettingsStats, 800);" class="flex-1 py-1.5 px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Clear Routes</span>
+          </button>
+          <button onclick="executeDataClear('routes', true); setTimeout(refreshSettingsStats, 800);" class="py-1.5 px-2.5 rounded-lg bg-white dark:bg-dark-800 hover:bg-slate-100 dark:hover:bg-dark-700 text-amber-600 dark:text-amber-300 border border-amber-500/30 font-medium text-xs transition-all flex items-center gap-1" title="Clear current and reload authentic benchmarks">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span>Reseed</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Module 2: AI Analysis & Telemetry -->
+      <div class="p-4 rounded-xl bg-dark-950/60 border border-dark-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="cpu" class="w-4 h-4 text-purple-400"></i>
+              <span class="font-bold text-slate-900 dark:text-white">AI Analysis & Telemetry</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">table: ai_tasks</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Deletes queued & completed entity extraction records, pipeline latency telemetry, and inspector traces.
+          </p>
+        </div>
+        <div class="pt-2 border-t border-dark-800">
+          <button onclick="executeDataClear('analysis', false); setTimeout(refreshSettingsStats, 800);" class="w-full py-1.5 px-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Clear AI Analysis History</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Module 3: Market News & Outages -->
+      <div class="p-4 rounded-xl bg-dark-950/60 border border-dark-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="newspaper" class="w-4 h-4 text-rose-400"></i>
+              <span class="font-bold text-slate-900 dark:text-white">Carrier News & Outages</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">table: market_news</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Deletes carrier outage bulletins, fiber cut warnings, and telecom regulatory news.
+          </p>
+        </div>
+        <div class="pt-2 border-t border-dark-800">
+          <button onclick="executeDataClear('news', false); setTimeout(refreshSettingsStats, 800);" class="w-full py-1.5 px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Delete Outages & News</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Module 4: Media Downloads Cache -->
+      <div class="p-4 rounded-xl bg-dark-950/60 border border-dark-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="hard-drive" class="w-4 h-4 text-amber-400"></i>
+              <span class="font-bold text-slate-900 dark:text-white">Media Files Cache</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">dir: data/media</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Purges cached voice audio notes, rate sheet PDFs, and photos downloaded from WhatsApp chats.
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-dark-800">
+          <button onclick="handlePurgeMedia(80); setTimeout(refreshSettingsStats, 1000);" class="py-1.5 px-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-semibold text-xs transition-all text-center">
+            Purge 80%
+          </button>
+          <button onclick="handlePurgeMedia(100); setTimeout(refreshSettingsStats, 1000);" class="py-1.5 px-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-semibold text-xs transition-all text-center">
+            Purge 100%
+          </button>
+        </div>
+      </div>
+
+      <!-- Module 5: SQLite Envelope Retention -->
+      <div class="p-4 rounded-xl bg-dark-950/60 border border-dark-800 hover:border-slate-700 transition-all space-y-3 flex flex-col justify-between">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+              <span class="font-bold text-slate-900 dark:text-white">30-Day SQLite Prune</span>
+            </div>
+            <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">Auto Active</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Prunes bulky raw Baileys envelopes older than 30 days and removes delivered logs >60 days. Parsed routes stay forever.
+          </p>
+        </div>
+        <div class="pt-2 border-t border-dark-800">
+          <button onclick="handleRunLogRetention(); setTimeout(refreshSettingsStats, 1000);" class="w-full py-1.5 px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold text-xs transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Run Retention Prune Now</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Module 6: Master Terminal Reset (Danger Zone) -->
+      <div class="p-4 rounded-xl bg-rose-500/5 border border-rose-500/30 hover:border-rose-500/50 transition-all space-y-3 flex flex-col justify-between">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-500"></i>
+              <span class="font-bold text-rose-700 dark:text-rose-400">Master Data Reset</span>
+            </div>
+            <span class="text-[10px] font-bold text-rose-600 uppercase">Danger</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Purges all routes, AI history, and news across all tables simultaneously. WhatsApp link & session stay preserved.
+          </p>
+        </div>
+        <div class="pt-2 border-t border-rose-500/20">
+          <button onclick="executeDataClear('all', false); setTimeout(refreshSettingsStats, 1000);" class="w-full py-1.5 px-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Factory Reset All Data</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -22,6 +22,18 @@ html:not(.dark) h6 {
 /* Neutral Slate Text in Light Mode (Scoped to avoid overriding colored badges) */
 html:not(.dark) p.text-white,
 html:not(.dark) span.text-white:not([class*="bg-"]):not(.btn):not([class*="btn-"]):not(.sidebar-badge),
+html:not(.dark) strong.text-white,
+html:not(.dark) b.text-white,
+html:not(.dark) div.text-white:not([class*="bg-rose-6"]):not([class*="bg-emerald-6"]):not([class*="bg-purple-6"]),
+html:not(.dark) label.text-white,
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) h4.text-white,
+html:not(.dark) h5.text-white,
+html:not(.dark) h6.text-white,
+html:not(.dark) strong:not([class*="text-"]):not([class*="bg-"]):not(.btn):not([class*="btn-"]):not(.sidebar-badge),
+html:not(.dark) b:not([class*="text-"]):not([class*="bg-"]):not(.btn):not([class*="btn-"]):not(.sidebar-badge),
 html:not(.dark) .text-slate-100:not(.sidebar-badge),
 html:not(.dark) .text-slate-200:not(.sidebar-badge),
 html:not(.dark) .text-slate-300:not(.sidebar-badge) {
@@ -39,6 +51,108 @@ html:not(.dark) .text-slate-600,
 html:not(.dark) .text-slate-700 {
   color: var(--text-dim) !important;
   font-weight: 500 !important;
+}
+
+/* Light Mode Pale Semantic Colored Text Shield (Converts pale pastel text to deep, rich, legible tones) */
+html:not(.dark) .text-rose-100,
+html:not(.dark) .text-rose-200,
+html:not(.dark) .text-rose-300,
+html:not(.dark) [class*="text-rose-300/"],
+html:not(.dark) .text-red-100,
+html:not(.dark) .text-red-200,
+html:not(.dark) .text-red-300 {
+  color: #9f1239 !important; /* Rose 800 - rich deep crimson */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-amber-100,
+html:not(.dark) .text-amber-200,
+html:not(.dark) .text-amber-300,
+html:not(.dark) [class*="text-amber-300/"],
+html:not(.dark) .text-yellow-100,
+html:not(.dark) .text-yellow-200,
+html:not(.dark) .text-yellow-300 {
+  color: #92400e !important; /* Amber 800 - rich deep ochre */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-emerald-100,
+html:not(.dark) .text-emerald-200,
+html:not(.dark) .text-emerald-300,
+html:not(.dark) [class*="text-emerald-300/"],
+html:not(.dark) .text-green-100,
+html:not(.dark) .text-green-200,
+html:not(.dark) .text-green-300 {
+  color: #065f46 !important; /* Emerald 800 - deep bottle green */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-purple-100,
+html:not(.dark) .text-purple-200,
+html:not(.dark) .text-purple-300,
+html:not(.dark) [class*="text-purple-300/"] {
+  color: #6b21a8 !important; /* Purple 800 - deep royal violet */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-sky-100,
+html:not(.dark) .text-sky-200,
+html:not(.dark) .text-sky-300,
+html:not(.dark) [class*="text-sky-300/"],
+html:not(.dark) .text-blue-100,
+html:not(.dark) .text-blue-200,
+html:not(.dark) .text-blue-300 {
+  color: #0369a1 !important; /* Sky 800 / Blue 800 */
+  font-weight: 600 !important;
+}
+
+/* Light Mode Alert & Warning Box Text Overrides (Prevents washed-out/invisible text) */
+html:not(.dark) [class*="bg-rose-500/"],
+html:not(.dark) [class*="bg-red-500/"] {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #881337 !important;
+}
+
+html:not(.dark) [class*="bg-rose-500/"] p,
+html:not(.dark) [class*="bg-rose-500/"] span,
+html:not(.dark) [class*="bg-rose-500/"] div,
+html:not(.dark) [class*="bg-red-500/"] p,
+html:not(.dark) [class*="bg-red-500/"] span,
+html:not(.dark) [class*="bg-red-500/"] div {
+  color: #881337 !important;
+}
+
+html:not(.dark) [class*="bg-rose-500/"] strong,
+html:not(.dark) [class*="bg-rose-500/"] b,
+html:not(.dark) [class*="bg-red-500/"] strong,
+html:not(.dark) [class*="bg-red-500/"] b {
+  color: #4c0519 !important; /* Rose 950 - ultra high contrast */
+  font-weight: 800 !important;
+}
+
+html:not(.dark) [class*="bg-amber-500/"],
+html:not(.dark) [class*="bg-yellow-500/"] {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+html:not(.dark) [class*="bg-amber-500/"] p,
+html:not(.dark) [class*="bg-amber-500/"] span,
+html:not(.dark) [class*="bg-amber-500/"] div,
+html:not(.dark) [class*="bg-yellow-500/"] p,
+html:not(.dark) [class*="bg-yellow-500/"] span,
+html:not(.dark) [class*="bg-yellow-500/"] div {
+  color: #92400e !important;
+}
+
+html:not(.dark) [class*="bg-amber-500/"] strong,
+html:not(.dark) [class*="bg-amber-500/"] b,
+html:not(.dark) [class*="bg-yellow-500/"] strong,
+html:not(.dark) [class*="bg-yellow-500/"] b {
+  color: #451a03 !important; /* Amber 950 */
+  font-weight: 800 !important;
 }
 
 /* Secondary & Metadata Text in Dark Mode (Fixes muted/invisible text) */
