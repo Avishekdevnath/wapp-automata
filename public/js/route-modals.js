@@ -1,5 +1,5 @@
 /**
- * WappAutomata • Route Matrix Modals Controller
+ * Telco Man • Route Matrix Modals Controller
  * Handles Route Details Inspector, Trade Ticket Clipboard, and Post Route creation.
  */
 (function() {
@@ -183,7 +183,7 @@
     const flag = flags[route.country] || '';
 
     const ticket = `========================================
-WHOLESALE ROUTE TICKET - WAPPAUTOMATA
+WHOLESALE ROUTE TICKET - TELCO MAN
 ========================================
 Destination : ${flag} ${route.country}
 Intent      : ${route.intent || 'WTS'} (${(route.intent === 'WTB') ? 'Buying' : 'Selling'})

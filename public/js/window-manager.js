@@ -1,5 +1,5 @@
 /**
- * WappAutomata • Ultra-Fast Enterprise Modal Controller
+ * Telco Man • Ultra-Fast Enterprise Modal Controller
  * Replaces heavy window dragging with instant (<16ms) hardware-accelerated modals.
  * Features: Native ESC dismissal, backdrop click closing, zero CPU churn, full backwards-compatibility.
  */

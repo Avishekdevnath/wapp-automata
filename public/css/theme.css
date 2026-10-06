@@ -1,6 +1,7 @@
 /* ==========================================================================
-   WappAutomata • Design System Theme Tokens
-   Dual-Mode Dark & Light Variables (WhatsApp Enterprise SaaS Theme)
+   Telco Man • Design System Theme Tokens
+   Dual-Mode Dark & Light Variables (Wholesale Carrier Trading Terminal)
+   Bangladesh Sovereign Palette (Subtle Crimson Red & Emerald Bottle Green)
    ========================================================================== */
 
 :root {
@@ -33,6 +34,12 @@
   --input-bg: #ffffff;
   --input-border: #cbd5e1;
   --input-text: #0f172a;
+
+  /* Bangladesh Subtle Accent Tokens */
+  --bd-green: #006a4e;                /* Authentic Bangladesh Bottle Green */
+  --bd-green-deep: #004d38;
+  --bd-red: #f42a41;                  /* Authentic Bangladesh Circular Crimson Sun */
+  --bd-ribbon: linear-gradient(90deg, #006a4e 0%, #059669 40%, #f42a41 50%, #059669 60%, #006a4e 100%);
 }
 
 .dark {
@@ -61,4 +68,10 @@
   --input-bg: #090e17;
   --input-border: #1e293b;
   --input-text: #f8fafc;
+
+  /* Bangladesh Subtle Accent Tokens (Dark Mode) */
+  --bd-green: #00875a;                /* Luminous Bangladesh Bottle Green */
+  --bd-green-deep: #006a4e;
+  --bd-red: #f42a41;                  /* Authentic Bangladesh Circular Crimson Sun */
+  --bd-ribbon: linear-gradient(90deg, #006a4e 0%, #059669 40%, #f42a41 50%, #059669 60%, #006a4e 100%);
 }

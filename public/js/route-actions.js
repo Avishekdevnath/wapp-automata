@@ -1,5 +1,5 @@
 /**
- * WappAutomata • Route Matrix Actions Controller
+ * Telco Man • Route Matrix Actions Controller
  * Handles 1-Click WhatsApp Knocking, CSV Rate Sheet Export, and Benchmark Seeding.
  */
 (function() {
