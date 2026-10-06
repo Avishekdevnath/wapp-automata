@@ -167,7 +167,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   const displayUrl = (HOST === '0.0.0.0' || HOST === '::') ? `http://localhost:${PORT}/` : `http://${HOST}:${PORT}/`;
-  console.log(`\n🇧🇩 🚀 Telco Man • Wholesale Carrier Route Terminal running at: ${displayUrl}`);
+  console.log(`\n🇧🇩 🚀 Telcia • Telecom Intelligent Agent running at: ${displayUrl}`);
   console.log(`📁 Serving frontend components from:         ${PUBLIC_DIR}`);
   console.log(`🔑 Password Gate:                            "${DASHBOARD_PASSWORD}"`);
   console.log(`📡 Ingestion Endpoint:                        ${displayUrl}webhook\n`);

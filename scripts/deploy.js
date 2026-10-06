@@ -5,7 +5,7 @@ const VPS_USER = process.env.VPS_USER || 'root';
 const VPS_DIR = process.env.VPS_DIR || '/opt/wapp-automata/current';
 
 console.log('=====================================================');
-console.log('🚀 Telco Man Deployment to Hostinger VPS');
+console.log('🚀 Telcia • Telecom Intelligent Agent Deployment');
 console.log(`📡 Target: ${VPS_USER}@${VPS_HOST}:${VPS_DIR}`);
 console.log('=====================================================\n');
 
