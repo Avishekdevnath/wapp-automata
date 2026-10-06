@@ -16,9 +16,19 @@ const { backfillHistoricalTelecomData } = require('./server/db');
 const { recentMessages } = require('./server/store');
 const { startQueueWorker } = require('./server/ai-queue');
 
+// Global process fault guards
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ [UncaughtException in Dashboard Receiver]', err.message, err.stack);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('⚠️ [UnhandledRejection in Dashboard Receiver]', reason);
+});
+
 const server = http.createServer(async (req, res) => {
-  const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const pathname = parsedUrl.pathname;
+  try {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const pathname = parsedUrl.pathname;
 
   // 1. PUBLIC WEBHOOK INGESTION (Signed with HMAC SHA-256)
   if (req.method === 'POST' && (pathname === '/webhook' || pathname === '/')) {
@@ -107,8 +117,15 @@ const server = http.createServer(async (req, res) => {
     return serveStaticFile(pathname, res);
   }
 
-  res.writeHead(405, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Method not allowed' }));
+    res.writeHead(405, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Method not allowed' }));
+  } catch (err) {
+    console.error('🚨 [Server Error] Unhandled exception during request routing:', err);
+    if (!res.headersSent) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Internal Server Error', message: err.message }));
+    }
+  }
 });
 
 server.listen(PORT, HOST, () => {
@@ -121,3 +138,11 @@ server.listen(PORT, HOST, () => {
   startQueueWorker();
   setTimeout(() => backfillHistoricalTelecomData(recentMessages), 1000);
 });
+
+// Clean shutdown signals
+const shutdownReceiver = () => {
+  console.log('\n🛑 Gracefully shutting down dashboard receiver...');
+  server.close(() => process.exit(0));
+};
+process.on('SIGINT', shutdownReceiver);
+process.on('SIGTERM', shutdownReceiver);

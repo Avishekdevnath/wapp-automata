@@ -49,6 +49,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
   private reconnectTimer: NodeJS.Timeout | null = null;
   private groupCache = new Map<string, { subject: string }>();
   private consecutive428Errors: number = 0;
+  private reconnectAttempts: number = 0;
 
   private readonly sessionPath: string;
   private readonly printQR: boolean;
@@ -133,6 +134,25 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     const resolvedSessionDir = initSessionDirectory(this.sessionPath);
     const { state, saveCreds } = await useMultiFileAuthState(resolvedSessionDir);
 
+    if (this.sock) {
+      try {
+        this.sock.ev.removeAllListeners('connection.update');
+        this.sock.ev.removeAllListeners('creds.update');
+        this.sock.ev.removeAllListeners('messages.upsert');
+        this.sock.ev.removeAllListeners('contacts.upsert');
+        this.sock.ev.removeAllListeners('contacts.update');
+        this.sock.ev.removeAllListeners('groups.update');
+        this.sock.ev.removeAllListeners('group-participants.update');
+        this.sock.ev.removeAllListeners('chats.upsert');
+        this.sock.ev.removeAllListeners('chats.update');
+        this.sock.ev.removeAllListeners('messaging-history.set');
+        this.sock.end(undefined);
+      } catch (err) {
+        logger.debug('Error closing previous Baileys socket before reconnect', { error: err });
+      }
+      this.sock = null;
+    }
+
     const sock = makeWASocket({
       auth: state,
       browser: Browsers.ubuntu('Chrome'),
@@ -201,6 +221,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
       if (connection === 'open') {
         this.consecutive428Errors = 0;
+        this.reconnectAttempts = 0;
         if (this.pairPollTimer) {
           clearInterval(this.pairPollTimer);
           this.pairPollTimer = null;
@@ -229,10 +250,30 @@ export class BaileysAdapter implements IWhatsAppAdapter {
         const statusCode = error?.output?.statusCode;
         const isLoggedOut = statusCode === DisconnectReason.loggedOut;
 
+        // WhatsApp normal handshake restart (Status 515: restartRequired)
+        if (statusCode === 515) {
+          logger.info('WhatsApp socket requested handshake restart (status 515); performing immediate reconnect...');
+          this.transitionState('connecting');
+          if (this.isRunning) {
+            this.scheduleReconnect(500);
+          }
+          return;
+        }
+
+        // WhatsApp connection replaced by another client session (Status 440: connectionReplaced)
+        if (statusCode === DisconnectReason.connectionReplaced) {
+          logger.warn('WhatsApp session replaced by another connection; pausing reconnect to prevent duplicate session collision');
+          this.transitionState('disconnected');
+          if (this.isRunning) {
+            this.scheduleReconnect(15000);
+          }
+          return;
+        }
+
         if (statusCode === 428) {
           this.consecutive428Errors++;
           logger.warn(`WhatsApp socket closed with statusCode 428 (consecutive: ${this.consecutive428Errors})`);
-        } else if (statusCode !== 515) {
+        } else {
           this.consecutive428Errors = 0;
         }
 
@@ -425,8 +466,19 @@ export class BaileysAdapter implements IWhatsAppAdapter {
     });
   }
 
-  private scheduleReconnect(): void {
+  private scheduleReconnect(explicitDelayMs?: number): void {
     if (!this.isRunning || this.reconnectTimer) return;
+
+    let delayMs = explicitDelayMs;
+    if (delayMs === undefined) {
+      this.reconnectAttempts++;
+      // Exponential backoff: 2s * 1.5^(attempt - 1), capped at 30s + randomized jitter (0-2s)
+      const baseDelay = Math.min(30_000, 2000 * Math.pow(1.5, Math.min(this.reconnectAttempts - 1, 6)));
+      const jitter = Math.floor(Math.random() * 2000);
+      delayMs = baseDelay + jitter;
+    }
+
+    logger.info(`Scheduling WhatsApp socket reconnection in ${Math.round(delayMs / 1000)}s (attempt ${this.reconnectAttempts})...`);
 
     this.reconnectTimer = setTimeout(async () => {
       this.reconnectTimer = null;
@@ -439,7 +491,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
         logger.error('Failed to reconnect WhatsApp socket; scheduling retry', { error: err });
         this.scheduleReconnect();
       }
-    }, this.reconnectIntervalMs);
+    }, delayMs);
 
     if (this.reconnectTimer.unref) {
       this.reconnectTimer.unref();
