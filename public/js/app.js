@@ -650,4 +650,21 @@ document.addEventListener('DOMContentLoaded', () => {
       coordinatedDashboardHeartbeat();
     }
   });
+
+  // Universal Info Popover Click Handler (Touch, Click & Mobile Friendly)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.ui-info-btn');
+    const allOpen = document.querySelectorAll('.ui-info-wrapper.is-open');
+    if (btn) {
+      const wrapper = btn.closest('.ui-info-wrapper');
+      if (wrapper) {
+        const wasOpen = wrapper.classList.contains('is-open');
+        allOpen.forEach(w => w.classList.remove('is-open'));
+        if (!wasOpen) wrapper.classList.add('is-open');
+        e.stopPropagation();
+        return;
+      }
+    }
+    allOpen.forEach(w => w.classList.remove('is-open'));
+  });
 });

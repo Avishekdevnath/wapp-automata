@@ -25,7 +25,17 @@
             <!-- Floor Rate -->
             <div class="glass-card rounded-2xl p-4 border border-dark-700/80 flex items-center justify-between">
               <div class="space-y-1">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Best Trusted Floor</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Best Trusted Floor</span>
+                  <div class="ui-info-wrapper">
+                    <button type="button" class="ui-info-btn" aria-label="Floor rate info">
+                      <i data-lucide="info"></i>
+                    </button>
+                    <div class="ui-info-popover">
+                      Lowest verified rate per minute among authenticated tier-1 wholesale voice routes.
+                    </div>
+                  </div>
+                </div>
                 <div class="flex items-baseline gap-1.5">
                   <span id="kpi-floor-rate" class="text-2xl font-black font-mono text-emerald-400 tracking-tight">$0.0045</span>
                   <span class="text-[10px] text-slate-400">/min</span>
@@ -40,7 +50,17 @@
             <!-- Market Liquidity -->
             <div class="glass-card rounded-2xl p-4 border border-dark-700/80 flex items-center justify-between">
               <div class="space-y-1">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Market Liquidity</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Market Liquidity</span>
+                  <div class="ui-info-wrapper">
+                    <button type="button" class="ui-info-btn" aria-label="Market liquidity info">
+                      <i data-lucide="info"></i>
+                    </button>
+                    <div class="ui-info-popover">
+                      Active ratio of selling offers versus active buyer requests captured across WhatsApp chats.
+                    </div>
+                  </div>
+                </div>
                 <div class="flex items-baseline gap-1.5">
                   <span id="kpi-liquidity" class="text-2xl font-black font-mono text-amber-300 tracking-tight">18 / 3</span>
                 </div>
@@ -54,7 +74,17 @@
             <!-- Quality & FAS Free -->
             <div class="glass-card rounded-2xl p-4 border border-dark-700/80 flex items-center justify-between">
               <div class="space-y-1">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Quality Standard</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Quality Standard</span>
+                  <div class="ui-info-wrapper">
+                    <button type="button" class="ui-info-btn" aria-label="Quality standard info">
+                      <i data-lucide="info"></i>
+                    </button>
+                    <div class="ui-info-popover">
+                      Percentage of voice routes verified 100% free of False Answer Supervision (FAS).
+                    </div>
+                  </div>
+                </div>
                 <div class="flex items-baseline gap-1.5">
                   <span id="kpi-fas-quality" class="text-2xl font-black font-mono text-emerald-400 tracking-tight">100%</span>
                   <span class="text-[10px] text-slate-400">FAS-Free</span>
