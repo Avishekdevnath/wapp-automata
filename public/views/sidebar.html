@@ -5,13 +5,13 @@
       <div>
         <div class="h-16 px-5 border-b border-dark-700/80 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#006a4e] via-emerald-600 to-[#004d38] p-[1.5px] shadow-md shadow-emerald-950/30 shrink-0 relative group">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#006a4e] via-emerald-600 to-[#004d38] p-[1.5px] shadow-md shadow-emerald-950/30 shrink-0 relative group" title="Telco Man BD">
               <div class="w-full h-full bg-slate-900 dark:bg-dark-950 rounded-[10px] flex items-center justify-center relative overflow-hidden">
                 <span class="absolute w-3.5 h-3.5 rounded-full bg-[#f42a41] opacity-90 shadow-[0_0_8px_rgba(244,42,65,0.7)]"></span>
                 <i data-lucide="radio" class="w-4 h-4 text-white relative z-10 drop-shadow-sm"></i>
               </div>
             </div>
-            <div>
+            <div class="sidebar-brand-text">
               <div class="flex items-center gap-1.5">
                 <span class="font-bold text-sm tracking-tight text-slate-900 dark:text-white block">Telco Man</span>
                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase bg-[#006a4e]/15 text-[#006a4e] dark:bg-[#006a4e]/30 dark:text-emerald-400 border border-[#006a4e]/30">
@@ -31,7 +31,7 @@
         <nav class="p-3 space-y-1">
           
           <!-- Route Matrix -->
-          <button onclick="switchView('routes')" data-view="routes" class="sidebar-nav-btn active w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('routes')" data-view="routes" title="Route Matrix & Rate Sheet (1)" class="sidebar-nav-btn active w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="table" class="w-4 h-4 text-emerald-400 shrink-0"></i>
               <span class="whitespace-nowrap">Route Matrix</span>
@@ -40,7 +40,7 @@
           </button>
 
           <!-- Market Trends & Charts -->
-          <button onclick="switchView('trends')" data-view="trends" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('trends')" data-view="trends" title="Market Trends & Price Charts (2)" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="trending-up" class="w-4 h-4 text-blue-400 shrink-0"></i>
               <span class="whitespace-nowrap">Market Trends</span>
@@ -49,7 +49,7 @@
           </button>
 
           <!-- AI Insights & Arbitrage -->
-          <button onclick="switchView('insights')" data-view="insights" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('insights')" data-view="insights" title="AI Insights & Arbitrage Signals (3)" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 shrink-0"></i>
               <span class="whitespace-nowrap">AI Insights</span>
@@ -58,7 +58,7 @@
           </button>
 
           <!-- Telco News & Outages -->
-          <button onclick="switchView('news')" data-view="news" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('news')" data-view="news" title="Telco News & Outage Alerts (4)" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="newspaper" class="w-4 h-4 text-rose-400 shrink-0"></i>
               <span class="whitespace-nowrap">Telco News</span>
@@ -67,7 +67,7 @@
           </button>
 
           <!-- Vendor Directory -->
-          <button onclick="switchView('vendors')" data-view="vendors" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('vendors')" data-view="vendors" title="Carriers & Vendors Directory (5)" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="users" class="w-4 h-4 text-purple-400 shrink-0"></i>
               <span class="whitespace-nowrap">Carriers & Vendors</span>
@@ -76,7 +76,7 @@
           </button>
 
           <!-- Live WhatsApp Message Stream -->
-          <button onclick="switchView('terminal')" data-view="terminal" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('terminal')" data-view="terminal" title="Live WhatsApp Messages Stream (6)" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="radio" class="w-4 h-4 text-emerald-400 animate-pulse shrink-0"></i>
               <span class="whitespace-nowrap">Live Messages Stream</span>
@@ -85,7 +85,7 @@
           </button>
 
           <!-- System Pipeline & AI Inspector -->
-          <button onclick="switchView('pipeline')" data-view="pipeline" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('pipeline')" data-view="pipeline" title="System Pipeline & AI Inspector (7)" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="cpu" class="w-4 h-4 text-purple-400 shrink-0"></i>
               <span class="whitespace-nowrap">System Pipeline</span>
@@ -94,7 +94,7 @@
           </button>
 
           <!-- Developer Studio -->
-          <button onclick="switchView('dev')" data-view="dev" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('dev')" data-view="dev" title="Developer Studio & API Lab (8)" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="code-2" class="w-4 h-4 text-sky-400 shrink-0"></i>
               <span class="whitespace-nowrap">Developer Studio</span>
@@ -103,7 +103,7 @@
           </button>
 
           <!-- Settings & Terminal Configuration -->
-          <button onclick="switchView('settings')" data-view="settings" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
+          <button onclick="switchView('settings')" data-view="settings" title="Settings & Terminal Config (9)" class="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all">
             <div class="flex items-center gap-2.5 min-w-0">
               <i data-lucide="settings" class="w-4 h-4 text-emerald-400 shrink-0"></i>
               <span class="whitespace-nowrap">Settings & Config</span>
@@ -113,12 +113,12 @@
 
           <!-- Explicit Link WhatsApp Phone (QR) Action -->
           <div class="pt-2 border-t border-dark-800/80">
-            <button onclick="openDeviceModal()" class="w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-all shadow-sm">
+            <button onclick="openDeviceModal()" title="Link WhatsApp (Scan QR Code)" class="w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition-all shadow-sm">
               <div class="flex items-center gap-2.5 min-w-0">
-                <i data-lucide="qr-code" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <i data-lucide="qr-code" class="w-4 h-4 text-amber-500 shrink-0"></i>
                 <span class="whitespace-nowrap">Link WhatsApp</span>
               </div>
-              <span id="sidebar-device-badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 animate-pulse shrink-0">Scan QR</span>
+              <span id="sidebar-device-badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 animate-pulse shrink-0">Scan QR</span>
             </button>
           </div>
 
@@ -128,20 +128,25 @@
       <!-- Bottom Status & System Health -->
       <div class="p-4 border-t border-dark-700/80 space-y-3">
         <!-- Storage Health Indicator -->
-        <div onclick="openStorageModal()" class="cursor-pointer p-3 rounded-xl bg-dark-950/70 border border-dark-800 hover:border-slate-600 transition-colors">
-          <div class="flex items-center justify-between text-xs mb-1.5">
-            <span class="text-slate-400 flex items-center gap-1.5">
-              <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i>
-              <span>Disk Storage</span>
-            </span>
-            <span id="sidebar-storage-text" class="font-mono font-semibold text-slate-200">--%</span>
+        <div onclick="openStorageModal()" title="Storage & Cache Manager" class="cursor-pointer p-3 rounded-xl bg-dark-950/70 border border-dark-800 hover:border-slate-600 transition-colors">
+          <div class="sidebar-storage-details">
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="text-slate-400 flex items-center gap-1.5">
+                <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Disk Storage</span>
+              </span>
+              <span id="sidebar-storage-text" class="font-mono font-semibold text-slate-200">--%</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-dark-800 overflow-hidden">
+              <div id="sidebar-storage-bar" class="h-full bg-emerald-500 transition-all duration-500" style="width: 10%;"></div>
+            </div>
           </div>
-          <div class="w-full h-1.5 rounded-full bg-dark-800 overflow-hidden">
-            <div id="sidebar-storage-bar" class="h-full bg-emerald-500 transition-all duration-500" style="width: 10%;"></div>
+          <div class="sidebar-storage-icon-only hidden text-center">
+            <i data-lucide="hard-drive" class="w-5 h-5 text-emerald-400 mx-auto"></i>
           </div>
         </div>
 
-        <p class="text-[10px] text-slate-500 text-center flex items-center justify-center gap-1.5">
+        <p class="sidebar-footer-text text-[10px] text-slate-500 text-center flex items-center justify-center gap-1.5">
           <span class="inline-flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-[#f42a41]"></span>
             <span>Telco Man BD</span>

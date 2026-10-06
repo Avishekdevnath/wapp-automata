@@ -9,11 +9,119 @@
   white-space: nowrap !important;
 }
 
-/* Desktop Sidebar Collapse State */
-@media (min-width: 1024px) {
-  #app-sidebar.sidebar-collapsed {
-    display: none !important;
-  }
+/* ==========================================================================
+   Icon-Only Rail Mode (Collapsed Sidebar)
+   Shows logos only of menus when sidebar is toggled
+   ========================================================================== */
+#app-sidebar.sidebar-collapsed {
+  display: flex !important;
+  transform: translateX(0) !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease !important;
+  overflow-x: hidden !important;
+}
+
+/* Top Branding in Collapsed Rail Mode: Center logo icon only */
+#app-sidebar.sidebar-collapsed .h-16 {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  justify-content: center !important;
+}
+
+#app-sidebar.sidebar-collapsed .h-16 > .flex {
+  justify-content: center !important;
+  gap: 0 !important;
+  width: 100% !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-brand-text,
+#app-sidebar.sidebar-collapsed .h-16 button {
+  display: none !important;
+}
+
+#app-sidebar.sidebar-collapsed .h-16 .w-9 {
+  margin: 0 auto !important;
+}
+
+/* Navigation items in Collapsed Rail Mode: Center logos only */
+#app-sidebar.sidebar-collapsed nav {
+  padding: 0.75rem 0.5rem !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn {
+  padding: 0.65rem 0 !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  border-radius: 0.75rem !important;
+  position: relative !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn > div {
+  justify-content: center !important;
+  gap: 0 !important;
+  width: 100% !important;
+}
+
+/* Hide all text labels and badges */
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn span,
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn .sidebar-badge,
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn span[id*="-badge"] {
+  display: none !important;
+}
+
+/* Enlarge & center menu icons */
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn i,
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  margin: 0 auto !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+/* Link WhatsApp button in Collapsed Rail Mode */
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] {
+  padding: 0.65rem 0 !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] > div {
+  justify-content: center !important;
+  gap: 0 !important;
+  width: 100% !important;
+}
+
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] span {
+  display: none !important;
+}
+
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] i,
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* Bottom Storage Indicator & Footer in Collapsed Rail Mode */
+#app-sidebar.sidebar-collapsed .border-t.border-dark-700\/80 {
+  padding: 0.75rem 0.5rem !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-storage-details {
+  display: none !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-storage-icon-only {
+  display: block !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-footer-text {
+  display: none !important;
 }
 
 /* Light Theme Sidebar */

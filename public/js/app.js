@@ -173,26 +173,22 @@ function switchView(viewName, updateHash = true) {
   if (window.lucide) lucide.createIcons();
 }
 
-// Universal Sidebar Controller (Desktop Collapse & Mobile Off-Canvas Drawer)
+// Universal Sidebar Controller (Desktop Rail Collapse & Mobile Off-Canvas Drawer)
 function toggleSidebar() {
   const sidebar = document.getElementById('app-sidebar');
   const backdrop = document.getElementById('sidebar-backdrop');
   if (!sidebar) return;
 
-  const isDesktop = window.innerWidth >= 1024;
-  if (isDesktop) {
-    const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
-    try {
-      localStorage.setItem('wapp_sidebar_collapsed', isCollapsed ? '1' : '0');
-    } catch {}
-  } else {
-    const isClosed = sidebar.classList.contains('-translate-x-full');
-    if (isClosed) {
-      sidebar.classList.remove('-translate-x-full');
-      if (backdrop) backdrop.classList.remove('hidden');
-    } else {
-      closeMobileSidebar();
-    }
+  const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+  try {
+    localStorage.setItem('wapp_sidebar_collapsed', isCollapsed ? '1' : '0');
+  } catch {}
+
+  if (sidebar.classList.contains('-translate-x-full')) {
+    sidebar.classList.remove('-translate-x-full');
+  }
+  if (backdrop) {
+    backdrop.classList.add('hidden');
   }
 }
 
@@ -200,7 +196,9 @@ function closeMobileSidebar() {
   const sidebar = document.getElementById('app-sidebar');
   const backdrop = document.getElementById('sidebar-backdrop');
   if (sidebar && window.innerWidth < 1024) {
-    sidebar.classList.add('-translate-x-full');
+    if (!sidebar.classList.contains('sidebar-collapsed')) {
+      sidebar.classList.add('-translate-x-full');
+    }
   }
   if (backdrop) backdrop.classList.add('hidden');
 }
@@ -210,21 +208,20 @@ function initSidebarState() {
   const backdrop = document.getElementById('sidebar-backdrop');
   if (!sidebar) return;
 
-  if (window.innerWidth >= 1024) {
-    try {
-      if (localStorage.getItem('wapp_sidebar_collapsed') === '1') {
-        sidebar.classList.add('sidebar-collapsed');
+  try {
+    if (localStorage.getItem('wapp_sidebar_collapsed') === '1') {
+      sidebar.classList.add('sidebar-collapsed');
+      sidebar.classList.remove('-translate-x-full');
+    } else {
+      sidebar.classList.remove('sidebar-collapsed');
+      if (window.innerWidth < 1024) {
+        sidebar.classList.add('-translate-x-full');
       } else {
-        sidebar.classList.remove('sidebar-collapsed');
+        sidebar.classList.remove('-translate-x-full');
       }
-    } catch {}
-    sidebar.classList.remove('-translate-x-full');
-    if (backdrop) backdrop.classList.add('hidden');
-  } else {
-    sidebar.classList.remove('sidebar-collapsed');
-    sidebar.classList.add('-translate-x-full');
-    if (backdrop) backdrop.classList.add('hidden');
-  }
+    }
+  } catch {}
+  if (backdrop) backdrop.classList.add('hidden');
 }
 
 // Window resize listener to handle responsive transitions cleanly
@@ -233,20 +230,16 @@ window.addEventListener('resize', () => {
   const backdrop = document.getElementById('sidebar-backdrop');
   if (!sidebar) return;
 
-  if (window.innerWidth >= 1024) {
-    sidebar.classList.remove('-translate-x-full');
-    if (backdrop) backdrop.classList.add('hidden');
-    try {
-      if (localStorage.getItem('wapp_sidebar_collapsed') === '1') {
-        sidebar.classList.add('sidebar-collapsed');
-      }
-    } catch {}
-  } else {
-    sidebar.classList.remove('sidebar-collapsed');
-    if (!sidebar.classList.contains('-translate-x-full') && backdrop) {
-      backdrop.classList.remove('hidden');
+  try {
+    if (localStorage.getItem('wapp_sidebar_collapsed') === '1') {
+      sidebar.classList.add('sidebar-collapsed');
+      sidebar.classList.remove('-translate-x-full');
+      if (backdrop) backdrop.classList.add('hidden');
+    } else if (window.innerWidth >= 1024) {
+      sidebar.classList.remove('-translate-x-full');
+      if (backdrop) backdrop.classList.add('hidden');
     }
-  }
+  } catch {}
 });
 
 // Explicit Global Exports
