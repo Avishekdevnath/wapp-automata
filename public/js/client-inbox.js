@@ -532,7 +532,7 @@ function toggleStreamAutoScroll() {
   window.streamAutoScroll = !window.streamAutoScroll;
   const label = document.getElementById('label-stream-autoscroll');
   const btn = document.getElementById('btn-stream-autoscroll');
-  if (label) label.innerText = window.streamAutoScroll ? 'Auto-Scroll: ON' : 'Auto-Scroll: OFF';
+  if (label) label.innerText = window.streamAutoScroll ? 'Auto-Scroll' : 'Scroll: OFF';
   if (btn) {
     btn.className = window.streamAutoScroll
       ? 'px-3 py-1.5 rounded-xl bg-dark-900 border border-dark-700 text-xs text-emerald-400 hover:text-white flex items-center gap-1.5 transition-all'
