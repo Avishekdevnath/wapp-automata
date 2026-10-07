@@ -333,25 +333,148 @@ const BENCHMARK_ROUTES = [
 
 const BENCHMARK_NEWS = [
   {
-    category: 'MAINTENANCE',
-    headline: 'Tata Communications scheduled core IP gateway maintenance (02:00 - 04:00 GMT)',
-    affected_countries: 'India, Singapore, UAE',
-    urgency: 'MEDIUM',
-    raw_text: 'Notice: Scheduled core maintenance on Europe-Asia subsea fiber segment. Traffic rerouted via trans-Pacific redundancy links with minimal latency increase.'
-  },
-  {
     category: 'OUTAGE',
-    headline: 'Backbone fiber cut near Bogota affecting multiple carrier routes',
-    affected_countries: 'Colombia',
+    headline: 'Red Sea Subsea Cable Cut (SMW4/AAE-1) Severing Primary Europe-Asia Latency Corridor',
+    affected_countries: 'Egypt, India, Bangladesh, UAE',
     urgency: 'HIGH',
-    raw_text: 'ALERT: Major terrestrial fiber cut reported on Bogota-Medellin route. Carriers experiencing temporary ASR drops; backup microwave links engaged.'
+    raw_text: 'CRITICAL ALERT: Physical subsea cable cut confirmed in Red Sea corridor near Jeddah. Latency increased by 140ms on South Asia voice trunks. Carriers rerouting via terrestrial and Cape of Good Hope routes with heavy transit congestion.',
+    hoursAgo: 0.2
   },
   {
     category: 'REGULATION',
-    headline: 'FCC enforcement reminder: Enhanced STIR/SHAKEN certification mandatory for US 800 routes',
+    headline: 'BTRC Bangladesh Mandates Real-Time A-Number Verification on Inbound International Gateways',
+    affected_countries: 'Bangladesh, India',
+    urgency: 'HIGH',
+    raw_text: 'DIRECTIVE: BTRC order 2026-BTRC-04 requires Tier-1 ICX and IGW operators to drop non-standard ANI/CLI strings. Unregistered VoIP traffic terminating to BD Mobile 880 prefixes facing immediate 403 Forbidden response.',
+    hoursAgo: 0.8
+  },
+  {
+    category: 'OUTAGE',
+    headline: 'Backbone Terrestrial Fiber Cut Near Bogota Impacting Tier-1 Interconnects',
+    affected_countries: 'Colombia, Panama, Ecuador',
+    urgency: 'HIGH',
+    raw_text: 'ALERT: Major terrestrial fiber cut reported on Bogota-Medellin mountain pass. Multiple carriers reporting 35% ASR drop on Colombia Mobile Claro/Tigo. Microwave failover active with reduced capacity.',
+    hoursAgo: 1.5
+  },
+  {
+    category: 'FRAUD',
+    headline: 'High-Volume False Answer Supervision (FAS) Burst Detected on Pakistan Mobile 923 Ranges',
+    affected_countries: 'Pakistan, UAE, UK',
+    urgency: 'HIGH',
+    raw_text: 'FRAUD WARNING: Telecom security sensors detected unauthorized 12-second pre-answer audio loops on rogue Pakistan route offers. Immediate vendor quarantine advised for untrusted VoIP accounts.',
+    hoursAgo: 2.2
+  },
+  {
+    category: 'REGULATION',
+    headline: 'FCC STIR/SHAKEN Mandate: Robocall Mitigation Database Verification for US 800 Toll-Free Trunks',
     affected_countries: 'USA, Canada',
     urgency: 'HIGH',
-    raw_text: 'FCC reminds wholesale voice providers that non-certificated Robocall Mitigation database traffic will be blocked at the tier-1 boundary gateways.'
+    raw_text: 'REGULATORY: FCC Tier-1 enforcement deadline reached. Intermediate providers must block all incoming session initiation protocol calls lacking full Level-A cryptographic attestation tokens.',
+    hoursAgo: 3.5
+  },
+  {
+    category: 'OUTAGE',
+    headline: 'Southern California Boundary Exchange Power Surge Trips Primary SBC Cluster',
+    affected_countries: 'USA, Mexico',
+    urgency: 'HIGH',
+    raw_text: 'ALERT: Core Session Border Controller cluster in Los Angeles data center experienced sudden power drop. Traffic shifting automatically to Ashburn redundancy site with transient call disconnects.',
+    hoursAgo: 4.1
+  },
+  {
+    category: 'FRAUD',
+    headline: 'International Revenue Share Fraud (IRSF) Exploiting Somalia and Latvia Premium Prefixes',
+    affected_countries: 'Somalia, Latvia, Lithuania',
+    urgency: 'HIGH',
+    raw_text: 'FRAUD ADVISORY: Coordinated autodialer burst attempting PBX brute force to generate high-cost terminates to +252 and +371 ranges. Set maximum duration limits to under 180 seconds on unverified routes.',
+    hoursAgo: 5.0
+  },
+  {
+    category: 'MAINTENANCE',
+    headline: 'Tata Communications Scheduled Subsea Core Gateway Maintenance (02:00 - 04:00 GMT)',
+    affected_countries: 'India, Singapore, UAE',
+    urgency: 'MEDIUM',
+    raw_text: 'SCHEDULED: Core router firmware upgrade on Europe-Asia subsea transit. Minimal latency fluctuations of 15-25ms anticipated during failover convergence.',
+    hoursAgo: 6.5
+  },
+  {
+    category: 'REGULATION',
+    headline: 'UK Ofcom Anti-Spoofing Directive on International VoIP Inbound to +44 7 Mobile Ranges',
+    affected_countries: 'United Kingdom, Germany',
+    urgency: 'MEDIUM',
+    raw_text: 'BULLETIN: Ofcom implementation guidance mandates carrier boundary drop for foreign CLI claiming UK local origin without roaming clearinghouse tokens.',
+    hoursAgo: 8.0
+  },
+  {
+    category: 'MAINTENANCE',
+    headline: 'SEACOM West Africa Subsea Cable Emergency Wet Plant Maintenance',
+    affected_countries: 'South Africa, Kenya, Tanzania',
+    urgency: 'MEDIUM',
+    raw_text: 'ADVISORY: Repair ship dispatched off the coast of Mtunzini. Traffic rerouted via WACS and Equiano fiber systems during scheduled daylight hours.',
+    hoursAgo: 10.0
+  },
+  {
+    category: 'OUTAGE',
+    headline: 'Trans-Alpine Fiber Severed Near Turin Impairing Franco-Italian Voice Peering',
+    affected_countries: 'Italy, France, Switzerland',
+    urgency: 'MEDIUM',
+    raw_text: 'DISPATCH: Civil construction works cut regional duct. Sparkle and Orange rerouting wholesale voice through Zurich. ACD down 4%, ASR steady.',
+    hoursAgo: 12.0
+  },
+  {
+    category: 'REGULATION',
+    headline: 'Brazil ANATEL Enforces Strict Origin Identification on 0800 Toll-Free Terminations',
+    affected_countries: 'Brazil, USA',
+    urgency: 'MEDIUM',
+    raw_text: 'COMPLIANCE: ANATEL circular requires non-national origination identifiers for wholesale call center transit terminating into Brazilian national carriers.',
+    hoursAgo: 14.0
+  },
+  {
+    category: 'OUTAGE',
+    headline: 'Lagos Metro Ring Disruption Affecting Inter-Carrier SIP Handshakes',
+    affected_countries: 'Nigeria, Ghana',
+    urgency: 'MEDIUM',
+    raw_text: 'INCIDENT: Metro fiber cut during roadway expansion impacting interconnect between MTN and Airtel. Terrestrial microwave backup links operating at 85% capacity.',
+    hoursAgo: 16.5
+  },
+  {
+    category: 'INFRASTRUCTURE',
+    headline: 'PLDT Trans-Pacific AAG Segment Fault Repairs Successfully Completed',
+    affected_countries: 'Philippines, USA, Japan',
+    urgency: 'LOW',
+    raw_text: 'RECOVERY: Full restoration confirmed on Asia-America Gateway segment 1. Latency on Manila-San Jose voice trunks returned to baseline 155ms.',
+    hoursAgo: 19.0
+  },
+  {
+    category: 'MAINTENANCE',
+    headline: 'Etisalat UAE Regional Softswitch Database Indexing Window',
+    affected_countries: 'UAE, Qatar, Oman',
+    urgency: 'LOW',
+    raw_text: 'ROUTINE: Database maintenance scheduled between 03:00 and 04:30 GST. All active sessions maintain media flow without interruption.',
+    hoursAgo: 22.0
+  },
+  {
+    category: 'MAINTENANCE',
+    headline: 'SingTel International Gateway SIP Trunking Routine Failover Drill',
+    affected_countries: 'Singapore, Malaysia, Indonesia',
+    urgency: 'LOW',
+    raw_text: 'DRILL: Planned BGP multi-homing validation drill completed with zero dropped calls recorded across tier-1 trading partners.',
+    hoursAgo: 26.0
+  },
+  {
+    category: 'INFRASTRUCTURE',
+    headline: 'China Telecom Golden Week Traffic Shaping and Route Capacity Optimization',
+    affected_countries: 'China, Hong Kong',
+    urgency: 'LOW',
+    raw_text: 'OPERATIONAL: Traffic capacity expanded on Hong Kong cross-border gateways in anticipation of holiday volume peaks. CLI routes clear.',
+    hoursAgo: 30.0
+  },
+  {
+    category: 'REGULATION',
+    headline: 'Germany BNetzA Guidance Clarification for Wholesale Transit Operators',
+    affected_countries: 'Germany, Austria',
+    urgency: 'LOW',
+    raw_text: 'INFORMATIONAL: Technical specification updated regarding transit operator obligations under section 120 of the German Telecommunications Act.',
+    hoursAgo: 36.0
   }
 ];
 
@@ -442,6 +565,7 @@ function seedBenchmarkRoutes(db, force = false) {
       // 2. Seed News
       for (let i = 0; i < BENCHMARK_NEWS.length; i++) {
         const n = BENCHMARK_NEWS[i];
+        const offsetMs = n.hoursAgo ? Math.round(n.hoursAgo * 3600000) : (i * 3600000 * 2);
         insertNews.run(
           `news_bm_${i}`,
           `bm_news_msg_${i}`,
@@ -450,7 +574,7 @@ function seedBenchmarkRoutes(db, force = false) {
           n.affected_countries,
           n.urgency,
           n.raw_text,
-          now - (i * 3600000 * 8)
+          now - offsetMs
         );
       }
     })();

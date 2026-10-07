@@ -1,0 +1,324 @@
+/* ==========================================================================
+   WappAutomata • Base Layout, Scrollbars & Animations
+   ========================================================================== */
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Universal Clickable Elements & Hand Cursor Standard */
+button,
+button *,
+[role="button"],
+[role="button"] *,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+summary,
+a,
+a *,
+a[href],
+a[href] *,
+.btn,
+.btn *,
+.cursor-pointer,
+.cursor-pointer *,
+[class*="cursor-pointer"],
+[class*="cursor-pointer"] *,
+.win-btn,
+.win-btn *,
+.win-btn-close,
+.win-btn-close * {
+  cursor: pointer !important;
+}
+
+button:disabled,
+button:disabled *,
+[role="button"][aria-disabled="true"],
+[role="button"][aria-disabled="true"] *,
+input:disabled,
+select:disabled,
+button[disabled],
+button[disabled] * {
+  cursor: not-allowed !important;
+}
+
+/* Prevent internal vector icons from swallowing button hover cursor */
+button svg,
+[role="button"] svg,
+a svg,
+.btn svg,
+.cursor-pointer svg,
+.win-btn svg,
+.win-btn-close svg {
+  pointer-events: none !important;
+}
+
+/* Theme Surface Adaptation */
+.bg-dark-950, [class*="bg-dark-950"] {
+  background-color: var(--bg-app) !important;
+}
+
+.bg-dark-900, [class*="bg-dark-900"] {
+  background-color: var(--bg-surface) !important;
+}
+
+.bg-dark-850, [class*="bg-dark-850"] {
+  background-color: var(--bg-surface-subtle) !important;
+}
+
+.bg-dark-800, [class*="bg-dark-800"] {
+  background-color: var(--bg-hover) !important;
+}
+
+.border-dark-700, [class*="border-dark-700"],
+.border-dark-800, [class*="border-dark-800"] {
+  border-color: var(--border-color) !important;
+}
+
+/* Light Mode Nested Container Surfaces (Zero Dark Cement Clutter) */
+html:not(.dark) .glass-card .bg-dark-900,
+html:not(.dark) .glass-card .bg-dark-950,
+html:not(.dark) .glass-modal .bg-dark-900,
+html:not(.dark) .glass-modal .bg-dark-950,
+html:not(.dark) .win-window .bg-dark-900,
+html:not(.dark) .win-window .bg-dark-950 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Precision Scrollbars (Placed on right-most edge) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--bg-app);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #202c33;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Utility: Clean horizontal scrolling without visible scrollbar track */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #00a884;
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background-color: #008069;
+}
+
+/* Status Animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.96);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2.5s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   Interactive Info Tooltip & Guide Popovers (High Data-Density UI)
+   Replaces verbose inline explanatory text with sleek (i) trigger popovers
+   ========================================================================== */
+.ui-info-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.ui-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  min-width: 1.125rem;
+  border-radius: 9999px;
+  background-color: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  padding: 0;
+  line-height: 1;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.ui-info-btn svg,
+.ui-info-btn i {
+  width: 10px;
+  height: 10px;
+  stroke-width: 2.2;
+}
+
+.ui-info-btn:hover,
+.ui-info-btn:focus,
+.ui-info-wrapper:hover .ui-info-btn {
+  background-color: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #10b981;
+}
+
+.ui-info-popover {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 280px;
+  min-width: 180px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  font-weight: 500;
+  border-radius: 0.625rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  z-index: 70;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  white-space: normal;
+  word-break: break-word;
+  text-align: left;
+}
+
+/* Light Mode Popover Surface: Deep slate with high contrast crisp text */
+html:not(.dark) .ui-info-popover {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+
+/* Dark Mode Popover Surface: Deep obsidian with high contrast crisp text */
+.dark .ui-info-popover {
+  background-color: #0b1320 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #1e293b !important;
+}
+
+/* Popover Arrow */
+.ui-info-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #0f172a transparent transparent transparent;
+}
+
+.dark .ui-info-popover::after {
+  border-color: #0b1320 transparent transparent transparent;
+}
+
+/* Direction Variants */
+.ui-info-wrapper.align-right .ui-info-popover {
+  left: auto;
+  right: -8px;
+  transform: translateY(4px);
+}
+.ui-info-wrapper.align-right .ui-info-popover::after {
+  left: auto;
+  right: 12px;
+  transform: none;
+}
+
+.ui-info-wrapper.align-left .ui-info-popover {
+  left: -8px;
+  right: auto;
+  transform: translateY(4px);
+}
+.ui-info-wrapper.align-left .ui-info-popover::after {
+  left: 12px;
+  right: auto;
+  transform: none;
+}
+
+.ui-info-wrapper.pop-bottom .ui-info-popover {
+  bottom: auto;
+  top: calc(100% + 7px);
+  transform: translateX(-50%) translateY(-4px);
+}
+.ui-info-wrapper.pop-bottom .ui-info-popover::after {
+  top: auto;
+  bottom: 100%;
+  border-color: transparent transparent #0f172a transparent;
+}
+.dark .ui-info-wrapper.pop-bottom .ui-info-popover::after {
+  border-color: transparent transparent #0b1320 transparent;
+}
+
+/* Interactive Reveal on Hover or Focus */
+.ui-info-wrapper:hover .ui-info-popover,
+.ui-info-wrapper:focus-within .ui-info-popover,
+.ui-info-wrapper.is-open .ui-info-popover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ui-info-wrapper.align-right:hover .ui-info-popover,
+.ui-info-wrapper.align-right:focus-within .ui-info-popover,
+.ui-info-wrapper.align-right.is-open .ui-info-popover {
+  transform: translateY(0);
+}
+
+.ui-info-wrapper.align-left:hover .ui-info-popover,
+.ui-info-wrapper.align-left:focus-within .ui-info-popover,
+.ui-info-wrapper.align-left.is-open .ui-info-popover {
+  transform: translateY(0);
+}
+
+.ui-info-wrapper.pop-bottom:hover .ui-info-popover,
+.ui-info-wrapper.pop-bottom:focus-within .ui-info-popover,
+.ui-info-wrapper.pop-bottom.is-open .ui-info-popover {
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 640px) {
+  .ui-info-popover {
+    max-width: 220px;
+    min-width: 150px;
+    font-size: 0.68rem;
+    padding: 0.45rem 0.65rem;
+  }
+}

@@ -88,13 +88,22 @@ export function createApplication(options?: ApplicationOptions): ApplicationCont
       try {
         const envelope = normalizeMessage(rawEvent);
         if (!envelope) {
-          logger.debug('Skipping message: normalizer returned null');
+          logger.info('Skipping message: normalizer returned null');
           return;
         }
 
+        logger.info('Incoming WhatsApp message normalized', {
+          id: envelope.id,
+          chatId: envelope.chatId,
+          chatType: envelope.chatType,
+          senderId: envelope.senderId,
+          hasMedia: envelope.hasMedia,
+          textPreview: envelope.text ? envelope.text.slice(0, 50) : ''
+        });
+
         if (config.ALLOWED_CHATS && config.ALLOWED_CHATS.length > 0) {
           if (!config.ALLOWED_CHATS.includes(envelope.chatId)) {
-            logger.debug('Skipping message from unallowed chat', { chatId: envelope.chatId });
+            logger.info('Skipping message from unallowed chat', { chatId: envelope.chatId });
             return;
           }
         }

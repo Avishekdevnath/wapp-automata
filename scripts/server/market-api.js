@@ -47,9 +47,12 @@ function handleNewsGet(req, res) {
     res.writeHead(500, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ error: 'Database unavailable' }));
   }
-  const rows = db.prepare('SELECT * FROM market_news ORDER BY created_at DESC LIMIT 50').all();
+  const urlObj = new URL(req.url, 'http://localhost');
+  const limitParam = parseInt(urlObj.searchParams.get('limit'), 10);
+  const limit = (limitParam > 0 && limitParam <= 500) ? limitParam : 100;
+  const rows = db.prepare('SELECT * FROM market_news ORDER BY created_at DESC LIMIT ?').all(limit);
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  return res.end(JSON.stringify({ status: 'ok', news: rows }));
+  return res.end(JSON.stringify({ status: 'ok', news: rows, total: rows.length }));
 }
 
 function handleNewsClear(req, res) {
@@ -68,15 +71,118 @@ function handleNewsClear(req, res) {
   }
 }
 
+function detectCountry(phone) {
+  if (!phone) return 'Global Carrier 🌐';
+  const clean = phone.replace(/\D/g, '');
+  if (clean.startsWith('880')) return 'Bangladesh 🇧🇩';
+  if (clean.startsWith('44')) return 'United Kingdom 🇬🇧';
+  if (clean.startsWith('1')) return 'United States 🇺🇸';
+  if (clean.startsWith('971')) return 'United Arab Emirates 🇦🇪';
+  if (clean.startsWith('65')) return 'Singapore 🇸🇬';
+  if (clean.startsWith('92')) return 'Pakistan 🇵🇰';
+  if (clean.startsWith('91')) return 'India 🇮🇳';
+  if (clean.startsWith('20')) return 'Egypt 🇪🇬';
+  if (clean.startsWith('63')) return 'Philippines 🇵🇭';
+  if (clean.startsWith('49')) return 'Germany 🇩🇪';
+  if (clean.startsWith('33')) return 'France 🇫🇷';
+  if (clean.startsWith('86')) return 'China 🇨🇳';
+  if (clean.startsWith('60')) return 'Malaysia 🇲🇾';
+  if (clean.startsWith('966')) return 'Saudi Arabia 🇸🇦';
+  if (clean.startsWith('974')) return 'Qatar 🇶🇦';
+  if (clean.startsWith('968')) return 'Oman 🇴🇲';
+  if (clean.startsWith('90')) return 'Turkey 🇹🇷';
+  if (clean.startsWith('234')) return 'Nigeria 🇳🇬';
+  if (clean.startsWith('27')) return 'South Africa 🇿🇦';
+  if (clean.startsWith('84')) return 'Vietnam 🇻🇳';
+  if (clean.startsWith('62')) return 'Indonesia 🇮🇩';
+  return 'International 🌐';
+}
+
+function formatRelativeTime(timestamp) {
+  if (!timestamp) return 'recently';
+  const ms = typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp;
+  if (isNaN(ms)) return 'recently';
+  const diff = Math.max(0, Date.now() - ms);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 function handleVendorsGet(req, res) {
   const db = getTradingDb();
-  if (!db) {
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ error: 'Database unavailable' }));
+  const contactsMap = new Map();
+
+  // 1. Read registered vendors from SQLite
+  if (db) {
+    try {
+      const dbVendors = db.prepare('SELECT * FROM vendors').all();
+      for (const v of dbVendors) {
+        if (!v.phone) continue;
+        const normKey = v.phone.trim();
+        contactsMap.set(normKey, {
+          id: 'v_' + normKey.replace(/\D/g, ''),
+          name: v.name && !v.name.startsWith('LID:') ? v.name : normKey,
+          company: v.company || 'Carrier Interconnect Desk',
+          phone: normKey,
+          country: detectCountry(normKey),
+          offersCount: v.total_offers || 1,
+          lastSeenAt: v.last_seen_at || Date.now(),
+          verified: (v.total_offers || 1) >= 3
+        });
+      }
+    } catch (_) {}
   }
-  const rows = db.prepare('SELECT * FROM vendors ORDER BY last_seen_at DESC LIMIT 50').all();
+
+  // 2. Aggregate across all live messages in store to capture all active contacts
+  try {
+    const { recentMessages } = require('./store');
+    if (Array.isArray(recentMessages)) {
+      for (const m of recentMessages) {
+        const phone = (m.sender_phone || m.sender_id || '').trim();
+        if (!phone) continue;
+        const existing = contactsMap.get(phone);
+        const ts = m.occurred_at ? new Date(m.occurred_at).getTime() : (m.timestamp || Date.now());
+        const validName = m.sender_name && !m.sender_name.startsWith('+') && !m.sender_name.startsWith('LID:')
+          ? m.sender_name
+          : (existing?.name || phone);
+        const company = m.chat_name || existing?.company || 'Wholesale Carrier Desk';
+
+        if (existing) {
+          existing.offersCount++;
+          if (ts > existing.lastSeenAt) existing.lastSeenAt = ts;
+          if (validName && validName !== phone) existing.name = validName;
+          if (m.chat_name && existing.company === 'Wholesale Carrier Desk') existing.company = m.chat_name;
+          if (existing.offersCount >= 3) existing.verified = true;
+        } else {
+          contactsMap.set(phone, {
+            id: 'c_' + phone.replace(/\D/g, ''),
+            name: validName,
+            company: company,
+            phone: phone,
+            country: detectCountry(phone),
+            offersCount: 1,
+            lastSeenAt: ts,
+            verified: false
+          });
+        }
+      }
+    }
+  } catch (_) {}
+
+  // 3. Format relative time and sort by recency & activity
+  const vendorsList = Array.from(contactsMap.values())
+    .map(v => ({
+      ...v,
+      lastSeen: formatRelativeTime(v.lastSeenAt)
+    }))
+    .sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+
   res.writeHead(200, { 'Content-Type': 'application/json' });
-  return res.end(JSON.stringify({ status: 'ok', vendors: rows }));
+  return res.end(JSON.stringify({ status: 'ok', count: vendorsList.length, vendors: vendorsList }));
 }
 
 function handleInsightsGet(req, res) {

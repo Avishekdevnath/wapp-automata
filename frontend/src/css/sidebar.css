@@ -1,0 +1,284 @@
+/* ==========================================================================
+   Telco Man • Sidebar Navigation & Active Route Highlight
+   ========================================================================== */
+
+.sidebar-nav-btn {
+  transition: all 0.15s ease-in-out !important;
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap !important;
+}
+
+/* ==========================================================================
+   Responsive Flex Flow Rules for Desktop & Tablet (>= 768px)
+   The sidebar is a direct flex child of #main-app, pushing content to the right
+   ========================================================================== */
+@media (min-width: 768px) {
+  #app-sidebar {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    flex-shrink: 0 !important;
+    height: 100% !important;
+  }
+}
+
+/* ==========================================================================
+   Icon-Only Rail Mode (Collapsed Sidebar)
+   Shows logos only of menus when sidebar is toggled
+   ========================================================================== */
+#app-sidebar.sidebar-collapsed {
+  display: flex !important;
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  flex-shrink: 0 !important;
+  height: 100% !important;
+  z-index: 30 !important;
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease !important;
+  overflow-x: hidden !important;
+}
+
+/* Top Branding in Collapsed Rail Mode: Center logo icon only */
+#app-sidebar.sidebar-collapsed .h-16 {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  justify-content: center !important;
+}
+
+#app-sidebar.sidebar-collapsed .h-16 > .flex {
+  justify-content: center !important;
+  gap: 0 !important;
+  width: 100% !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-brand-text,
+#app-sidebar.sidebar-collapsed .h-16 button {
+  display: none !important;
+}
+
+#app-sidebar.sidebar-collapsed .h-16 .w-9 {
+  margin: 0 auto !important;
+}
+
+/* Navigation items in Collapsed Rail Mode: Center logos only */
+#app-sidebar.sidebar-collapsed nav {
+  padding: 0.75rem 0.5rem !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn {
+  padding: 0.65rem 0 !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  border-radius: 0.75rem !important;
+  position: relative !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn > div {
+  justify-content: center !important;
+  gap: 0 !important;
+  width: 100% !important;
+}
+
+/* Hide all text labels and badges */
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn span,
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn .sidebar-badge,
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn span[id*="-badge"] {
+  display: none !important;
+}
+
+/* Enlarge & center menu icons */
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn i,
+#app-sidebar.sidebar-collapsed .sidebar-nav-btn svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  margin: 0 auto !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+/* Link WhatsApp button in Collapsed Rail Mode */
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] {
+  padding: 0.65rem 0 !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] > div {
+  justify-content: center !important;
+  gap: 0 !important;
+  width: 100% !important;
+}
+
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] span {
+  display: none !important;
+}
+
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] i,
+#app-sidebar.sidebar-collapsed button[onclick*="openDeviceModal"] svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* Bottom Storage Indicator & Footer in Collapsed Rail Mode */
+#app-sidebar.sidebar-collapsed .border-t.border-dark-700\/80 {
+  padding: 0.75rem 0.5rem !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-storage-details {
+  display: none !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-storage-icon-only {
+  display: block !important;
+}
+
+#app-sidebar.sidebar-collapsed .sidebar-footer-text {
+  display: none !important;
+}
+
+/* Light Theme Sidebar */
+html:not(.dark) #app-sidebar {
+  background-color: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+/* Inactive Nav Links: Clean, transparent, zero white box clutter */
+html:not(.dark) .sidebar-nav-btn:not(.active) {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+html:not(.dark) .sidebar-nav-btn:not(.active):hover {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* ==========================================================================
+   Sidebar Badge Component (Modern Smooth Pill / Capsule Shape)
+   ========================================================================== */
+.sidebar-badge,
+span[id*="-badge"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  min-width: 1.35rem !important;
+  height: 1.25rem !important;
+  padding: 1.5px 0.5rem 0 0.5rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 'Inter', sans-serif !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.01em !important;
+  vertical-align: middle !important;
+  transition: all 0.2s ease !important;
+}
+
+html:not(.dark) .sidebar-nav-btn:not(.active) .sidebar-badge,
+html:not(.dark) .sidebar-nav-btn:not(.active) span[id*="-badge"] {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .sidebar-nav-btn:not(.active):hover .sidebar-badge {
+  background-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+/* Active Nav Link: Eye-Soothing Soft Emerald Highlight */
+html:not(.dark) .sidebar-nav-btn.active {
+  background-color: #f0fdf4 !important;
+  border: 1px solid #86efac !important;
+  color: #15803d !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.08) !important;
+}
+
+html:not(.dark) .sidebar-nav-btn.active i,
+html:not(.dark) .sidebar-nav-btn.active svg {
+  color: #16a34a !important;
+}
+
+/* Active Badge: Modern Rounded Emerald Pill with Crisp White Text */
+html:not(.dark) .sidebar-nav-btn.active .sidebar-badge,
+html:not(.dark) .sidebar-nav-btn.active span[id*="-badge"] {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  border: 1px solid #15803d !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.25) !important;
+}
+
+/* Dark Theme Sidebar */
+.dark #app-sidebar {
+  background-color: #0b1320 !important;
+  border-right: 1px solid #1e293b !important;
+}
+
+.dark .sidebar-nav-btn:not(.active) {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+.dark .sidebar-nav-btn:not(.active):hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .sidebar-nav-btn:not(.active) .sidebar-badge,
+.dark .sidebar-nav-btn:not(.active) span[id*="-badge"] {
+  background-color: #111c2e !important;
+  color: #94a3b8 !important;
+  border: 1px solid #1e293b !important;
+  font-weight: 600 !important;
+}
+
+.dark .sidebar-nav-btn:not(.active):hover .sidebar-badge {
+  background-color: #1a273e !important;
+  color: #f8fafc !important;
+}
+
+.dark .sidebar-nav-btn.active {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px -2px rgba(16, 185, 129, 0.25) !important;
+}
+
+.dark .sidebar-nav-btn.active i,
+.dark .sidebar-nav-btn.active svg {
+  color: #34d399 !important;
+}
+
+/* Dark Mode Active Badge: Luminous Green Rounded Pill */
+.dark .sidebar-nav-btn.active .sidebar-badge,
+.dark .sidebar-nav-btn.active span[id*="-badge"] {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  border: 1px solid #10b981 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.35) !important;
+}

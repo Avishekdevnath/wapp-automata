@@ -1,0 +1,374 @@
+/* ==========================================================================
+   WappAutomata • Typography & Color Contrast System (WCAG AAA)
+   Dual-Mode Eye-Soothing Palette for High-Contrast Financial Terminal
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Document Hierarchy & Neutral Typography (Light Mode)
+   -------------------------------------------------------------------------- */
+html:not(.dark) {
+  color: var(--text-main);
+}
+
+html:not(.dark) h1:not([class*="text-"]), 
+html:not(.dark) h2:not([class*="text-"]), 
+html:not(.dark) h3:not([class*="text-"]), 
+html:not(.dark) h4:not([class*="text-"]), 
+html:not(.dark) h5:not([class*="text-"]), 
+html:not(.dark) h6:not([class*="text-"]) {
+  color: var(--text-main);
+}
+
+/* Neutral Slate Text in Light Mode (Scoped to avoid overriding colored badges & buttons) */
+html:not(.dark) p.text-white:not(button):not(.btn):not([class*="bg-"]):not([class*="badge"]),
+html:not(.dark) span.text-white:not([class*="bg-"]):not(.btn):not([class*="btn-"]):not(.sidebar-badge):not(button):not([class*="badge"]),
+html:not(.dark) strong.text-white:not(button):not(.btn):not([class*="bg-"]),
+html:not(.dark) b.text-white:not(button):not(.btn):not([class*="bg-"]),
+html:not(.dark) div.text-white:not([class*="bg-"]):not(button):not(.btn),
+html:not(.dark) label.text-white:not([class*="bg-"]),
+html:not(.dark) .text-slate-100:not(.sidebar-badge):not(button):not(.btn):not([class*="bg-"]),
+html:not(.dark) .text-slate-200:not(.sidebar-badge):not(button):not(.btn):not([class*="bg-"]),
+html:not(.dark) .text-slate-300:not(.sidebar-badge):not(button):not(.btn):not([class*="bg-"]) {
+  color: var(--text-main);
+}
+
+/* Secondary & Metadata Text in Light Mode */
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-500 {
+  color: var(--text-muted) !important;
+}
+
+/* Labels, Pulse & Timestamps in Light Mode */
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-slate-700 {
+  color: var(--text-dim) !important;
+  font-weight: 500 !important;
+}
+
+/* Light Mode Pale Semantic Colored Text Shield (Converts pale pastel text to deep, rich, legible tones) */
+html:not(.dark) .text-rose-100,
+html:not(.dark) .text-rose-200,
+html:not(.dark) .text-rose-300,
+html:not(.dark) [class*="text-rose-300/"],
+html:not(.dark) .text-red-100,
+html:not(.dark) .text-red-200,
+html:not(.dark) .text-red-300 {
+  color: #9f1239 !important; /* Rose 800 - rich deep crimson */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-amber-100,
+html:not(.dark) .text-amber-200,
+html:not(.dark) .text-amber-300,
+html:not(.dark) [class*="text-amber-300/"],
+html:not(.dark) .text-yellow-100,
+html:not(.dark) .text-yellow-200,
+html:not(.dark) .text-yellow-300 {
+  color: #92400e !important; /* Amber 800 - rich deep ochre */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-emerald-100,
+html:not(.dark) .text-emerald-200,
+html:not(.dark) .text-emerald-300,
+html:not(.dark) [class*="text-emerald-300/"],
+html:not(.dark) .text-green-100,
+html:not(.dark) .text-green-200,
+html:not(.dark) .text-green-300 {
+  color: #065f46 !important; /* Emerald 800 - deep bottle green */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-purple-100,
+html:not(.dark) .text-purple-200,
+html:not(.dark) .text-purple-300,
+html:not(.dark) [class*="text-purple-300/"] {
+  color: #6b21a8 !important; /* Purple 800 - deep royal violet */
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-sky-100,
+html:not(.dark) .text-sky-200,
+html:not(.dark) .text-sky-300,
+html:not(.dark) [class*="text-sky-300/"],
+html:not(.dark) .text-blue-100,
+html:not(.dark) .text-blue-200,
+html:not(.dark) .text-blue-300 {
+  color: #0369a1 !important; /* Sky 800 / Blue 800 */
+  font-weight: 600 !important;
+}
+
+/* Light Mode Alert & Warning Box Text Overrides (Prevents washed-out/invisible text) */
+html:not(.dark) [class*="bg-rose-500/"],
+html:not(.dark) [class*="bg-red-500/"] {
+  background-color: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  color: #881337 !important;
+}
+
+html:not(.dark) [class*="bg-rose-500/"] p:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-rose-500/"] span:not(button *):not(.btn *):not(.text-white),
+html:not(.dark) [class*="bg-rose-500/"] div:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-red-500/"] p:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-red-500/"] span:not(button *):not(.btn *):not(.text-white),
+html:not(.dark) [class*="bg-red-500/"] div:not(button *):not(.btn *) {
+  color: #881337 !important;
+}
+
+html:not(.dark) [class*="bg-rose-500/"] strong:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-rose-500/"] b:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-red-500/"] strong:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-red-500/"] b:not(button *):not(.btn *) {
+  color: #4c0519 !important; /* Rose 950 - ultra high contrast */
+  font-weight: 800 !important;
+}
+
+html:not(.dark) [class*="bg-amber-500/"],
+html:not(.dark) [class*="bg-yellow-500/"] {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+html:not(.dark) [class*="bg-amber-500/"] p:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-amber-500/"] span:not(button *):not(.btn *):not(.text-white),
+html:not(.dark) [class*="bg-amber-500/"] div:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-yellow-500/"] p:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-yellow-500/"] span:not(button *):not(.btn *):not(.text-white),
+html:not(.dark) [class*="bg-yellow-500/"] div:not(button *):not(.btn *) {
+  color: #92400e !important;
+}
+
+html:not(.dark) [class*="bg-amber-500/"] strong:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-amber-500/"] b:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-yellow-500/"] strong:not(button *):not(.btn *),
+html:not(.dark) [class*="bg-yellow-500/"] b:not(button *):not(.btn *) {
+  color: #451a03 !important; /* Amber 950 */
+  font-weight: 800 !important;
+}
+
+/* Secondary & Metadata Text in Dark Mode (Fixes muted/invisible text) */
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .text-slate-600,
+.dark .text-slate-700 {
+  color: var(--text-muted) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Semantic Values & Rates Contrast (Light Mode)
+   High-contrast, non-pastel, rich colors (7:1+ ratio)
+   -------------------------------------------------------------------------- */
+html:not(.dark) .text-emerald-400,
+html:not(.dark) .text-emerald-300,
+html:not(.dark) .text-emerald-500 {
+  color: #047857 !important; /* Emerald 700 - rich wholesale green */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .text-amber-400,
+html:not(.dark) .text-amber-300,
+html:not(.dark) .text-yellow-400 {
+  color: #b45309 !important; /* Amber 700 - rich buyer demand gold */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .text-rose-400,
+html:not(.dark) .text-rose-300,
+html:not(.dark) .text-red-400 {
+  color: #be123c !important; /* Rose 700 - urgent outage notice */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .text-purple-400,
+html:not(.dark) .text-purple-300 {
+  color: #7e22ce !important; /* Purple 700 - AI & compliance */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .text-sky-400,
+html:not(.dark) .text-sky-300 {
+  color: #0369a1 !important; /* Sky 700 - maintenance */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .text-blue-400,
+html:not(.dark) .text-blue-300 {
+  color: #1d4ed8 !important; /* Blue 700 */
+  font-weight: 700 !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Semantic Values & Rates Contrast (Dark Mode)
+   Radiant, luminous neon highlights on obsidian surfaces
+   -------------------------------------------------------------------------- */
+.dark .text-emerald-400,
+.dark .text-emerald-300 {
+  color: #34d399 !important; /* Emerald 400 */
+  font-weight: 700 !important;
+}
+
+.dark .text-amber-400,
+.dark .text-amber-300 {
+  color: #fbbf24 !important; /* Amber 400 */
+  font-weight: 700 !important;
+}
+
+.dark .text-rose-400,
+.dark .text-rose-300 {
+  color: #fb7185 !important; /* Rose 400 */
+  font-weight: 700 !important;
+}
+
+.dark .text-purple-400,
+.dark .text-purple-300 {
+  color: #c084fc !important; /* Purple 400 */
+  font-weight: 700 !important;
+}
+
+.dark .text-sky-400,
+.dark .text-sky-300 {
+  color: #38bdf8 !important; /* Sky 400 */
+  font-weight: 700 !important;
+}
+
+.dark .text-blue-400,
+.dark .text-blue-300 {
+  color: #60a5fa !important; /* Blue 400 */
+  font-weight: 700 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. Semantic Pill Badges & Tags (Light Mode)
+   Soft calm tints with crisp matching borders and rich high-contrast text
+   -------------------------------------------------------------------------- */
+html:not(.dark) .bg-emerald-500\/10,
+html:not(.dark) .bg-emerald-500\/15,
+html:not(.dark) .bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important; /* Emerald 50 */
+  border-color: #a7f3d0 !important;     /* Emerald 200 */
+  color: #065f46 !important;            /* Emerald 800 */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .bg-amber-500\/10,
+html:not(.dark) .bg-amber-500\/15,
+html:not(.dark) .bg-amber-500\/20 {
+  background-color: #fffbeb !important; /* Amber 50 */
+  border-color: #fde68a !important;     /* Amber 200 */
+  color: #92400e !important;            /* Amber 800 */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .bg-rose-500\/10,
+html:not(.dark) .bg-rose-500\/15,
+html:not(.dark) .bg-rose-500\/20 {
+  background-color: #fff1f2 !important; /* Rose 50 */
+  border-color: #fecdd3 !important;     /* Rose 200 */
+  color: #9f1239 !important;            /* Rose 800 */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .bg-purple-500\/10,
+html:not(.dark) .bg-purple-500\/15,
+html:not(.dark) .bg-purple-500\/20 {
+  background-color: #faf5ff !important; /* Purple 50 */
+  border-color: #e9d5ff !important;     /* Purple 200 */
+  color: #6b21a8 !important;            /* Purple 800 */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .bg-sky-500\/10,
+html:not(.dark) .bg-sky-500\/15,
+html:not(.dark) .bg-sky-500\/20 {
+  background-color: #f0f9ff !important; /* Sky 50 */
+  border-color: #bae6fd !important;     /* Sky 200 */
+  color: #0369a1 !important;            /* Sky 800 */
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-dark-800 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Semantic Pill Badges & Tags (Dark Mode)
+   Semi-transparent luminous highlights with clean neon borders
+   -------------------------------------------------------------------------- */
+.dark .bg-emerald-500\/10,
+.dark .bg-emerald-500\/15,
+.dark .bg-emerald-500\/20 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  color: #6ee7b7 !important;
+  font-weight: 700 !important;
+}
+
+.dark .bg-amber-500\/10,
+.dark .bg-amber-500\/15,
+.dark .bg-amber-500\/20 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  color: #fde68a !important;
+  font-weight: 700 !important;
+}
+
+.dark .bg-rose-500\/10,
+.dark .bg-rose-500\/15,
+.dark .bg-rose-500\/20 {
+  background-color: rgba(244, 63, 94, 0.18) !important;
+  border: 1px solid rgba(244, 63, 94, 0.4) !important;
+  color: #fecdd3 !important;
+  font-weight: 700 !important;
+}
+
+.dark .bg-purple-500\/10,
+.dark .bg-purple-500\/15,
+.dark .bg-purple-500\/20 {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  color: #e9d5ff !important;
+  font-weight: 700 !important;
+}
+
+.dark .bg-sky-500\/10,
+.dark .bg-sky-500\/15,
+.dark .bg-sky-500\/20 {
+  background-color: rgba(14, 165, 233, 0.15) !important;
+  border: 1px solid rgba(14, 165, 233, 0.35) !important;
+  color: #bae6fd !important;
+  font-weight: 700 !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. Universal Solid Button & Badge Contrast Shield
+   Ensures text inside solid colored containers is ALWAYS crisp white
+   -------------------------------------------------------------------------- */
+.bg-emerald-600, .bg-emerald-700,
+.bg-purple-600, .bg-purple-700,
+.bg-rose-600, .bg-rose-700,
+.bg-sky-600, .bg-blue-600,
+button.bg-rose-600, button.bg-emerald-600, button.bg-purple-600,
+.sidebar-nav-btn.active .sidebar-badge,
+.sidebar-nav-btn.active span[id*="-badge"],
+.btn-primary, .btn-danger {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .bg-emerald-600 *, html:not(.dark) .bg-emerald-700 *,
+html:not(.dark) .bg-purple-600 *, html:not(.dark) .bg-purple-700 *,
+html:not(.dark) .bg-rose-600 *, html:not(.dark) .bg-rose-700 *,
+html:not(.dark) button.bg-rose-600 *, html:not(.dark) button.bg-emerald-600 *,
+html:not(.dark) .btn-primary *, html:not(.dark) .btn-danger *,
+.bg-emerald-600 *, .bg-emerald-700 *,
+.bg-purple-600 *, .bg-purple-700 *,
+.bg-rose-600 *, .bg-rose-700 *,
+.bg-sky-600 *, .bg-blue-600 *,
+.sidebar-nav-btn.active .sidebar-badge *,
+.sidebar-nav-btn.active span[id*="-badge"] *,
+.btn-primary *, .btn-danger * {
+  color: #ffffff !important;
+}

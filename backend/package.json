@@ -1,0 +1,29 @@
+{
+  "name": "wapp-automata-backend",
+  "version": "0.1.0",
+  "description": "Native WhatsApp message collector, SQLite durable queue, webhook dispatcher, and API server",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "server": "node dist/server/index.js",
+    "server:dev": "tsx src/server/index.ts",
+    "test": "tsx --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@whiskeysockets/baileys": "^6.7.24",
+    "better-sqlite3": "^13.0.3",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^20.11.0",
+    "@types/qrcode-terminal": "^0.12.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.3.3"
+  }
+}

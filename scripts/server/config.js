@@ -26,7 +26,7 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 const HOST = process.env.HOST || '0.0.0.0';
 const SECRET = process.env.WEBHOOK_SECRET || 'local_dev_webhook_secret_key_12345';
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'wapp2026';
-const FORWARD_WEBHOOK_URL = process.env.FORWARD_WEBHOOK_URL || 'https://n8n.srv1718993.hstgr.cloud/webhook/ispsaddamb491e-a770-231f11c5fdff';
+const FORWARD_WEBHOOK_URL = process.env.FORWARD_WEBHOOK_URL || '';
 const FORWARD_FORMAT = process.env.FORWARD_FORMAT || 'clean';
 const MAX_HISTORY_MESSAGES = process.env.MAX_HISTORY_MESSAGES ? parseInt(process.env.MAX_HISTORY_MESSAGES, 10) : 10000;
 
@@ -39,8 +39,11 @@ const SESSION_PATH = process.env.SESSION_DATA_PATH ||
 
 const HISTORY_FILE = path.join(DATA_DIR, 'dashboard_history.json');
 const SQLITE_FILE = process.env.SQLITE_DB_PATH || path.join(DATA_DIR, 'collector.sqlite');
-const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
+const PUBLIC_DIR = path.join(__dirname, '..', '..', 'frontend', 'dist');
 const MEDIA_DIR = path.join(DATA_DIR, 'media');
+
+
+
 
 if (!fs.existsSync(MEDIA_DIR)) {
   try { fs.mkdirSync(MEDIA_DIR, { recursive: true }); } catch {}

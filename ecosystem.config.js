@@ -6,7 +6,7 @@ module.exports = {
   apps: [
     {
       name: 'wapp-automata',
-      script: './dist/index.js',
+      script: './backend/dist/index.js',
       instances: 1, // Strictly single instance: prevents SQLite WAL concurrent writer lock & Baileys socket collision
       exec_mode: 'fork',
       autorestart: true,
@@ -23,7 +23,7 @@ module.exports = {
     },
     {
       name: 'wapp-dashboard',
-      script: './scripts/local-receiver.js',
+      script: './backend/src/server/index.js',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,

@@ -159,7 +159,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       syncFullHistory: true,
       markOnlineOnConnect: true,
       generateHighQualityLinkPreview: false,
-      logger: pino({ level: 'silent' }),
+      logger: pino({ level: 'warn' }),
       printQRInTerminal: false
     });
     this.sock = sock;
@@ -402,6 +402,10 @@ export class BaileysAdapter implements IWhatsAppAdapter {
 
     sock.ev.on('messages.upsert', async (upsert) => {
       if (!upsert.messages || upsert.messages.length === 0) return;
+      logger.info('Received raw WhatsApp messages.upsert event', {
+        count: upsert.messages.length,
+        type: upsert.type
+      });
 
       for (const msg of upsert.messages) {
         const remoteJid = msg.key?.remoteJid;

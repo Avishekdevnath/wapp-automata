@@ -1,0 +1,143 @@
+/* ==========================================================================
+   WappAutomata • Tables, Rate Grids & Metrics
+   ========================================================================== */
+
+/* Sticky Table Header Pinning */
+thead.sticky,
+.table-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Light Mode Table Styling */
+html:not(.dark) thead tr,
+html:not(.dark) thead th {
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+html:not(.dark) td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  background-color: #ffffff;
+}
+
+html:not(.dark) tbody tr:hover td {
+  background-color: #f1f5f9 !important;
+}
+
+/* Dark Mode Table Styling */
+.dark thead tr,
+.dark thead th {
+  background-color: #0c1220 !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #233352 !important;
+}
+
+.dark td {
+  border-bottom: 1px solid rgba(35, 51, 82, 0.5) !important;
+}
+
+.dark tbody tr:hover td {
+  background-color: rgba(24, 36, 60, 0.4) !important;
+}
+
+/* Metric Counter Cards in Light Mode */
+html:not(.dark) .grid .bg-dark-950\/80 {
+  background-color: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+html:not(.dark) .grid .bg-dark-950\/80 span:first-child {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .grid .bg-dark-950\/80 span:last-child {
+  color: #0f172a !important;
+}
+
+/* ==========================================================================
+   Table Density Modes (Compact vs Comfortable)
+   ========================================================================== */
+
+/* Compact Mode (Bloomberg/VoIP High Density ~30-40 rows visible) */
+table.table-density-compact th,
+.table-density-compact th {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  padding-left: 0.6rem !important;
+  padding-right: 0.6rem !important;
+  font-size: 0.68rem !important;
+  line-height: 1rem !important;
+}
+
+table.table-density-compact td,
+.table-density-compact td {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+  padding-left: 0.6rem !important;
+  padding-right: 0.6rem !important;
+  font-size: 0.72rem !important;
+  line-height: 1.1rem !important;
+}
+
+table.table-density-compact td .text-xl,
+.table-density-compact td .text-xl {
+  font-size: 1.05rem !important;
+}
+
+table.table-density-compact td .text-xs,
+.table-density-compact td .text-xs {
+  font-size: 0.72rem !important;
+}
+
+table.table-density-compact td button,
+.table-density-compact td button {
+  padding: 0.2rem 0.45rem !important;
+  font-size: 0.68rem !important;
+}
+
+/* Comfortable Mode (Default spacious view) */
+table.table-density-comfortable th,
+.table-density-comfortable th {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+table.table-density-comfortable td,
+.table-density-comfortable td {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+/* Live WhatsApp Stream Native Table & Empty Container */
+#stream-native-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+#stream-native-table.hidden {
+  display: none !important;
+}
+
+#client-messages-container.hidden {
+  display: none !important;
+}
+
+#client-messages-container:not(.hidden) {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+
