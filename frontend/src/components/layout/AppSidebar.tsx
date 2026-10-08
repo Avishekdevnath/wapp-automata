@@ -57,7 +57,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   const [counts, setCounts] = useState<SidebarCounts>({
     routes: 0,
     news: 0,
-    vendors: stats.senders || 0,
+    vendors: 0,
   });
   const [diskPercent, setDiskPercent] = useState<number>(12);
 
@@ -96,12 +96,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     window.addEventListener('wapp:account-changed', handleRefresh);
     window.addEventListener('wapp:news-changed', handleRefresh);
     window.addEventListener('wapp:routes-changed', handleRefresh);
+    window.addEventListener('wapp:vendors-changed', handleRefresh);
     window.addEventListener('wapp:storage-changed', handleRefresh);
     return () => {
       clearInterval(timer);
       window.removeEventListener('wapp:account-changed', handleRefresh);
       window.removeEventListener('wapp:news-changed', handleRefresh);
       window.removeEventListener('wapp:routes-changed', handleRefresh);
+      window.removeEventListener('wapp:vendors-changed', handleRefresh);
       window.removeEventListener('wapp:storage-changed', handleRefresh);
     };
   }, [loadCounts]);
@@ -154,7 +156,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'Carriers & Vendors',
       icon: Users,
       iconColor: 'text-purple-400',
-      badge: String(counts.vendors || stats.senders || 0),
+      badge: String(counts.vendors ?? 0),
       badgeClass: 'sidebar-badge',
     },
     {

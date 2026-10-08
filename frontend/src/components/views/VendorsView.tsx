@@ -44,6 +44,7 @@ export const VendorsView: React.FC = () => {
     const ok = await deleteVendor(vendorToDelete.phone);
     if (ok) {
       setVendors((prev) => prev.filter((v) => v.phone !== vendorToDelete.phone));
+      window.dispatchEvent(new CustomEvent('wapp:vendors-changed'));
       return true;
     }
     return false;
@@ -53,6 +54,7 @@ export const VendorsView: React.FC = () => {
     const ok = await deleteAllVendors();
     if (ok) {
       setVendors([]);
+      window.dispatchEvent(new CustomEvent('wapp:vendors-changed'));
       return true;
     }
     return false;
@@ -685,7 +687,10 @@ export const VendorsView: React.FC = () => {
       <AddVendorModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onCreated={loadVendors}
+        onCreated={() => {
+          loadVendors();
+          window.dispatchEvent(new CustomEvent('wapp:vendors-changed'));
+        }}
       />
 
       <DeleteVendorModal
