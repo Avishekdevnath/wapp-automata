@@ -1,0 +1,12 @@
+{
+  "name": "local-wp-scraper",
+  "version": "1.0.0",
+  "description": "Isolated local WhatsApp scraper, login/logout, and real-time message catcher with plain HTML",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["whatsapp", "baileys", "scraper", "isolated"],
+  "author": "",
+  "license": "ISC"
+}

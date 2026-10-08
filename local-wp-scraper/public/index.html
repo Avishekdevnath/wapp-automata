@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Local Scraper & Message Catcher</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #25d366;
+      --accent-hover: #1eb956;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --warning: #f59e0b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font);
+      line-height: 1.5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .title-group h1 {
+      font-size: 24px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+    }
+
+    .title-group p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-disconnected { background: #334155; color: #cbd5e1; }
+    .badge-connecting { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-connected { background: rgba(37, 211, 102, 0.2); color: #4ade80; border: 1px solid rgba(37, 211, 102, 0.4); }
+    .badge-qr { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.4); }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    /* Grid Layout for Top Area */
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .top-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Button styles */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-accent { background: var(--accent); color: #000; }
+    .btn-accent:hover { background: var(--accent-hover); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: var(--danger-hover); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.05); }
+
+    /* QR Code Display */
+    .qr-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      background: #0f172a;
+      border-radius: 10px;
+      border: 1px dashed var(--card-border);
+      min-height: 240px;
+      text-align: center;
+    }
+    .qr-image {
+      max-width: 200px;
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .pairing-box {
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 20px;
+      letter-spacing: 2px;
+      padding: 8px 16px;
+      background: #312e81;
+      color: #e0e7ff;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    /* Stats Grid */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .stat-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      font-family: monospace;
+      margin-top: 4px;
+    }
+
+    /* Filter & Search Bar */
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--primary); }
+
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+      background: #0f172a;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+    .filter-tab {
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .filter-tab.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Messages Table */
+    .stream-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead {
+      background: #0f172a;
+      border-bottom: 1px solid var(--card-border);
+    }
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      transition: background 0.15s ease;
+    }
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    tbody tr.new-flash {
+      animation: flashIn 1.5s ease-out;
+    }
+    @keyframes flashIn {
+      0% { background: rgba(37, 211, 102, 0.25); }
+      100% { background: transparent; }
+    }
+
+    td {
+      padding: 12px 16px;
+      vertical-align: top;
+    }
+
+    .time-cell {
+      white-space: nowrap;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .chat-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .chat-group { background: #1e1b4b; color: #a5b4fc; border: 1px solid #3730a3; }
+    .chat-direct { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+
+    .sender-name {
+      font-weight: 600;
+      color: #f1f5f9;
+      display: block;
+    }
+    .sender-phone {
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--text-muted);
+    }
+
+    .msg-text {
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #e2e8f0;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .raw-toggle {
+      font-size: 11px;
+      color: var(--primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-top: 4px;
+      display: inline-block;
+    }
+    .raw-toggle:hover { text-decoration: underline; }
+
+    .raw-box {
+      display: none;
+      margin-top: 6px;
+      padding: 8px;
+      background: #0f172a;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 11px;
+      max-height: 180px;
+      overflow: auto;
+      color: #cbd5e1;
+    }
+
+    .empty-state {
+      padding: 50px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="title-group">
+        <h1>
+          <span>💬</span> WhatsApp Local Scraper & Message Catcher
+        </h1>
+        <p>Isolated Testing Suite • Baileys Multi-Device Client • Plain HTML/Vanilla JS</p>
+      </div>
+
+      <div id="live-indicator" class="badge badge-disconnected">
+        <span class="pulse"></span>
+        <span id="live-text">Connecting Stream...</span>
+      </div>
+    </header>
+
+    <!-- Top Grid: Connection & Stats -->
+    <div class="top-grid">
+      <!-- Connection Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Authentication & Session</span>
+          <span id="session-badge" class="badge badge-disconnected">Disconnected</span>
+        </div>
+
+        <div id="qr-section" class="qr-container">
+          <div id="qr-placeholder" style="color: var(--text-muted);">
+            <p style="margin-bottom: 10px;">WhatsApp is currently disconnected.</p>
+            <button onclick="startConnection()" class="btn btn-accent">
+              Connect WhatsApp
+            </button>
+          </div>
+          <div id="qr-display" style="display: none;">
+            <p style="font-size: 12px; margin-bottom: 8px; color: var(--text-muted);">
+              Scan this QR code with WhatsApp on your phone:
+            </p>
+            <img id="qr-img" class="qr-image" alt="WhatsApp QR Code" />
+          </div>
+          <div id="pairing-display" style="display: none; margin-top: 10px;">
+            <p style="font-size: 12px; color: var(--text-muted);">Pairing Code:</p>
+            <div id="pairing-code" class="pairing-box">---- ----</div>
+          </div>
+        </div>
+
+        <!-- Phone number pairing option -->
+        <div style="margin-top: 15px; display: flex; gap: 8px;">
+          <input type="text" id="phone-input" placeholder="Or enter phone: e.g. 88018..." class="search-input" />
+          <button onclick="requestPairing()" class="btn btn-outline" style="white-space: nowrap;">
+            Get Code
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 8px; margin-top: 15px;">
+          <button id="btn-connect" onclick="startConnection()" class="btn btn-primary" style="flex: 1;">
+            Start Client
+          </button>
+          <button id="btn-logout" onclick="logoutSession()" class="btn btn-danger" style="flex: 1;">
+            Logout & Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Statistics & Info Card -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div class="card-title">
+            <span>Connected Account & Overview</span>
+            <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">Port: 5050</span>
+          </div>
+
+          <div style="background: #0f172a; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--card-border); margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span style="color: var(--text-muted); font-size: 12px;">Active Account:</span>
+              <span id="user-phone" style="font-family: monospace; font-weight: 700; color: #4ade80;">Not Linked</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted); font-size: 12px;">Display Name:</span>
+              <span id="user-name" style="font-weight: 600;">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-label">Total Messages</div>
+              <div id="stat-total" class="stat-value">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Groups</div>
+              <div id="stat-groups" class="stat-value">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Direct (DMs)</div>
+              <div id="stat-dms" class="stat-value">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Senders</div>
+              <div id="stat-senders" class="stat-value">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Row (Search, Filters, Export, Clear) -->
+    <div class="controls-row">
+      <div class="search-box">
+        <input
+          type="text"
+          id="search-input"
+          oninput="handleSearch()"
+          placeholder="Search message text, sender name, phone (+44...), or group name..."
+          class="search-input"
+        />
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-tab" onclick="setFilter('groups', this)">Groups Only</button>
+        <button class="filter-tab" onclick="setFilter('dms', this)">DMs Only</button>
+        <button class="filter-tab" onclick="setFilter('media', this)">With Media</button>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button onclick="exportMessages()" class="btn btn-outline" title="Export all caught messages as JSON">
+          📥 Export JSON
+        </button>
+        <button onclick="clearMessagesList()" class="btn btn-outline" style="color: #f87171;" title="Clear caught messages from database">
+          🗑️ Clear List
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Stream Table -->
+    <div class="stream-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 90px;">Time</th>
+            <th style="width: 180px;">Chat / Destination</th>
+            <th style="width: 180px;">Sender</th>
+            <th>Message Text Content</th>
+          </tr>
+        </thead>
+        <tbody id="messages-tbody">
+          <tr>
+            <td colspan="4" class="empty-state">
+              <div>📡</div>
+              <p>No messages caught yet. Start WhatsApp client and incoming messages will stream here live!</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let messages = [];
+
+    // 1. Initialize Server-Sent Events (SSE) Stream
+    function initStream() {
+      const evtSource = new EventSource('/api/stream');
+
+      evtSource.onopen = () => {
+        const ind = document.getElementById('live-indicator');
+        ind.className = 'badge badge-connected';
+        document.getElementById('live-text').innerText = 'Live Stream Active';
+      };
+
+      evtSource.onerror = () => {
+        const ind = document.getElementById('live-indicator');
+        ind.className = 'badge badge-disconnected';
+        document.getElementById('live-text').innerText = 'Reconnecting...';
+      };
+
+      evtSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === 'status') {
+            updateStatusUI(payload.data);
+          } else if (payload.type === 'message') {
+            handleIncomingMessage(payload.data);
+          } else if (payload.type === 'cleared') {
+            messages = [];
+            renderMessages();
+            loadStatus();
+          }
+        } catch (_) {}
+      };
+    }
+
+    // 2. Update Connection Status UI
+    function updateStatusUI(data) {
+      const badge = document.getElementById('session-badge');
+      const qrPlaceholder = document.getElementById('qr-placeholder');
+      const qrDisplay = document.getElementById('qr-display');
+      const qrImg = document.getElementById('qr-img');
+      const pairingDisplay = document.getElementById('pairing-display');
+      const pairingCode = document.getElementById('pairing-code');
+
+      const userPhone = document.getElementById('user-phone');
+      const userName = document.getElementById('user-name');
+
+      if (data.status === 'connected') {
+        badge.className = 'badge badge-connected';
+        badge.innerText = 'Connected';
+        qrPlaceholder.style.display = 'block';
+        qrPlaceholder.innerHTML = '<p style="color: #4ade80; font-weight: bold;">WhatsApp is connected and listening!</p>';
+        qrDisplay.style.display = 'none';
+        pairingDisplay.style.display = 'none';
+
+        userPhone.innerText = data.user?.phone || 'Linked';
+        userName.innerText = data.user?.name || 'WhatsApp User';
+      } else if (data.status === 'awaiting_qr') {
+        badge.className = 'badge badge-qr';
+        badge.innerText = 'Scan QR Code';
+        qrPlaceholder.style.display = 'none';
+
+        if (data.qrDataUrl) {
+          qrDisplay.style.display = 'block';
+          qrImg.src = data.qrDataUrl;
+        }
+
+        if (data.pairingCode) {
+          pairingDisplay.style.display = 'block';
+          pairingCode.innerText = data.pairingCode;
+        }
+      } else if (data.status === 'connecting') {
+        badge.className = 'badge badge-connecting';
+        badge.innerText = 'Connecting...';
+        qrPlaceholder.style.display = 'block';
+        qrPlaceholder.innerHTML = '<p style="color: #fbbf24;">Connecting to WhatsApp servers...</p>';
+        qrDisplay.style.display = 'none';
+        pairingDisplay.style.display = 'none';
+      } else {
+        badge.className = 'badge badge-disconnected';
+        badge.innerText = 'Disconnected';
+        qrPlaceholder.style.display = 'block';
+        qrPlaceholder.innerHTML = `
+          <p style="margin-bottom: 10px;">WhatsApp is disconnected.</p>
+          <button onclick="startConnection()" class="btn btn-accent">Connect WhatsApp</button>
+        `;
+        qrDisplay.style.display = 'none';
+        pairingDisplay.style.display = 'none';
+        userPhone.innerText = 'Not Linked';
+        userName.innerText = '—';
+      }
+
+      if (data.stats) {
+        document.getElementById('stat-total').innerText = data.stats.total || 0;
+        document.getElementById('stat-groups').innerText = data.stats.groups || 0;
+        document.getElementById('stat-dms').innerText = data.stats.dms || 0;
+        document.getElementById('stat-senders').innerText = data.stats.senders || 0;
+      }
+    }
+
+    // 3. Handle Incoming Message Live
+    function handleIncomingMessage(msg) {
+      messages.unshift(msg);
+      if (messages.length > 500) messages.pop();
+
+      // Quick update stats
+      const totalEl = document.getElementById('stat-total');
+      totalEl.innerText = Number(totalEl.innerText || 0) + 1;
+
+      renderMessages(true);
+    }
+
+    // 4. Load Messages from Server
+    async function loadMessages() {
+      try {
+        const query = new URLSearchParams({
+          filter: currentFilter,
+          search: searchQuery,
+          limit: 150
+        });
+        const res = await fetch(`/api/messages?${query.toString()}`);
+        const data = await res.json();
+        messages = data.messages || [];
+        renderMessages(false);
+      } catch (err) {
+        console.error('Failed to load messages:', err);
+      }
+    }
+
+    // 5. Render Messages Table
+    function renderMessages(isNewIncoming = false) {
+      const tbody = document.getElementById('messages-tbody');
+      if (messages.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="empty-state">
+              <div>📡</div>
+              <p>No messages matching current filter.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let html = '';
+      messages.forEach((m, idx) => {
+        const timeStr = new Date(m.timestamp).toLocaleTimeString();
+        const isGroup = m.chat_type === 'group';
+        const chatBadgeClass = isGroup ? 'chat-group' : 'chat-direct';
+        const chatLabel = isGroup ? 'Group' : 'Direct';
+        const flashClass = (idx === 0 && isNewIncoming) ? 'new-flash' : '';
+
+        const rawJsonString = typeof m.raw_json === 'string' ? m.raw_json : JSON.stringify(m.raw_json || m.raw || {}, null, 2);
+
+        html += `
+          <tr class="${flashClass}">
+            <td class="time-cell">${timeStr}</td>
+            <td>
+              <span class="chat-pill ${chatBadgeClass}">${chatLabel}</span>
+              <div style="font-weight: 600; margin-top: 3px; font-size: 12px; color: #f8fafc;">
+                ${escapeHtml(m.chat_name || m.remote_jid)}
+              </div>
+            </td>
+            <td>
+              <span class="sender-name">${escapeHtml(m.sender_name || 'Unknown')}</span>
+              <span class="sender-phone">${escapeHtml(m.sender_phone || '')}</span>
+            </td>
+            <td>
+              <div class="msg-text">${escapeHtml(m.message_text)}</div>
+              ${m.has_media ? `<span style="font-size: 11px; color: #a5b4fc; margin-right: 6px;">[📎 ${m.media_type || 'Media'}]</span>` : ''}
+              <button class="raw-toggle" onclick="toggleRaw('${m.id}')">View Raw JSON</button>
+              <div id="raw-${m.id}" class="raw-box"><pre>${escapeHtml(rawJsonString)}</pre></div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function toggleRaw(id) {
+      const el = document.getElementById('raw-' + id);
+      if (el) {
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // 6. User Actions
+    async function startConnection() {
+      await fetch('/api/connect', { method: 'POST' });
+    }
+
+    async function requestPairing() {
+      const phone = document.getElementById('phone-input').value.trim();
+      if (!phone) {
+        alert('Please enter your phone number with country code (e.g. 8801812345678)');
+        return;
+      }
+      try {
+        const res = await fetch('/api/pair-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
+        if (data.error) alert(data.error);
+      } catch (err) {
+        alert('Pairing request failed: ' + err.message);
+      }
+    }
+
+    async function logoutSession() {
+      if (!confirm('Are you sure you want to log out and clear local session credentials?')) return;
+      await fetch('/api/logout', { method: 'POST' });
+    }
+
+    async function clearMessagesList() {
+      if (!confirm('Are you sure you want to clear all caught messages?')) return;
+      await fetch('/api/messages', { method: 'DELETE' });
+      messages = [];
+      renderMessages();
+    }
+
+    function exportMessages() {
+      window.location.href = '/api/export';
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      loadMessages();
+    }
+
+    let searchTimer = null;
+    function handleSearch() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchQuery = document.getElementById('search-input').value;
+        loadMessages();
+      }, 250);
+    }
+
+    async function loadStatus() {
+      const res = await fetch('/api/status');
+      const data = await res.json();
+      updateStatusUI(data);
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      initStream();
+      loadStatus();
+      loadMessages();
+    });
+  </script>
+</body>
+</html>

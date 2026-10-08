@@ -20,6 +20,8 @@ data/
 .session/
 .auth/
 .sessions/
+local-wp-scraper/session/
+local-wp-scraper/data/
 
 # Logs
 logs/
