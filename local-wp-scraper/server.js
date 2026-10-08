@@ -139,7 +139,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/messages') {
       const search = parsedUrl.searchParams.get('search') || '';
       const filter = parsedUrl.searchParams.get('filter') || 'all';
-      const limit = parseInt(parsedUrl.searchParams.get('limit') || '100', 10);
+      const limit = parsedUrl.searchParams.get('limit') || '200';
       const messages = getMessages({ search, filter, limit });
       return sendJson(200, {
         count: messages.length,

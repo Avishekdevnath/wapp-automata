@@ -76,7 +76,8 @@ function saveMessage(msg) {
 }
 
 function getMessages(options = {}) {
-  const limit = Math.min(Math.max(Number(options.limit) || 100, 1), 1000);
+  const isAll = options.limit === 'all';
+  const limit = isAll ? 10000 : Math.min(Math.max(Number(options.limit) || 150, 1), 10000);
   const search = options.search ? `%${options.search.trim()}%` : null;
   const filter = options.filter || 'all';
 
@@ -129,7 +130,6 @@ function importFromCollectorDb() {
     const rows = mainDb.prepare(`
       SELECT id, chat_id, sender_id, chat_type, source_name, message_timestamp, message_text, has_media, media_type, raw_payload, created_at
       FROM messages
-      WHERE message_text IS NOT NULL AND trim(message_text) != ''
       ORDER BY created_at DESC
     `).all();
     mainDb.close();
@@ -147,6 +147,7 @@ function importFromCollectorDb() {
         }
 
         let pushName = null;
+        let fileName = null;
         if (r.raw_payload) {
           try {
             const p = JSON.parse(r.raw_payload);
@@ -154,7 +155,19 @@ function importFromCollectorDb() {
             if (p.key?.participantPn && p.key.participantPn.includes('@s.whatsapp.net')) {
               senderPhone = '+' + p.key.participantPn.split('@')[0].split(':')[0];
             }
+            const doc = p.message?.documentMessage;
+            if (doc?.fileName || doc?.title) {
+              fileName = doc.fileName || doc.title;
+            }
           } catch (_) {}
+        }
+
+        let text = (r.message_text || '').trim();
+        if (!text && r.has_media) {
+          text = fileName ? `[📄 Document: ${fileName}]` : `[📎 ${r.media_type ? r.media_type.toUpperCase() : 'Media File'}]`;
+        }
+        if (!text) {
+          text = '[Empty / System Event]';
         }
 
         insertStmt.run({
@@ -165,7 +178,7 @@ function importFromCollectorDb() {
           sender_jid: r.sender_id || '',
           sender_phone: senderPhone,
           sender_name: pushName || r.source_name || senderPhone || 'Unknown',
-          message_text: r.message_text || '',
+          message_text: text,
           has_media: r.has_media ? 1 : 0,
           media_type: r.media_type || null,
           is_from_me: 0,

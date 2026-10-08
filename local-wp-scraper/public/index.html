@@ -492,6 +492,13 @@
         <button class="filter-tab" onclick="setFilter('media', this)">With Media</button>
       </div>
 
+      <div class="filter-tabs">
+        <span style="font-size: 11px; color: var(--text-muted); align-self: center; margin: 0 4px;">Limit:</span>
+        <button class="filter-tab" onclick="setLimit(150, this)">150</button>
+        <button class="filter-tab" onclick="setLimit(500, this)">500</button>
+        <button class="filter-tab active" onclick="setLimit('all', this)">All (1500+)</button>
+      </div>
+
       <div style="display: flex; gap: 8px;">
         <button onclick="loadDatabaseHistory()" class="btn btn-primary" title="Import 1,571 messages from main database (collector.sqlite)">
           📥 Load 1,571 DB History
@@ -530,8 +537,16 @@
 
   <script>
     let currentFilter = 'all';
+    let currentLimit = 'all';
     let searchQuery = '';
     let messages = [];
+
+    function setLimit(limit, btn) {
+      currentLimit = limit;
+      btn.parentElement.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      loadMessages();
+    }
 
     // 1. Initialize Server-Sent Events (SSE) Stream
     function initStream() {
@@ -648,7 +663,7 @@
         const query = new URLSearchParams({
           filter: currentFilter,
           search: searchQuery,
-          limit: 150
+          limit: currentLimit
         });
         const res = await fetch(`/api/messages?${query.toString()}`);
         const data = await res.json();
