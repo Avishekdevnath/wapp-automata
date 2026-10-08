@@ -65,7 +65,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       let parsed = {};
       try { parsed = JSON.parse(body); } catch {}
-      if (parsed.password === DASHBOARD_PASSWORD) {
+      if (String(parsed.password || '').trim() === String(DASHBOARD_PASSWORD || '').trim()) {
         const token = generateAuthToken();
         res.writeHead(200, {
           'Content-Type': 'application/json',

@@ -37,8 +37,8 @@ if (fs.existsSync(envPath)) {
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 const HOST = process.env.HOST || '0.0.0.0';
-const SECRET = process.env.WEBHOOK_SECRET || 'local_dev_webhook_secret_key_12345';
-const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || 'wapp2026';
+const SECRET = (process.env.WEBHOOK_SECRET || 'local_dev_webhook_secret_key_12345').trim();
+const DASHBOARD_PASSWORD = (process.env.DASHBOARD_PASSWORD || 'wapp2026').trim();
 const FORWARD_WEBHOOK_URL = process.env.FORWARD_WEBHOOK_URL || '';
 const FORWARD_FORMAT = process.env.FORWARD_FORMAT || 'clean';
 const MAX_HISTORY_MESSAGES = process.env.MAX_HISTORY_MESSAGES ? parseInt(process.env.MAX_HISTORY_MESSAGES, 10) : 10000;
