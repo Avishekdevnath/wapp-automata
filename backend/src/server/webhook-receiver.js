@@ -84,7 +84,7 @@ function processWebhookDelivery(body, headers) {
 
   // Discard internal protocol handshake notifications or contentless messages
   if ((!text || text.trim() === '') && !hasMedia) {
-    return;
+    return { isValid: isValidSig, discarded: true };
   }
 
   const isArchived = Boolean(

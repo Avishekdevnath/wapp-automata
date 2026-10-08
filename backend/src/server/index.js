@@ -51,9 +51,14 @@ const server = http.createServer(async (req, res) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
-      const result = processWebhookDelivery(body, req.headers);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok', received_at: Date.now(), valid: result.isValid }));
+      try {
+        const result = processWebhookDelivery(body, req.headers);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', received_at: Date.now(), valid: Boolean(result?.isValid) }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'error', error: err.message }));
+      }
     });
     return;
   }
