@@ -41,6 +41,7 @@ Do not read the entire `brain/` directory on every task. Instead, selectively re
 
 ### Working on VPS / Deployment / Operations
 - `00_context/constraints.md`
+- `00_context/operator-standards.md`
 - `03_architecture/architecture.md`
 - `06_security/security.md`
 - `07_operations/reliability.md`

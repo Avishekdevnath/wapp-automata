@@ -224,10 +224,11 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
   // 7. Authentication
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return (
+    const hasAuth =
       localStorage.getItem('wapp_authenticated') === 'true' ||
-      sessionStorage.getItem('wapp_authenticated') === 'true'
-    );
+      sessionStorage.getItem('wapp_authenticated') === 'true';
+    const hasToken = Boolean(localStorage.getItem('wapp_token'));
+    return hasAuth && hasToken;
   });
 
   const setAuthenticated = useCallback((val: boolean) => {
@@ -240,6 +241,14 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     localStorage.removeItem('wapp_token');
     setIsAuthenticated(false);
   }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+    window.addEventListener('wapp:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('wapp:unauthorized', handleUnauthorized);
+  }, [logout]);
 
   return (
     <UIContext.Provider

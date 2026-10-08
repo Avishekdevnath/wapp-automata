@@ -33,14 +33,13 @@ async function authenticatedFetch(url: string, init?: RequestInit): Promise<Resp
   if (!headers.has('X-Account-ID')) {
     headers.set('X-Account-ID', activeAccount);
   }
-  let res = await fetch(url, { ...init, headers });
+  const res = await fetch(url, { ...init, headers });
   if (res.status === 401) {
-    // Attempt automatic authentication with default password
-    const ok = await loginWithPassword('wapp2026');
-    if (ok) {
-      const freshToken = localStorage.getItem('wapp_token');
-      if (freshToken) headers.set('Authorization', `Bearer ${freshToken}`);
-      res = await fetch(url, { ...init, headers });
+    localStorage.removeItem('wapp_token');
+    localStorage.removeItem('wapp_authenticated');
+    sessionStorage.removeItem('wapp_authenticated');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('wapp:unauthorized'));
     }
   }
   return res;

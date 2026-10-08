@@ -2,7 +2,6 @@
  * SQLite Database Access & Migrations for Telecom Intelligence
  */
 const { SQLITE_FILE } = require('./config');
-const { seedBenchmarkRoutes } = require('./benchmark-data');
 let persistence;
 try {
   persistence = require('../persistence');
@@ -106,14 +105,7 @@ function getTradingDb(target) {
     try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_risk_level TEXT DEFAULT 'LOW';`); } catch (_) {}
     try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_flags TEXT;`); } catch (_) {}
 
-    try {
-      const newsCount = db.prepare('SELECT COUNT(*) as c FROM market_news').get()?.c || 0;
-      const isCleared = db.prepare("SELECT value FROM system_settings WHERE key = 'user_cleared_news'").get()?.value;
-      if (newsCount === 0 && isCleared !== 'true') {
-        const { seedBenchmarkRoutes } = require('./benchmark-data');
-        seedBenchmarkRoutes(db);
-      }
-    } catch (_) {}
+    // Clean slate standard: Never auto-seed dummy records into databases
   } catch (err) {
     console.warn('[getTradingDb] Table setup warning:', err.message);
   }

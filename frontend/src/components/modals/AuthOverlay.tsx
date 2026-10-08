@@ -70,7 +70,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ onSuccess }) => {
                 id="auth-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password (default: wapp2026)"
+                placeholder="Enter password"
                 required
                 className="w-full bg-dark-900 border border-dark-700 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
               />
