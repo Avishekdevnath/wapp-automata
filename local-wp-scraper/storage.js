@@ -120,10 +120,75 @@ function getStats() {
   return { total, groups, dms, senders };
 }
 
+function importFromCollectorDb() {
+  const mainDbPath = path.resolve(__dirname, '..', 'data', 'collector.sqlite');
+  if (!fs.existsSync(mainDbPath)) return 0;
+
+  try {
+    const mainDb = new Database(mainDbPath, { readonly: true });
+    const rows = mainDb.prepare(`
+      SELECT id, chat_id, sender_id, chat_type, source_name, message_timestamp, message_text, has_media, media_type, raw_payload, created_at
+      FROM messages
+      WHERE message_text IS NOT NULL AND trim(message_text) != ''
+      ORDER BY created_at DESC
+    `).all();
+    mainDb.close();
+
+    if (!rows || rows.length === 0) return 0;
+
+    let imported = 0;
+    const insertMany = db.transaction((items) => {
+      for (const r of items) {
+        let senderPhone = '';
+        if (r.sender_id && r.sender_id.includes('@s.whatsapp.net')) {
+          senderPhone = '+' + r.sender_id.split('@')[0].split(':')[0];
+        } else if (r.sender_id && r.sender_id.includes('@lid')) {
+          senderPhone = 'LID:' + r.sender_id.split('@')[0];
+        }
+
+        let pushName = null;
+        if (r.raw_payload) {
+          try {
+            const p = JSON.parse(r.raw_payload);
+            pushName = p.pushName || p.message?.sender_name || null;
+            if (p.key?.participantPn && p.key.participantPn.includes('@s.whatsapp.net')) {
+              senderPhone = '+' + p.key.participantPn.split('@')[0].split(':')[0];
+            }
+          } catch (_) {}
+        }
+
+        insertStmt.run({
+          id: r.id,
+          remote_jid: r.chat_id || '',
+          chat_name: r.source_name || r.chat_id || '',
+          chat_type: r.chat_type || 'direct',
+          sender_jid: r.sender_id || '',
+          sender_phone: senderPhone,
+          sender_name: pushName || r.source_name || senderPhone || 'Unknown',
+          message_text: r.message_text || '',
+          has_media: r.has_media ? 1 : 0,
+          media_type: r.media_type || null,
+          is_from_me: 0,
+          timestamp: r.message_timestamp ? r.message_timestamp * 1000 : r.created_at || Date.now(),
+          raw_json: r.raw_payload || '{}'
+        });
+        imported++;
+      }
+    });
+
+    insertMany(rows);
+    return imported;
+  } catch (err) {
+    console.error('[Storage] Error importing from main db:', err.message);
+    return 0;
+  }
+}
+
 module.exports = {
   saveMessage,
   getMessages,
   getAllMessagesForExport,
   clearMessages,
-  getStats
+  getStats,
+  importFromCollectorDb
 };

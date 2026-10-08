@@ -182,7 +182,7 @@ async function connectWhatsApp() {
       printQRInTerminal: false,
       logger: pino({ level: 'silent' }),
       browser: ['Telcia Local Scraper', 'Chrome', '124.0.0.0'],
-      syncFullHistory: false,
+      syncFullHistory: true,
       defaultQueryTimeoutMs: 60000
     });
 
@@ -245,6 +245,22 @@ async function connectWhatsApp() {
           emitUpdate('message', parsed);
           console.log(`📩 [Caught] [${parsed.chat_type}] From: ${parsed.sender_name} (${parsed.sender_phone}): "${parsed.message_text.slice(0, 70)}"`);
         }
+      }
+    });
+
+    sock.ev.on('messaging-history.set', async ({ chats, messages: historyMsgs, isLatest }) => {
+      console.log(`📜 [Local Scraper] WhatsApp history sync received: ${historyMsgs ? historyMsgs.length : 0} messages.`);
+      if (Array.isArray(historyMsgs) && historyMsgs.length > 0) {
+        let count = 0;
+        for (const m of historyMsgs) {
+          const parsed = extractMessageDetails(m);
+          if (parsed && parsed.message_text) {
+            saveMessage(parsed);
+            count++;
+          }
+        }
+        console.log(`✅ [Local Scraper] Saved ${count} historical messages from WhatsApp phone sync.`);
+        emitUpdate('status', getStatus());
       }
     });
 

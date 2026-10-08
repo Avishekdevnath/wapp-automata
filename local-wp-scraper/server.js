@@ -169,6 +169,17 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify(allMsgs, null, 2));
     }
 
+    // 10. Import previous messages from collector.sqlite
+    if (req.method === 'POST' && pathname === '/api/import-main-db') {
+      const { importFromCollectorDb } = require('./storage');
+      const imported = importFromCollectorDb();
+      const payload = `data: ${JSON.stringify({ type: 'status', data: getStatus() })}\n\n`;
+      for (const client of sseClients) {
+        try { client.write(payload); } catch (_) {}
+      }
+      return sendJson(200, { status: 'ok', importedCount: imported });
+    }
+
     sendJson(404, { error: 'Not Found' });
   } catch (err) {
     console.error('Request error:', err);

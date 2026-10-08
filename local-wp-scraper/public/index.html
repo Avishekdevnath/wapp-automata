@@ -493,8 +493,11 @@
       </div>
 
       <div style="display: flex; gap: 8px;">
+        <button onclick="loadDatabaseHistory()" class="btn btn-primary" title="Import 1,571 messages from main database (collector.sqlite)">
+          📥 Load 1,571 DB History
+        </button>
         <button onclick="exportMessages()" class="btn btn-outline" title="Export all caught messages as JSON">
-          📥 Export JSON
+          Export JSON
         </button>
         <button onclick="clearMessagesList()" class="btn btn-outline" style="color: #f87171;" title="Clear caught messages from database">
           🗑️ Clear List
@@ -758,6 +761,19 @@
       await fetch('/api/messages', { method: 'DELETE' });
       messages = [];
       renderMessages();
+    }
+
+    async function loadDatabaseHistory() {
+      if (!confirm('Load existing 1,571 historical messages from collector.sqlite into this isolated scraper?')) return;
+      try {
+        const res = await fetch('/api/import-main-db', { method: 'POST' });
+        const data = await res.json();
+        alert(`Successfully imported ${data.importedCount || 0} messages from collector.sqlite!`);
+        await loadStatus();
+        await loadMessages();
+      } catch (err) {
+        alert('Failed to import database history: ' + err.message);
+      }
     }
 
     function exportMessages() {
