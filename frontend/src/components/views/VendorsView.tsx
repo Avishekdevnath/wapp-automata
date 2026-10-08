@@ -17,11 +17,15 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { cleanPhone } from '../../utils/formatters';
 import { ProfileAvatar } from '../common/ProfileAvatar';
-import { fetchVendors, type BackendVendorItem } from '../../api/client';
+import { fetchVendors, deleteVendor, deleteAllVendors, type BackendVendorItem } from '../../api/client';
 import { matchesVendorSlug, getVendorSlug } from '../../utils/slug';
+import { AddVendorModal } from '../modals/AddVendorModal';
+import { DeleteVendorModal } from '../modals/DeleteVendorModal';
 
 export const VendorsView: React.FC = () => {
   const [vendors, setVendors] = useState<BackendVendorItem[]>([]);
@@ -31,6 +35,28 @@ export const VendorsView: React.FC = () => {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [pageSize, setPageSize] = useState<number>(25);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState<BackendVendorItem | null>(null);
+  const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
+
+  const confirmDeleteSingle = async (): Promise<boolean> => {
+    if (!vendorToDelete) return false;
+    const ok = await deleteVendor(vendorToDelete.phone);
+    if (ok) {
+      setVendors((prev) => prev.filter((v) => v.phone !== vendorToDelete.phone));
+      return true;
+    }
+    return false;
+  };
+
+  const confirmDeleteAll = async (): Promise<boolean> => {
+    const ok = await deleteAllVendors();
+    if (ok) {
+      setVendors([]);
+      return true;
+    }
+    return false;
+  };
 
   const { vendorSlug } = useParams<{ vendorSlug?: string }>();
 
@@ -190,6 +216,27 @@ export const VendorsView: React.FC = () => {
                 <span className="hidden sm:inline">Cards</span>
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="btn btn-primary btn-sm flex items-center gap-1.5 cursor-pointer shadow-xs"
+              title="Add a verified carrier partner manually"
+            >
+              <Plus className="w-3.5 h-3.5 pointer-events-none" />
+              <span>Add Carrier</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsDeleteAllOpen(true)}
+              disabled={loading || vendors.length === 0}
+              className="px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Delete all carriers and reset directory"
+            >
+              <Trash2 className="w-3.5 h-3.5 pointer-events-none" />
+              <span className="hidden sm:inline">Delete All</span>
+            </button>
 
             <button
               onClick={loadVendors}
@@ -456,6 +503,15 @@ export const VendorsView: React.FC = () => {
                                 <span>WhatsApp</span>
                               </a>
                             )}
+
+                            <button
+                              type="button"
+                              onClick={() => setVendorToDelete(vendor)}
+                              className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 dark:bg-dark-900 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-dark-700 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 text-[11px] font-medium flex items-center shadow-xs transition-colors cursor-pointer"
+                              title={`Delete carrier ${vendor.name}`}
+                            >
+                              <Trash2 className="w-3 h-3 pointer-events-none" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -503,9 +559,19 @@ export const VendorsView: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 font-mono shrink-0">
-                    {vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 font-mono">
+                      {vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setVendorToDelete(vendor)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                      title={`Delete carrier ${vendor.name}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 pointer-events-none" />
+                    </button>
+                  </div>
                 </div>
 
                 {vendor.routes && vendor.routes.length > 0 && (
@@ -614,6 +680,27 @@ export const VendorsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <AddVendorModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onCreated={loadVendors}
+      />
+
+      <DeleteVendorModal
+        isOpen={Boolean(vendorToDelete)}
+        onClose={() => setVendorToDelete(null)}
+        onConfirm={confirmDeleteSingle}
+        vendor={vendorToDelete}
+      />
+
+      <DeleteVendorModal
+        isOpen={isDeleteAllOpen}
+        onClose={() => setIsDeleteAllOpen(false)}
+        onConfirm={confirmDeleteAll}
+        vendor={null}
+      />
     </div>
   );
 };

@@ -7,7 +7,7 @@ const { PORT, HOST, DASHBOARD_PASSWORD, PUBLIC_DIR } = require('./config');
 const { isAuthenticated, generateAuthToken } = require('./auth');
 const { processWebhookDelivery } = require('./webhook-receiver');
 const { handleRoutesGet, handleRoutesPost, handleRoutesSeed, handleRoutesClear, handleRoutesExport } = require('./routes-api');
-const { handleTrendsGet, handleNewsGet, handleNewsClear, handleNewsSeed, handleVendorsGet, handleInsightsGet, handlePitchPost, handleExecutiveBriefGet, handleArbitrageGet } = require('./market-api');
+const { handleTrendsGet, handleNewsGet, handleNewsClear, handleNewsSeed, handleVendorsGet, handleVendorsDelete, handleVendorCreate, handleInsightsGet, handlePitchPost, handleExecutiveBriefGet, handleArbitrageGet } = require('./market-api');
 const { handleSystemApi } = require('./system-api');
 const { handleAiSettingsApi } = require('./ai-settings');
 const { handlePipelineApi } = require('./pipeline-api');
@@ -114,6 +114,8 @@ const server = http.createServer(async (req, res) => {
     if ((req.method === 'POST' && pathname === '/api/news/clear') || (req.method === 'DELETE' && pathname === '/api/news')) return handleNewsClear(req, res);
     if (req.method === 'POST' && pathname === '/api/news/seed') return handleNewsSeed(req, res);
     if (req.method === 'GET' && pathname === '/api/vendors') return handleVendorsGet(req, res);
+    if (req.method === 'DELETE' && pathname === '/api/vendors') return handleVendorsDelete(req, res, parsedUrl);
+    if (req.method === 'POST' && pathname === '/api/vendors') return handleVendorCreate(req, res);
     if (req.method === 'GET' && pathname === '/api/insights') return handleInsightsGet(req, res);
     if (req.method === 'GET' && pathname === '/api/arbitrage') return handleArbitrageGet(req, res);
     if (req.method === 'POST' && pathname === '/api/insights/pitch') return handlePitchPost(req, res);

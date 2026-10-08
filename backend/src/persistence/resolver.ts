@@ -43,29 +43,40 @@ export function sanitizeAccountId(accountId?: string | null): string {
  */
 export function getAccountDatabasePath(accountId: string = 'default'): string {
   const cleanId = sanitizeAccountId(accountId);
+  if (cleanId === 'default') {
+    const collectorDbPath = process.env.SQLITE_DB_PATH || path.join(DATA_DIR, 'collector.sqlite');
+    // If accounts/default.sqlite has app_settings, merge into collector.sqlite to preserve AI API keys
+    const defaultLegacy = path.join(ACCOUNTS_DIR, 'default.sqlite');
+    if (fs.existsSync(defaultLegacy) && fs.existsSync(collectorDbPath)) {
+      try {
+        const sqlite = require('better-sqlite3');
+        const legacyDb = new sqlite(defaultLegacy, { readonly: true });
+        const hasSettings = legacyDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='app_settings'").get();
+        if (hasSettings) {
+          const settingsRows = legacyDb.prepare("SELECT key, value FROM app_settings").all();
+          legacyDb.close();
+          if (settingsRows.length > 0) {
+            const targetDb = new sqlite(collectorDbPath);
+            targetDb.exec(`CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)`);
+            const insertStmt = targetDb.prepare(`INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)`);
+            for (const row of settingsRows) {
+              insertStmt.run(row.key, row.value);
+            }
+            targetDb.close();
+          }
+        } else {
+          legacyDb.close();
+        }
+      } catch (_) {}
+    }
+    return collectorDbPath;
+  }
+
   if (!fs.existsSync(ACCOUNTS_DIR)) {
     fs.mkdirSync(ACCOUNTS_DIR, { recursive: true });
   }
 
-  const targetPath = path.join(ACCOUNTS_DIR, `${cleanId}.sqlite`);
-
-  // Zero-Downtime Migration for default desk:
-  // If accounts/default.sqlite does not exist yet, but legacy data/collector.sqlite exists,
-  // copy/migrate collector.sqlite to accounts/default.sqlite!
-  if (cleanId === 'default' && !fs.existsSync(targetPath)) {
-    const legacyPath = path.join(DATA_DIR, 'collector.sqlite');
-    if (fs.existsSync(legacyPath)) {
-      try {
-        fs.copyFileSync(legacyPath, targetPath);
-        console.log(`[Account Resolver] Migrated legacy collector.sqlite -> accounts/default.sqlite`);
-      } catch (err: any) {
-        console.warn(`[Account Resolver] Could not copy legacy database, using directly:`, err.message);
-        return legacyPath;
-      }
-    }
-  }
-
-  return targetPath;
+  return path.join(ACCOUNTS_DIR, `${cleanId}.sqlite`);
 }
 
 /**

@@ -137,26 +137,38 @@ function parseTelecomMessage(rawText, senderPhone = '', senderName = '') {
     if (parts[1]) companyName = parts[1];
   }
 
-  // Extract company from signature in bottom lines
-  const lines = text.split(/\r?\n+/);
-  const lastLines = lines.slice(-6);
-  for (const l of lastLines) {
-    const compMatch = l.match(/([A-Za-z0-9\s.,&]+(?:Tel Ltd|Telecom|Telecoms|VoIP|Carrier|Networks|Communications|Trading|Solutions))\s*(?:[—–|-]\s*([A-Za-z0-9\s]+))?/i);
-    if (compMatch && !compMatch[1].toLowerCase().includes('group')) {
-      companyName = compMatch[1].trim();
-      if (compMatch[2] && (!contactName || contactName.startsWith('+'))) {
-        contactName = compMatch[2].trim();
-      }
-      break;
-    }
+  // Check explicit Company / Carrier / Provider prefix
+  const explicitComp = text.match(/\b(?:company|carrier|provider|org):\s*([A-Za-z0-9\s.,&'-]+?)(?:\s*(?:\||whatsapp|skype|email|phone|telegram|\+|$|\n))/i);
+  if (explicitComp && explicitComp[1].trim().length > 1) {
+    companyName = explicitComp[1].trim();
+  }
 
-    // Email domain detection: e.g. sales@voicetrade.com -> VoiceTrade
-    const emailMatch = l.match(/[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})/);
+  // Check explicit Contact Person prefix
+  const explicitContact = text.match(/\b(?:contact|contact person|ping|reach us at):?\s*([A-Za-z0-9\s.,&'-]+?)(?:\s*(?:\||whatsapp|skype|email|phone|telegram|\+|$|\n))/i);
+  if (explicitContact && explicitContact[1].trim().length > 1) {
+    const candidate = explicitContact[1].trim();
+    if (/(?:LLC|Inc\.?|Ltd\.?|Telecom|VoIP|Carrier|Networks|Trading)/i.test(candidate)) {
+      if (!companyName) companyName = candidate;
+    } else if (!contactName || contactName.startsWith('+')) {
+      contactName = candidate;
+    }
+  }
+
+  // Extract company from signature in lines or text
+  if (!companyName) {
+    const compRegex = /\b([A-Z][a-zA-Z0-9&'-]+(?:\s+[A-Z][a-zA-Z0-9&'-]+){0,3}\s+(?:LLC|Inc\.?|Ltd\.?|Limited|Telecom|Telecoms|VoIP|Carrier|Networks|Communications|Trading|Solutions|GmbH))\b/;
+    const m = text.match(compRegex);
+    if (m && !m[1].toLowerCase().includes('group')) {
+      companyName = m[1].replace(/^(?:contact|from|at|route|clean|ping)\s+/i, '').trim();
+    }
+  }
+
+  // Email domain detection: e.g. sales@voicetrade.com -> VoiceTrade
+  if (!companyName) {
+    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})/);
     if (emailMatch && !/gmail|yahoo|hotmail|outlook|proton/i.test(emailMatch[1])) {
       const brand = emailMatch[1].replace(/[-_]/g, ' ');
-      if (!companyName) {
-        companyName = brand.charAt(0).toUpperCase() + brand.slice(1);
-      }
+      companyName = brand.charAt(0).toUpperCase() + brand.slice(1);
     }
   }
 

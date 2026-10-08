@@ -153,6 +153,18 @@ export async function triggerTelecomReparse(): Promise<{ status: string; parsedC
   }
 }
 
+export interface CreateVendorPayload {
+  name: string;
+  phone: string;
+  company?: string;
+  country?: string;
+  destination?: string;
+  route_type?: string;
+  rate_per_min?: number;
+  billing_pulse?: string;
+  notes?: string;
+}
+
 export async function fetchVendors(): Promise<BackendVendorItem[]> {
   try {
     const res = await authenticatedFetch(`${API_BASE}/vendors`);
@@ -162,6 +174,43 @@ export async function fetchVendors(): Promise<BackendVendorItem[]> {
   } catch (err) {
     console.error('Failed to fetch carriers and contacts:', err);
     return [];
+  }
+}
+
+export async function deleteVendor(phone: string): Promise<boolean> {
+  try {
+    const encoded = encodeURIComponent(phone);
+    const res = await authenticatedFetch(`${API_BASE}/vendors?phone=${encoded}`, { method: 'DELETE' });
+    return res.ok;
+  } catch (err) {
+    console.error('Failed to delete vendor:', err);
+    return false;
+  }
+}
+
+export async function deleteAllVendors(): Promise<boolean> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/vendors`, { method: 'DELETE' });
+    return res.ok;
+  } catch (err) {
+    console.error('Failed to delete all vendors:', err);
+    return false;
+  }
+}
+
+export async function createVendor(payload: CreateVendorPayload): Promise<BackendVendorItem | null> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/vendors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data.vendor || null;
+  } catch (err) {
+    console.error('Failed to create carrier entity:', err);
+    return null;
   }
 }
 

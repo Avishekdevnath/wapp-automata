@@ -422,12 +422,165 @@ function handleArbitrageGet(req, res) {
   return res.end(JSON.stringify({ status: 'ok', opportunities: matches }));
 }
 
+function handleVendorsDelete(req, res, parsedUrl) {
+  const db = getTradingDb(req);
+  if (!db) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Database unavailable' }));
+  }
+
+  const phoneParam = parsedUrl ? parsedUrl.searchParams.get('phone') : null;
+  try {
+    if (phoneParam) {
+      const cleanPhone = phoneParam.trim();
+      const vRes = db.prepare('DELETE FROM vendors WHERE phone = ?').run(cleanPhone);
+      const rRes = db.prepare('DELETE FROM route_ticks WHERE vendor_phone = ?').run(cleanPhone);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        status: 'ok',
+        deletedPhone: cleanPhone,
+        vendorDeleted: vRes.changes > 0,
+        routesDeleted: rRes.changes
+      }));
+    } else {
+      const vRes = db.prepare('DELETE FROM vendors').run();
+      const rRes = db.prepare('DELETE FROM route_ticks').run();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        status: 'ok',
+        deletedAll: true,
+        vendorsDeleted: vRes.changes,
+        routesDeleted: rRes.changes
+      }));
+    }
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: err.message }));
+  }
+}
+
+function handleVendorCreate(req, res) {
+  const db = getTradingDb(req);
+  if (!db) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Database unavailable' }));
+  }
+
+  let body = '';
+  req.on('data', chunk => { body += chunk; });
+  req.on('end', () => {
+    try {
+      const payload = JSON.parse(body || '{}');
+      const name = (payload.name || '').trim();
+      let phone = (payload.phone || '').trim();
+      const company = (payload.company || '').trim();
+
+      if (!phone) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Phone number is required' }));
+      }
+
+      // Format international phone numbers cleanly
+      if (!phone.startsWith('+') && !phone.startsWith('LID:') && /^\d+$/.test(phone)) {
+        phone = '+' + phone;
+      }
+
+      const country = (payload.country || '').trim() || detectCountry(phone);
+      const vendorName = name || company || phone;
+      const now = Date.now();
+
+      // Check for optional initial route details
+      const destination = (payload.destination || payload.route_country || '').trim();
+      const routeType = (payload.route_type || 'CLI').trim();
+      const pulse = (payload.billing_pulse || '1/1').trim();
+      const rate = payload.rate_per_min ? parseFloat(payload.rate_per_min) : null;
+      const intent = (payload.intent || 'WTS').toUpperCase();
+
+      db.transaction(() => {
+        db.prepare(`
+          INSERT INTO vendors (phone, name, company, total_offers, last_seen_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(phone) DO UPDATE SET
+            name = excluded.name,
+            company = excluded.company,
+            total_offers = vendors.total_offers + excluded.total_offers,
+            last_seen_at = excluded.last_seen_at
+        `).run(
+          phone,
+          vendorName,
+          company || null,
+          destination ? 1 : 0,
+          now
+        );
+
+        if (destination) {
+          const routeId = `rt_man_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          db.prepare(`
+            INSERT INTO route_ticks (
+              id, message_id, vendor_name, vendor_phone, company_name,
+              country, route_type, billing_pulse, rate_per_min, ani_pass,
+              quality_notes, fas_free, intent, raw_text, fraud_risk_score,
+              fraud_risk_level, fraud_flags, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            routeId,
+            `manual_${now}`,
+            vendorName,
+            phone,
+            company || null,
+            destination,
+            routeType,
+            pulse,
+            rate,
+            payload.ani_pass || null,
+            payload.notes || 'Manually verified carrier',
+            1,
+            intent,
+            `Manual entry: ${destination} ${routeType} ${rate ? '$' + rate : ''}`,
+            0,
+            'LOW',
+            JSON.stringify([]),
+            now
+          );
+        }
+      })();
+
+      const createdItem = {
+        id: 'v_' + phone.replace(/\D/g, ''),
+        name: vendorName,
+        company: company || '',
+        phone,
+        country: country || detectCountry(phone),
+        offersCount: destination ? 1 : 0,
+        lastSeenAt: now,
+        lastSeen: 'just now',
+        verified: true,
+        routes: destination ? [{
+          country: destination,
+          route_type: routeType,
+          billing_pulse: pulse,
+          rate_per_min: rate,
+          intent
+        }] : []
+      };
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ status: 'ok', vendor: createdItem }));
+    } catch (err) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: err.message }));
+    }
+  });
+}
+
 module.exports = {
   handleTrendsGet,
   handleNewsGet,
   handleNewsClear,
   handleNewsSeed,
   handleVendorsGet,
+  handleVendorsDelete,
+  handleVendorCreate,
   handleInsightsGet,
   handlePitchPost,
   handleExecutiveBriefGet,
