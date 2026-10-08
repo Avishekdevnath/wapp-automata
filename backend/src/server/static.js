@@ -27,9 +27,10 @@ const MIME_TYPES = {
  * Assembles HTML with optional <!-- @include path/to/file.html --> tags
  */
 function assembleHtml(content) {
+  const resolvedPublicDir = path.resolve(PUBLIC_DIR);
   return content.replace(/<!--\s*@include\s+([a-zA-Z0-9_\-\.\/]+)\s*-->/g, (match, partialPath) => {
-    const fullPartialPath = path.join(PUBLIC_DIR, partialPath);
-    if (fs.existsSync(fullPartialPath)) {
+    const fullPartialPath = path.resolve(PUBLIC_DIR, partialPath);
+    if (fullPartialPath.startsWith(resolvedPublicDir) && fs.existsSync(fullPartialPath)) {
       try {
         return fs.readFileSync(fullPartialPath, 'utf8');
       } catch (err) {
@@ -43,8 +44,10 @@ function assembleHtml(content) {
 function serveStaticFile(reqPath, res) {
   const safePath = path.normalize(reqPath).replace(/^(\.\.[/\\])+/, '');
   let filePath = path.join(PUBLIC_DIR, safePath === '/' ? 'index.html' : safePath);
+  const resolvedPath = path.resolve(filePath);
+  const resolvedPublicDir = path.resolve(PUBLIC_DIR);
 
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+  if (!resolvedPath.startsWith(resolvedPublicDir) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
     filePath = path.join(PUBLIC_DIR, 'index.html');
   }
 

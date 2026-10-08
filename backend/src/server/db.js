@@ -10,6 +10,8 @@ try {
 }
 const { getAccountDatabase, sanitizeAccountId } = persistence;
 
+const initializedDbs = new Set();
+
 function getTradingDb(target) {
   let accountId = 'default';
   if (typeof target === 'string') {
@@ -22,6 +24,9 @@ function getTradingDb(target) {
   }
   const cleanId = sanitizeAccountId(accountId);
   const db = getAccountDatabase(cleanId);
+  if (initializedDbs.has(cleanId)) {
+    return db;
+  }
   try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS route_ticks (
@@ -106,6 +111,7 @@ function getTradingDb(target) {
     try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_flags TEXT;`); } catch (_) {}
 
     // Clean slate standard: Never auto-seed dummy records into databases
+    initializedDbs.add(cleanId);
   } catch (err) {
     console.warn('[getTradingDb] Table setup warning:', err.message);
   }

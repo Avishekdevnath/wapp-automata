@@ -62,11 +62,12 @@ export async function fetchDeviceStatus(): Promise<DeviceStatus> {
     const res = await authenticatedFetch(`${API_BASE}/session/status`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    const isConn = Boolean(data.status === 'authenticated' || data.connected);
     return {
-      connected: Boolean(data.status === 'authenticated' || data.connected),
+      connected: isConn,
       status: data.status || 'disconnected',
-      phone: data.phone || data.accountJid?.split('@')[0]?.split(':')[0] || null,
-      pushName: data.name || null,
+      phone: isConn ? (data.phone || data.accountJid?.split('@')[0]?.split(':')[0] || null) : null,
+      pushName: isConn ? (data.name || null) : null,
       platform: data.platform || null,
       qrCode: data.qrDataUrl || data.qr || null,
       uptime: data.updatedAt ? Math.floor((Date.now() - data.updatedAt) / 1000) : null,

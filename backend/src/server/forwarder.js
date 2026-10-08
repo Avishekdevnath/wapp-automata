@@ -5,7 +5,7 @@ const { FORWARD_WEBHOOK_URL, FORWARD_FORMAT } = require('./config');
 const { recentMessages, saveMessagesToDisk } = require('./store');
 
 function buildCleanPayload(record) {
-  const host = process.env.PUBLIC_URL || 'http://107.170.31.114:4000';
+  const host = process.env.PUBLIC_URL || 'https://telcia.bijoytel.network';
   const mediaUrl = record.has_media ? `${host}/api/media/${record.id}` : null;
   const rawMsg = record.raw_envelope?.message || {};
 

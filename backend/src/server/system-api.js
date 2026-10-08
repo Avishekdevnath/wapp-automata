@@ -143,11 +143,11 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
         occurred_at: now,
         message: {
           message_id: 'sim_msg_' + Date.now(),
-          chat_id: parsed.chat_type === 'group' ? '8801516539430-1620000000@g.us' : '8801700000000@s.whatsapp.net',
-          chat_name: parsed.chat_name || (parsed.chat_type === 'group' ? 'Executive Support Group' : 'Direct Conversation'),
+          chat_id: parsed.chat_type === 'group' ? '120363000000000000@g.us' : '10000000000@s.whatsapp.net',
+          chat_name: parsed.chat_name || (parsed.chat_type === 'group' ? 'Carrier Trading Group' : 'Direct Conversation'),
           chat_type: parsed.chat_type || 'direct',
-          sender_id: parsed.sender_phone ? parsed.sender_phone.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : '8801700000000@s.whatsapp.net',
-          sender_name: parsed.sender_name || 'Sarah Khan',
+          sender_id: parsed.sender_phone ? parsed.sender_phone.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : '10000000000@s.whatsapp.net',
+          sender_name: parsed.sender_name || 'Carrier Partner',
           text: parsed.text || 'Simulated WhatsApp message verification test.',
           has_media: false
         }
@@ -643,7 +643,8 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
 
   // Media download/serving
   if (req.method === 'GET' && pathname.startsWith('/api/media/')) {
-    const msgId = pathname.replace('/api/media/', '').split('?')[0].trim();
+    const rawMsgId = pathname.replace('/api/media/', '').split('?')[0].trim();
+    const msgId = rawMsgId.replace(/[^a-zA-Z0-9_\-.:]/g, '');
     if (!msgId) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'Message ID is required' }));
@@ -651,8 +652,8 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
 
     const possibleExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.mp4', '.ogg', '.opus', '.mp3', '.pdf', '.bin'];
     for (const ext of possibleExtensions) {
-      const filePath = path.join(MEDIA_DIR, `${msgId}${ext}`);
-      if (fs.existsSync(filePath)) {
+      const filePath = path.resolve(MEDIA_DIR, `${msgId}${ext}`);
+      if (filePath.startsWith(path.resolve(MEDIA_DIR)) && fs.existsSync(filePath)) {
         const mime = MIME_TYPES[ext] || 'application/octet-stream';
         res.writeHead(200, {
           'Content-Type': mime,
@@ -670,13 +671,18 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     }
 
     if (!rawPayload && fs.existsSync(SQLITE_FILE)) {
+      let db = null;
       try {
         const Database = require('better-sqlite3');
-        const db = new Database(SQLITE_FILE, { readonly: true, fileMustExist: true });
+        db = new Database(SQLITE_FILE, { readonly: true, fileMustExist: true });
         const row = db.prepare('SELECT raw_payload FROM messages WHERE id = ?').get(msgId);
-        db.close();
         if (row && row.raw_payload) rawPayload = JSON.parse(row.raw_payload);
-      } catch (err) {}
+      } catch (err) {
+      } finally {
+        if (db) {
+          try { db.close(); } catch (_) {}
+        }
+      }
     }
 
     if (rawPayload && (rawPayload.message || rawPayload.key)) {

@@ -237,9 +237,9 @@ function handleRoutesPost(req, res) {
       `).run(
         routeId,
         `manual_${now}`,
-        data.vendor_name || 'Terminal Trader',
-        data.vendor_phone || '+8801516539430',
-        data.company_name || 'Direct Wholesale',
+        data.vendor_name || 'Direct Carrier',
+        data.vendor_phone || 'Direct Interconnect',
+        data.company_name || null,
         data.country,
         data.route_type,
         data.billing_pulse || '1/1',
@@ -261,7 +261,7 @@ function handleRoutesPost(req, res) {
             company = COALESCE(excluded.company, vendors.company),
             total_offers = vendors.total_offers + 1,
             last_seen_at = excluded.last_seen_at
-        `).run(data.vendor_phone, data.vendor_name || 'Terminal Trader', data.company_name || 'Direct Wholesale', now);
+        `).run(data.vendor_phone, data.vendor_name || 'Direct Carrier', data.company_name || null, now);
       }
 
       res.writeHead(201, { 'Content-Type': 'application/json' });

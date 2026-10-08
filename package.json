@@ -18,7 +18,7 @@
     "dev:server": "npm run server:dev --prefix backend",
     "dashboard": "node backend/src/server/index.js",
     "deploy": "node scripts/deploy.js",
-    "test": "npm run test --prefix backend"
+    "test": "tsx --test tests/**/*.test.ts"
   },
   "keywords": [
     "whatsapp",

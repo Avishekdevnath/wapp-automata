@@ -8,7 +8,7 @@ const {
 } = require('../../scripts/telecom-parser');
 const {
   isLikelyTelecomMessage
-} = require('../../scripts/server/ai-queue');
+} = require('../../backend/src/server/ai-queue');
 
 describe('Phase 1 & 2 AI Intelligence Guardrail Tests', () => {
 
@@ -55,8 +55,8 @@ describe('Phase 1 & 2 AI Intelligence Guardrail Tests', () => {
   });
 
   it('should atomically enqueue tasks into SQLite with priority lanes', () => {
-    const { enqueueAiTask, getQueueStats } = require('../../scripts/server/ai-queue');
-    const { getTradingDb } = require('../../scripts/server/db');
+    const { enqueueAiTask, getQueueStats } = require('../../backend/src/server/ai-queue');
+    const { getTradingDb } = require('../../backend/src/server/db');
 
     const db = getTradingDb();
     assert.ok(db, 'Trading database must be active');

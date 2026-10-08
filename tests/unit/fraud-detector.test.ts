@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { evaluateRouteFraudRisk, MARKET_FLOORS } = require('../../scripts/server/fraud-detector');
+const { evaluateRouteFraudRisk, MARKET_FLOORS } = require('../../backend/src/server/fraud-detector');
 
 describe('Phase 3 FAS & Fraud Anomaly Risk Detector Tests', () => {
 

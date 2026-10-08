@@ -176,39 +176,6 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // Unified Data Clearance API
-    if (req.method === 'POST' && pathname === '/api/data/clear') {
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
-      req.on('end', () => {
-        let parsed = {};
-        try { parsed = JSON.parse(body || '{}'); } catch {}
-        const target = parsed.target || 'all';
-        const { getTradingDb } = require('./db');
-        const db = getTradingDb(req);
-        const results = {};
-        if (target === 'routes' || target === 'all') {
-          if (db) {
-            results.routes = db.prepare('DELETE FROM route_ticks').run().changes;
-            try {
-              db.prepare(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`).run();
-              db.prepare(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('user_cleared_routes', 'true')`).run();
-            } catch (_) {}
-          }
-        }
-        if (target === 'analysis' || target === 'all') {
-          if (db) results.analysis = db.prepare('DELETE FROM ai_tasks').run().changes;
-          const { clearPipelineData } = require('./pipeline-api');
-          clearPipelineData();
-        }
-        if (target === 'news' || target === 'all') {
-          if (db) results.news = db.prepare('DELETE FROM market_news').run().changes;
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ status: 'ok', target, deleted: results }));
-      });
-      return;
-    }
 
     // AI Engine Settings APIs
     if (pathname.startsWith('/api/settings/ai')) {
@@ -223,7 +190,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // System, Session, Storage, Forwarder & Media APIs
-    const handled = handleSystemApi(req, res, pathname, parsedUrl);
+    const handled = await handleSystemApi(req, res, pathname, parsedUrl);
     if (handled) return;
 
     res.writeHead(404, { 'Content-Type': 'application/json' });

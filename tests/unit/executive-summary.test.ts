@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { getExecutiveOutageBrief, generateFallbackBrief } = require('../../scripts/server/executive-summary');
+const { getExecutiveOutageBrief, generateFallbackBrief } = require('../../backend/src/server/executive-summary');
 
 describe('Phase 5 Telecom Executive Outage & Regulatory Summary Tests', () => {
 

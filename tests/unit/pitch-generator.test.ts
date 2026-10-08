@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { generateTradePitch, generateFallbackPitches } = require('../../scripts/server/pitch-generator');
+const { generateTradePitch, generateFallbackPitches } = require('../../backend/src/server/pitch-generator');
 
 describe('Phase 4 Trade Negotiation Pitch Generator Tests', () => {
 

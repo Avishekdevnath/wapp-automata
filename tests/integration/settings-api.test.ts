@@ -1,10 +1,10 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { getTradingDb } from '../../scripts/server/db';
-import { handleSystemApi } from '../../scripts/server/system-api';
-import { DASHBOARD_PASSWORD, setDashboardPassword } from '../../scripts/server/config';
-import { generateAuthToken } from '../../scripts/server/auth';
+import { getTradingDb } from '../../backend/src/server/db';
+import { handleSystemApi } from '../../backend/src/server/system-api';
+import { DASHBOARD_PASSWORD, setDashboardPassword } from '../../backend/src/server/config';
+import { generateAuthToken } from '../../backend/src/server/auth';
 
 describe('Settings API & Data Management Integration Tests', () => {
   let server: http.Server;
@@ -71,7 +71,7 @@ describe('Settings API & Data Management Integration Tests', () => {
   });
 
   it('POST /api/settings/password should reject new password shorter than 4 characters', async () => {
-    const { DASHBOARD_PASSWORD: currentPwd } = require('../../scripts/server/config');
+    const { DASHBOARD_PASSWORD: currentPwd } = require('../../backend/src/server/config');
     const res = await fetch(`${baseUrl}/api/settings/password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -86,7 +86,7 @@ describe('Settings API & Data Management Integration Tests', () => {
   });
 
   it('POST /api/settings/password should update password successfully with valid inputs', async () => {
-    const { DASHBOARD_PASSWORD: currentPwd } = require('../../scripts/server/config');
+    const { DASHBOARD_PASSWORD: currentPwd } = require('../../backend/src/server/config');
     const res = await fetch(`${baseUrl}/api/settings/password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -100,7 +100,7 @@ describe('Settings API & Data Management Integration Tests', () => {
     assert.equal(data.status, 'ok');
 
     // Verify token signed with new password works
-    const { DASHBOARD_PASSWORD: updatedPwd } = require('../../scripts/server/config');
+    const { DASHBOARD_PASSWORD: updatedPwd } = require('../../backend/src/server/config');
     assert.equal(updatedPwd, 'newSecurePassword2026');
   });
 

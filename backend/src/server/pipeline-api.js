@@ -92,10 +92,14 @@ function handlePipelineApi(req, res, pathname, parsedUrl) {
       } catch (_) {}
     }
 
-    // Seed preview traces if pipelineEvents is empty
+    // Populate preview traces if pipelineEvents is empty using real data
     if (pipelineEvents.length === 0 && recentMessages && recentMessages.length > 0) {
       const initial = recentMessages.slice(0, 8);
+      const { parseTelecomMessage } = require('../telecom-parser');
       for (const msg of initial) {
+        const parsed = msg.text ? parseTelecomMessage(msg.text, msg.sender_phone, msg.sender_name) : null;
+        const isTelecom = Boolean(parsed && parsed.isTelecom);
+        const rList = (parsed && Array.isArray(parsed.routes)) ? parsed.routes : [];
         pipelineEvents.push({
           id: msg.id || `evt_${Date.now()}`,
           timestamp: msg.timestamp || new Date().toISOString(),
@@ -106,19 +110,19 @@ function handlePipelineApi(req, res, pathname, parsedUrl) {
           chat_type: msg.chat_type || 'group',
           raw_text: (msg.text || '').trim(),
           text_snippet: (msg.text || '').trim().replace(/\s+/g, ' ').slice(0, 110),
-          is_telecom: true,
-          intent: 'WTS',
-          routes_count: 1,
-          routes: [{ country: 'Colombia', route_type: 'CC CLI', rate_per_min: 0.0062 }],
-          news: null,
+          is_telecom: isTelecom,
+          intent: (parsed && parsed.intent) || 'WTS',
+          routes_count: rList.length,
+          routes: rList,
+          news: (parsed && parsed.news) || null,
           provider,
           latency_ms: 380,
-          status: 'EXTRACTED'
+          status: (parsed && parsed.news) ? 'NEWS_ALERT' : (rList.length > 0 ? 'EXTRACTED' : (isTelecom ? 'TELECOM' : 'DISCARDED_NOISE'))
         });
       }
     } else if (pipelineEvents.length === 0 && db) {
       try {
-        const ticks = db.prepare('SELECT country, route_type, billing_pulse, rate_per_min, vendor_name, vendor_phone, raw_text, created_at FROM route_ticks ORDER BY id DESC LIMIT 8').all();
+        const ticks = db.prepare('SELECT country, route_type, billing_pulse, rate_per_min, vendor_name, vendor_phone, company_name, raw_text, created_at FROM route_ticks ORDER BY id DESC LIMIT 8').all();
         if (ticks && ticks.length > 0) {
           for (const t of ticks) {
             const timeStr = t.created_at ? new Date(Number(t.created_at)).toLocaleTimeString() : new Date().toLocaleTimeString();
@@ -128,8 +132,8 @@ function handlePipelineApi(req, res, pathname, parsedUrl) {
               timestamp,
               timeStr,
               sender_name: t.vendor_name || 'Carrier Partner',
-              sender_phone: t.vendor_phone || '+18005550199',
-              chat_name: 'Wholesale Voice Exchange',
+              sender_phone: t.vendor_phone || '',
+              chat_name: t.company_name || 'Carrier Exchange',
               chat_type: 'group',
               raw_text: (t.raw_text || `${t.country} ${t.route_type} available at $${t.rate_per_min}/min`).trim(),
               text_snippet: (t.raw_text || `${t.country} ${t.route_type} available at $${t.rate_per_min}/min`).slice(0, 110),

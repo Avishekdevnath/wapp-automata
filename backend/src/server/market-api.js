@@ -152,7 +152,7 @@ function handleVendorsGet(req, res) {
         contactsMap.set(normKey, {
           id: 'v_' + normKey.replace(/\D/g, ''),
           name: v.name && !v.name.startsWith('LID:') ? v.name : normKey,
-          company: v.company || 'Carrier Interconnect Desk',
+          company: v.company || '',
           phone: normKey,
           country: detectCountry(normKey),
           offersCount: v.total_offers || 1,
@@ -175,13 +175,13 @@ function handleVendorsGet(req, res) {
         const validName = m.sender_name && !m.sender_name.startsWith('+') && !m.sender_name.startsWith('LID:')
           ? m.sender_name
           : (existing?.name || phone);
-        const company = m.chat_name || existing?.company || 'Wholesale Carrier Desk';
+        const company = m.chat_name || existing?.company || '';
 
         if (existing) {
           existing.offersCount++;
           if (ts > existing.lastSeenAt) existing.lastSeenAt = ts;
           if (validName && validName !== phone) existing.name = validName;
-          if (m.chat_name && existing.company === 'Wholesale Carrier Desk') existing.company = m.chat_name;
+          if (m.chat_name && !existing.company) existing.company = m.chat_name;
           if (existing.offersCount >= 3) existing.verified = true;
         } else {
           contactsMap.set(phone, {
