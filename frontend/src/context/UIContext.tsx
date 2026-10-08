@@ -11,7 +11,7 @@ export type ModalType =
   | 'ai-settings'
   | 'shortcuts'
   | 'message-detail'
-  | 'purge';
+  | 'delete';
 
 interface UIContextValue {
   // Navigation
@@ -151,7 +151,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     try {
       const saved = localStorage.getItem('telco_sidebar_menus');
       if (saved) return JSON.parse(saved);
-    } catch (_) {}
+    } catch (_) { }
     return {
       routes: true,
       trends: true,

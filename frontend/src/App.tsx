@@ -18,7 +18,7 @@ function AppInner() {
   useShortcuts();
 
   // 2. Data & Stream State
-  const { messages, stats, refresh, purge } = useMessages();
+  const { messages, stats, refresh, deleteMessages } = useMessages();
   const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>({
     connected: false,
     status: 'disconnected',
@@ -88,7 +88,7 @@ function AppInner() {
       <ModalRoot
         deviceStatus={deviceStatus}
         onRefreshStatus={loadDeviceStatus}
-        onPurgeConfirm={purge}
+        onDeleteConfirm={deleteMessages}
         onPostRoute={handlePostRoute}
       />
     </>

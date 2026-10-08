@@ -7,7 +7,7 @@ const { exec } = require('child_process');
 const { SESSION_PATH, MEDIA_DIR, SQLITE_FILE, FORWARD_WEBHOOK_URL, computeSignature } = require('./config');
 const { recentMessages, stats, serverStartTime, saveMessagesToDisk } = require('./store');
 const { getSessionState } = require('./auth');
-const { getStorageStats, purgeMediaFiles, dismissStorageWarning } = require('./media');
+const { getStorageStats, deleteMediaFiles, dismissStorageWarning } = require('./media');
 const { processWebhookDelivery } = require('./webhook-receiver');
 const { forwardWebhookToClient } = require('./forwarder');
 const { getTradingDb, pruneRawPayloads, isDmRecordingEnabled, setDmRecordingEnabled } = require('./db');
@@ -32,7 +32,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
       try {
         const QRCode = require('qrcode');
         state.qrDataUrl = await QRCode.toDataURL(state.qr, { margin: 2, scale: 6 });
-      } catch (_) {}
+      } catch (_) { }
     }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify(state));
@@ -42,7 +42,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     try {
       const refreshReqFile = path.join(SESSION_PATH, 'refresh_request.json');
       fs.writeFileSync(refreshReqFile, JSON.stringify({ timestamp: Date.now() }), 'utf8');
-    } catch (_) {}
+    } catch (_) { }
 
     // Give a brief window for file update
     await new Promise(r => setTimeout(r, 400));
@@ -52,7 +52,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
       try {
         const QRCode = require('qrcode');
         state.qrDataUrl = await QRCode.toDataURL(state.qr, { margin: 2, scale: 6 });
-      } catch (_) {}
+      } catch (_) { }
     }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ status: 'ok', ...state }));
@@ -87,7 +87,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       let parsed = {};
-      try { parsed = JSON.parse(body); } catch {}
+      try { parsed = JSON.parse(body); } catch { }
       const phone = parsed.phone ? String(parsed.phone).replace(/[^0-9]/g, '') : '';
       if (!phone || phone.length < 8) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -109,7 +109,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
                 code = s.pairingCode;
                 break;
               }
-            } catch {}
+            } catch { }
           }
         }
 
@@ -133,7 +133,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       let parsed = {};
-      try { parsed = JSON.parse(body); } catch {}
+      try { parsed = JSON.parse(body); } catch { }
 
       const now = new Date().toISOString();
       const testPayload = {
@@ -190,7 +190,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     }));
   }
 
-  if (req.method === 'POST' && (pathname === '/api/messages/purge' || pathname === '/api/clear')) {
+  if (req.method === 'POST' && (pathname === '/api/messages/delete' || pathname === '/api/clear')) {
     recentMessages.length = 0;
     saveMessagesToDisk(recentMessages);
 
@@ -200,30 +200,30 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     stats.groupsCount.clear();
     stats.sendersCount.clear();
 
-    let purgedCount = 0;
+    let deletedCount = 0;
     const db = getTradingDb(req);
     if (db) {
       try {
         const info = db.prepare('DELETE FROM messages').run();
-        purgedCount = info.changes;
+        deletedCount = info.changes;
         if (parsedUrl?.query?.all === 'true' || parsedUrl?.query?.dummy === 'true') {
           db.prepare('DELETE FROM route_ticks').run();
           db.prepare('DELETE FROM vendors').run();
           db.prepare('DELETE FROM market_news').run();
           db.prepare('DELETE FROM ai_tasks').run();
         }
-        try { db.pragma('incremental_vacuum(100)'); } catch (_) {}
+        try { db.pragma('incremental_vacuum(100)'); } catch (_) { }
       } catch (err) {
-        console.warn('[Purge Stream] SQLite messages table wipe notice:', err.message);
+        console.warn('[delete Stream] SQLite messages table wipe notice:', err.message);
       }
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ 
-      status: 'ok', 
-      cleared: true, 
-      purgedCount,
-      message: 'Raw WhatsApp message stream permanently wiped. All dummy data cleared.' 
+    return res.end(JSON.stringify({
+      status: 'ok',
+      cleared: true,
+      deletedCount,
+      message: 'Raw WhatsApp message stream permanently wiped. All dummy data cleared.'
     }));
   }
 
@@ -233,8 +233,8 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     return res.end(JSON.stringify({
       disk: s.disk,
       media: s.media,
-      autoPurgeThresholdPercent: s.autoPurgeThresholdPercent,
-      autoPurgeEvictPercent: s.autoPurgeEvictPercent,
+      autodeleteThresholdPercent: s.autodeleteThresholdPercent,
+      autodeleteEvictPercent: s.autodeleteEvictPercent,
       retentionPolicy: {
         active: true,
         days: 30,
@@ -249,7 +249,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       let parsed = {};
-      try { parsed = JSON.parse(body); } catch {}
+      try { parsed = JSON.parse(body); } catch { }
       const days = Number(parsed.days) || 30;
       const db = getTradingDb(req);
       const result = pruneRawPayloads(db, days, false);
@@ -263,14 +263,14 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     return true;
   }
 
-  if (req.method === 'POST' && pathname === '/api/storage/purge') {
+  if (req.method === 'POST' && pathname === '/api/storage/delete') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       let parsed = {};
-      try { parsed = JSON.parse(body); } catch {}
+      try { parsed = JSON.parse(body); } catch { }
       const percentage = Number(parsed.percentage) || 100;
-      const result = purgeMediaFiles(percentage);
+      const result = deleteMediaFiles(percentage);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify(result));
     });
@@ -394,7 +394,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
               `).run(toDelete);
               deletedCount = delInfo.changes;
               remainingCount = Math.max(0, total - deletedCount);
-              
+
               // Resync memory feed
               if (recentMessages.length > remainingCount) {
                 recentMessages.splice(0, recentMessages.length - remainingCount);
@@ -402,7 +402,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
             }
 
             saveMessagesToDisk(recentMessages);
-            try { db.pragma('incremental_vacuum(100)'); } catch (_) {}
+            try { db.pragma('incremental_vacuum(100)'); } catch (_) { }
           }
         }
 
@@ -463,7 +463,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       let parsed = {};
-      try { parsed = JSON.parse(body || '{}'); } catch {}
+      try { parsed = JSON.parse(body || '{}'); } catch { }
       const enabled = Boolean(parsed.record_direct_messages);
       const success = setDmRecordingEnabled(enabled);
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -491,7 +491,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
         aiTasksCount = db.prepare('SELECT COUNT(*) as c FROM ai_tasks').get()?.c || 0;
         newsCount = db.prepare('SELECT COUNT(*) as c FROM market_news').get()?.c || 0;
         vendorsCount = db.prepare('SELECT COUNT(*) as c FROM vendors').get()?.c || 0;
-      } catch (_) {}
+      } catch (_) { }
     }
     const storage = getStorageStats();
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -517,7 +517,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       let parsed = {};
-      try { parsed = JSON.parse(body || '{}'); } catch {}
+      try { parsed = JSON.parse(body || '{}'); } catch { }
       const target = parsed.target || 'all';
       const db = getTradingDb(req);
       const results = {};
@@ -527,7 +527,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
           try {
             db.prepare(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`).run();
             db.prepare(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('user_cleared_routes', 'true')`).run();
-          } catch (_) {}
+          } catch (_) { }
         }
       }
       if (target === 'analysis' || target === 'all') {
@@ -535,7 +535,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
         try {
           const { clearPipelineData } = require('./pipeline-api');
           clearPipelineData();
-        } catch (_) {}
+        } catch (_) { }
       }
       if (target === 'news' || target === 'all') {
         if (db) results.news = db.prepare('DELETE FROM market_news').run().changes;
@@ -622,7 +622,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     req.on('data', c => { b += c; });
     req.on('end', async () => {
       let parsed = {};
-      try { parsed = JSON.parse(b); } catch {}
+      try { parsed = JSON.parse(b); } catch { }
       const msgId = parsed.message_id;
       const record = recentMessages.find(m => m.id === msgId);
       if (!record) {
@@ -680,7 +680,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
       } catch (err) {
       } finally {
         if (db) {
-          try { db.close(); } catch (_) {}
+          try { db.close(); } catch (_) { }
         }
       }
     }
@@ -693,7 +693,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
             rawPayload,
             'buffer',
             {},
-            { logger: { debug(){}, info(){}, error(){}, warn(){} } }
+            { logger: { debug() { }, info() { }, error() { }, warn() { } } }
           );
           if (buffer && buffer.length > 0) {
             let ext = '.bin';
@@ -705,7 +705,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
 
             const mime = MIME_TYPES[ext] || 'application/octet-stream';
             const savePath = path.join(MEDIA_DIR, `${msgId}${ext}`);
-            try { fs.writeFileSync(savePath, buffer); } catch {}
+            try { fs.writeFileSync(savePath, buffer); } catch { }
 
             res.writeHead(200, {
               'Content-Type': mime,
@@ -714,10 +714,10 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
             });
             return res.end(buffer);
           }
-        } catch (downloadErr) {}
+        } catch (downloadErr) { }
 
         const thumbBase64 = rawPayload.message?.imageMessage?.jpegThumbnail ||
-                            rawPayload.message?.videoMessage?.jpegThumbnail;
+          rawPayload.message?.videoMessage?.jpegThumbnail;
         if (thumbBase64) {
           const thumbBuffer = Buffer.from(thumbBase64, 'base64');
           res.writeHead(200, {

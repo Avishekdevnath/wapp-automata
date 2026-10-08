@@ -1,5 +1,5 @@
 /**
- * Media Downloads, Cache Storage & Auto-Purge Management
+ * Media Downloads, Cache Storage & Auto-delete Management
  */
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +23,7 @@ function getStorageStats() {
         usedPercent: pct
       };
     }
-  } catch (err) {}
+  } catch (err) { }
 
   let totalFiles = 0;
   let totalBytes = 0;
@@ -40,10 +40,10 @@ function getStorageStats() {
             totalBytes += stat.size;
             files.push({ name, path: filePath, size: stat.size, mtime: stat.mtimeMs });
           }
-        } catch {}
+        } catch { }
       }
     }
-  } catch {}
+  } catch { }
 
   // Sort oldest first
   files.sort((a, b) => a.mtime - b.mtime);
@@ -56,14 +56,14 @@ function getStorageStats() {
       totalBytes,
       totalMb: Number((totalBytes / (1024 * 1024)).toFixed(2))
     },
-    autoPurgeThresholdPercent: 80,
-    autoPurgeEvictPercent: 50,
+    autodeleteThresholdPercent: 80,
+    autodeleteEvictPercent: 50,
     warning: storageWarning,
     files
   };
 }
 
-function purgeMediaFiles(percentage) {
+function deleteMediaFiles(percentage) {
   const stats = getStorageStats();
   const files = stats.files;
   if (!files || files.length === 0) {
@@ -95,7 +95,7 @@ function purgeMediaFiles(percentage) {
   }
 
   const freedMb = Number((freedBytes / (1024 * 1024)).toFixed(2));
-  console.log(`🧹 Purged ${deletedCount} media files (${percentage}%), freed ${freedMb} MB. Remaining files: ${files.length - deletedCount}`);
+  console.log(`🧹 deleted ${deletedCount} media files (${percentage}%), freed ${freedMb} MB. Remaining files: ${files.length - deletedCount}`);
 
   return {
     status: 'ok',
@@ -106,20 +106,20 @@ function purgeMediaFiles(percentage) {
   };
 }
 
-function checkStorageAndAutoPurge() {
+function checkStorageAndAutodelete() {
   const stats = getStorageStats();
   if (stats.disk.usedPercent >= 80 && stats.files && stats.files.length > 0) {
     console.warn(`⚠️ STORAGE WARNING: Disk usage at ${stats.disk.usedPercent}% (exceeds 80% threshold). Automatically purging oldest 50% media...`);
-    const result = purgeMediaFiles(50);
+    const result = deleteMediaFiles(50);
     storageWarning = {
       triggeredAt: Date.now(),
-      message: `Server storage reached ${stats.disk.usedPercent}%. The oldest 50% of cached media files (${result.deletedCount} files, ${result.freedMb} MB) were automatically purged to prevent system disruption.`
+      message: `Server storage reached ${stats.disk.usedPercent}%. The oldest 50% of cached media files (${result.deletedCount} files, ${result.freedMb} MB) were automatically deleted to prevent system disruption.`
     };
   }
 }
 
 // Background storage monitor every 5 minutes
-setInterval(checkStorageAndAutoPurge, 5 * 60 * 1000).unref();
+setInterval(checkStorageAndAutodelete, 5 * 60 * 1000).unref();
 
 function downloadMediaInBackground(msgId, rawPayload) {
   setImmediate(async () => {
@@ -129,7 +129,7 @@ function downloadMediaInBackground(msgId, rawPayload) {
         rawPayload,
         'buffer',
         {},
-        { logger: { debug(){}, info(){}, error(){}, warn(){} } }
+        { logger: { debug() { }, info() { }, error() { }, warn() { } } }
       );
       if (buffer && buffer.length > 0) {
         let ext = '.jpg';
@@ -142,7 +142,7 @@ function downloadMediaInBackground(msgId, rawPayload) {
         fs.writeFileSync(savePath, buffer);
         console.log(`🖼️ Auto-cached media attachment for [${msgId}] (${buffer.length} bytes)`);
       }
-    } catch (err) {}
+    } catch (err) { }
   });
 }
 
@@ -156,8 +156,8 @@ function dismissStorageWarning() {
 
 module.exports = {
   getStorageStats,
-  purgeMediaFiles,
-  checkStorageAndAutoPurge,
+  deleteMediaFiles,
+  checkStorageAndAutodelete,
   downloadMediaInBackground,
   getStorageWarning,
   dismissStorageWarning

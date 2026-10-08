@@ -140,7 +140,7 @@ export const ViewDispatcher: React.FC<ViewDispatcherProps> = ({
             deviceStatus={deviceStatus}
             onOpenDeviceModal={() => openModal('device')}
             onRefresh={onRefreshMessages}
-            onOpenPurgeModal={() => openModal('purge')}
+            onOpenDeleteModal={() => openModal('delete')}
             onViewDetail={(m) => {
               navigate(`/stream/${m.id}`);
               openModal('message-detail', m);
@@ -157,7 +157,7 @@ export const ViewDispatcher: React.FC<ViewDispatcherProps> = ({
             deviceStatus={deviceStatus}
             onOpenDeviceModal={() => openModal('device')}
             onRefresh={onRefreshMessages}
-            onOpenPurgeModal={() => openModal('purge')}
+            onOpenDeleteModal={() => openModal('delete')}
             onViewDetail={(m) => {
               navigate(`/stream/${m.id}`);
               openModal('message-detail', m);
@@ -199,7 +199,7 @@ export const ViewDispatcher: React.FC<ViewDispatcherProps> = ({
               deviceStatus={deviceStatus}
               onRefreshStatus={onRefreshStatus}
               onOpenDeviceModal={() => openModal('device')}
-              onOpenPurgeStreamModal={() => openModal('purge')}
+              onOpenDeleteStreamModal={() => openModal('delete')}
             />
           </Suspense>
         }

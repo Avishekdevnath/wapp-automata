@@ -33,8 +33,8 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
               >
                 <Info className="w-3.5 h-3.5 pointer-events-none" />
               </button>
-              <div className="absolute top-full right-0 mt-1.5 hidden group-hover/info:flex flex-col items-end z-50 pointer-events-none">
-                <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-medium whitespace-nowrap shadow-xl border border-slate-700 max-w-xs">
+              <div className="absolute top-full right-0 mt-1.5 hidden group-hover/info:block z-50 pointer-events-none w-64 max-w-[calc(100vw-4rem)]">
+                <div className="px-3 py-2 rounded-xl bg-slate-900/95 dark:bg-slate-800/95 text-white text-[11px] font-medium whitespace-normal break-words leading-relaxed text-left shadow-2xl border border-slate-700">
                   Keyboard Shortcuts • Quick number keys 1–8 for instant navigation, ESC to close
                 </div>
               </div>

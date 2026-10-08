@@ -80,9 +80,9 @@ export async function fetchDeviceStatus(): Promise<DeviceStatus> {
   }
 }
 
-export async function purgeStreamMessages(): Promise<boolean> {
+export async function deleteStreamMessages(): Promise<boolean> {
   try {
-    const res = await authenticatedFetch(`${API_BASE}/messages/purge`, { method: 'POST' });
+    const res = await authenticatedFetch(`${API_BASE}/messages/delete`, { method: 'POST' });
     return res.ok;
   } catch {
     return false;
@@ -295,7 +295,7 @@ export async function restartDesk(accountId: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
-// Settings, Purge, and Diagnostics Client Methods
+// Settings, delete, and Diagnostics Client Methods
 // ---------------------------------------------------------------------------
 
 export interface SettingsStats {
@@ -426,18 +426,18 @@ export async function reseedRoutes(): Promise<{ success: boolean; seeded?: numbe
   }
 }
 
-export async function purgeMediaFiles(
+export async function deleteMediaFiles(
   percentage: 80 | 100
 ): Promise<{ success: boolean; deletedCount?: number; freedMb?: number; message?: string }> {
   try {
-    const res = await authenticatedFetch(`${API_BASE}/storage/purge`, {
+    const res = await authenticatedFetch(`${API_BASE}/storage/delete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ percentage }),
     });
     const data = await res.json();
     if (!res.ok) {
-      return { success: false, message: data.error || 'Failed to purge media' };
+      return { success: false, message: data.error || 'Failed to delete media' };
     }
     return { success: true, deletedCount: data.deletedCount, freedMb: data.freedMb };
   } catch (err: any) {
@@ -456,9 +456,9 @@ export async function runStorageRetention(
     });
     const data = await res.json();
     if (!res.ok) {
-      return { success: false, message: data.error || 'Failed to run retention prune' };
+      return { success: false, message: data.error || 'Failed to run retention cleanup' };
     }
-    return { success: true, message: data.message || 'Retention prune completed' };
+    return { success: true, message: data.message || 'Retention cleanup completed' };
   } catch (err: any) {
     return { success: false, message: err?.message || 'Network error' };
   }
@@ -506,13 +506,13 @@ export async function pruneMessagesPercentage(
     });
     const data = await res.json();
     if (!res.ok) {
-      return { success: false, message: data.error || 'Failed to prune messages' };
+      return { success: false, message: data.error || 'Failed to delete messages' };
     }
     return {
       success: true,
       deletedCount: data.deletedCount,
       remainingCount: data.remainingCount,
-      message: data.message || 'Prune complete',
+      message: data.message || 'Deletion complete',
     };
   } catch (err: any) {
     return { success: false, message: err?.message || 'Network error' };

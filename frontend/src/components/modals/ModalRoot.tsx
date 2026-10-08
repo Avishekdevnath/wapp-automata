@@ -8,21 +8,21 @@ import { PostRouteModal } from './PostRouteModal';
 import { AiSettingsModal } from './AiSettingsModal';
 import { ShortcutsModal } from './ShortcutsModal';
 import { MessageDetailModal } from './MessageDetailModal';
-import { PurgeConfirmModal } from './PurgeConfirmModal';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 import type { DeviceStatus } from '../../types/status';
 import type { WhatsAppMessage } from '../../types/message';
 
 interface ModalRootProps {
   deviceStatus: DeviceStatus;
   onRefreshStatus: () => void;
-  onPurgeConfirm: (percentage?: number) => Promise<boolean>;
+  onDeleteConfirm: (percentage?: number) => Promise<boolean>;
   onPostRoute: (route: Partial<RouteDetailItem>) => Promise<boolean>;
 }
 
 export const ModalRoot: React.FC<ModalRootProps> = ({
   deviceStatus,
   onRefreshStatus,
-  onPurgeConfirm,
+  onDeleteConfirm,
   onPostRoute,
 }) => {
   const { activeModal, modalPayload, closeModal, openModal, switchView } = useUI();
@@ -78,10 +78,10 @@ export const ModalRoot: React.FC<ModalRootProps> = ({
         onClose={closeModal}
       />
 
-      <PurgeConfirmModal
-        isOpen={activeModal === 'purge'}
+      <DeleteConfirmModal
+        isOpen={activeModal === 'delete'}
         onClose={closeModal}
-        onConfirm={onPurgeConfirm}
+        onConfirm={onDeleteConfirm}
       />
     </>
   );

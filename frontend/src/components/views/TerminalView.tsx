@@ -14,7 +14,7 @@ interface TerminalViewProps {
   deviceStatus?: DeviceStatus;
   onOpenDeviceModal?: () => void;
   onRefresh: () => void;
-  onOpenPurgeModal: () => void;
+  onOpenDeleteModal: () => void;
   onViewDetail: (message: WhatsAppMessage) => void;
 }
 
@@ -23,7 +23,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   deviceStatus,
   onOpenDeviceModal,
   onRefresh,
-  onOpenPurgeModal,
+  onOpenDeleteModal,
   onViewDetail,
 }) => {
   const { messageId } = useParams<{ messageId?: string }>();
@@ -75,7 +75,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         onToggleAutoScroll={toggleAutoScroll}
         onExportJson={exportJson}
         onExportCsv={exportCsv}
-        onOpenPurgeModal={onOpenPurgeModal}
+        onOpenDeleteModal={onOpenDeleteModal}
         onRefresh={onRefresh}
       />
 

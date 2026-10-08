@@ -76,8 +76,8 @@ export const PostRouteModal: React.FC<PostRouteModalProps> = ({
               >
                 <Info className="w-4 h-4 pointer-events-none" />
               </button>
-              <div className="absolute top-full right-0 mt-1.5 hidden group-hover/info:flex flex-col items-end z-50 pointer-events-none">
-                <div className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-dark-950 text-white text-[11px] font-medium whitespace-nowrap shadow-xl border border-slate-700/80 max-w-xs">
+              <div className="absolute top-full right-0 mt-1.5 hidden group-hover/info:block z-50 pointer-events-none w-64 max-w-[calc(100vw-4rem)]">
+                <div className="px-3 py-2 rounded-xl bg-slate-900/95 dark:bg-slate-800/95 text-white text-[11px] font-medium whitespace-normal break-words leading-relaxed text-left shadow-2xl border border-slate-700">
                   Wholesale Route Posting • Broadcast live rates and port availability to the trading matrix
                 </div>
               </div>

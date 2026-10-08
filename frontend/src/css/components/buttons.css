@@ -286,10 +286,10 @@ html:not(.dark) #btn-save-ai:hover {
    -------------------------------------------------------------------------- */
 .bg-rose-600,
 button.bg-rose-600,
-#btn-confirm-purge-stream,
+#btn-confirm-delete-stream,
 html:not(.dark) .bg-rose-600,
 html:not(.dark) button.bg-rose-600,
-html:not(.dark) #btn-confirm-purge-stream {
+html:not(.dark) #btn-confirm-delete-stream {
   background-color: #e11d48 !important;
   border: 1px solid #e11d48 !important;
   color: #ffffff !important;
@@ -298,10 +298,10 @@ html:not(.dark) #btn-confirm-purge-stream {
 
 .bg-rose-600:hover,
 button.bg-rose-600:hover,
-#btn-confirm-purge-stream:hover,
+#btn-confirm-delete-stream:hover,
 html:not(.dark) .bg-rose-600:hover,
 html:not(.dark) button.bg-rose-600:hover,
-html:not(.dark) #btn-confirm-purge-stream:hover {
+html:not(.dark) #btn-confirm-delete-stream:hover {
   background-color: #be123c !important;
   border-color: #be123c !important;
   color: #ffffff !important;
@@ -316,7 +316,7 @@ html:not(.dark) #btn-confirm-purge-stream:hover {
 .bg-rose-600 *,
 #btn-modal-knock *,
 #btn-modal-pitch *,
-#btn-confirm-purge-stream * {
+#btn-confirm-delete-stream * {
   color: #ffffff !important;
 }
 

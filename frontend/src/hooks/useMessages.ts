@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { WhatsAppMessage, StreamStats } from '../types/message';
-import { fetchMessages, purgeStreamMessages, pruneMessagesPercentage } from '../api/client';
+import { fetchMessages, deleteStreamMessages, pruneMessagesPercentage } from '../api/client';
 import { logDecryptedMessage, logStreamListeningBanner } from '../utils/consoleLogger';
 
 export function useMessages() {
@@ -85,9 +85,9 @@ export function useMessages() {
     };
   }, [messages]);
 
-  const purge = useCallback(async (percentage: number = 100) => {
+  const deleteMessages = useCallback(async (percentage: number = 100) => {
     if (percentage >= 100) {
-      const ok = await purgeStreamMessages();
+      const ok = await deleteStreamMessages();
       if (ok) {
         setMessages([]);
         seenIdsRef.current.clear();
@@ -108,6 +108,6 @@ export function useMessages() {
     error,
     stats,
     refresh: loadMessages,
-    purge,
+    deleteMessages,
   };
 }

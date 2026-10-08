@@ -73,7 +73,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">Delete Intelligence Data</h3>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400">Selective database purge with safety safeguards</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">Selective database deletion with safety safeguards</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 win-controls">
@@ -85,9 +85,9 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
               >
                 <Info className="w-3.5 h-3.5 pointer-events-none" />
               </button>
-              <div className="absolute top-full right-0 mt-1.5 hidden group-hover/info:flex flex-col items-end z-50 pointer-events-none">
-                <div className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-medium whitespace-nowrap shadow-xl border border-slate-700 max-w-xs">
-                  Intelligence Purge • Wipe selective datasets without touching WhatsApp auth session
+              <div className="absolute top-full right-0 mt-1.5 hidden group-hover/info:block z-50 pointer-events-none w-64 max-w-[calc(100vw-4rem)]">
+                <div className="px-3 py-2 rounded-xl bg-slate-900/95 dark:bg-slate-800/95 text-white text-[11px] font-medium whitespace-normal break-words leading-relaxed text-left shadow-2xl border border-slate-700">
+                  Delete Data • Delete selective datasets without touching WhatsApp auth session
                 </div>
               </div>
             </div>
@@ -123,7 +123,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-amber-800 dark:text-amber-200 flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>Confirm purge for "{pendingConfirm.target.toUpperCase()}"?</span>
+                <span>Confirm delete for "{pendingConfirm.target.toUpperCase()}"?</span>
               </span>
               <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono">Action required</span>
             </div>
@@ -247,7 +247,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
             title="Wipe routes, AI tasks and news in one click"
           >
             <Flame className="w-3.5 h-3.5 text-rose-500 pointer-events-none" />
-            <span>Purge All Intelligence Data</span>
+            <span>delete All Intelligence Data</span>
           </button>
           <button
             onClick={onClose}

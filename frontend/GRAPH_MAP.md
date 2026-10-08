@@ -63,7 +63,7 @@ flowchart TD
         ModalRoot --> M7["AiSettingsModal.tsx"]
         ModalRoot --> M8["ShortcutsModal.tsx"]
         ModalRoot --> M9["MessageDetailModal.tsx"]
-        ModalRoot --> M10["PurgeConfirmModal.tsx"]
+        ModalRoot --> M10["deleteConfirmModal.tsx"]
     end
 
     subgraph L7["Layer 7: Data Hooks & API Transport"]
@@ -101,7 +101,7 @@ sequenceDiagram
     Note over View: Sub-millisecond useMemo keyword filtering
     View-->>Hook: User clicks "View Detail" / "Post Route" / "Knock"
     Hook->>Modal: openModal(type, payload) triggered via UIContext
-    Modal->>Backend: Post actions (Purge, Pair Code, Retention)
+    Modal->>Backend: Post actions (delete, Pair Code, Retention)
 ```
 
 ---
@@ -137,15 +137,15 @@ sequenceDiagram
 | **L6** | `src/components/modals/ModalRoot.tsx` | Central modal manager rendering active modal overlays | `ModalRoot` | All modal components, `UIContext` |
 | **L6** | `src/components/modals/AuthOverlay.tsx` | Terminal password unlock gate (`wapp2026`) | `AuthOverlay` | `api/client.ts` |
 | **L6** | `src/components/modals/DeviceModal.tsx` | QR code pairing, 8-digit phone code pairing, reset session | `DeviceModal` | `types/status.ts` |
-| **L6** | `src/components/modals/StorageModal.tsx` | Disk space %, media purge, 30-day retention prune | `StorageModal` | None |
-| **L6** | `src/components/modals/DataManagementModal.tsx` | Accidental data loss protection banner, selective purge | `DataManagementModal` | None |
+| **L6** | `src/components/modals/StorageModal.tsx` | Disk space %, media delete, 30-day retention prune | `StorageModal` | None |
+| **L6** | `src/components/modals/DataManagementModal.tsx` | Accidental data loss protection banner, selective delete | `DataManagementModal` | None |
 | **L6** | `src/components/modals/RouteDetailModal.tsx` | Route specs, copy trade ticket, AI pitch, WhatsApp knock | `RouteDetailModal`, `RouteDetailItem` | `formatters.ts` |
 | **L6** | `src/components/modals/PostRouteModal.tsx` | Broadcast wholesale voice route form | `PostRouteModal` | None |
 | **L6** | `src/components/modals/AiSettingsModal.tsx` | LLM selector (DeepSeek, ChatGPT, Grok, Regex), API keys | `AiSettingsModal` | None |
 | **L6** | `src/components/modals/ShortcutsModal.tsx` | Trader keyboard shortcuts help table | `ShortcutsModal` | None |
 | **L6** | `src/components/modals/MessageDetailModal.tsx` | Verbatim WhatsApp message inspector, raw JSON viewer | `MessageDetailModal` | `formatters.ts`, `types/message.ts` |
-| **L6** | `src/components/modals/PurgeConfirmModal.tsx` | Raw stream purge confirmation modal | `PurgeConfirmModal` | None |
-| **L7** | `src/hooks/useMessages.ts` | Message polling, stats computation, purge trigger | `useMessages` | `api/client.ts`, `types/message.ts` |
+| **L6** | `src/components/modals/deleteConfirmModal.tsx` | Raw stream delete confirmation modal | `deleteConfirmModal` | None |
+| **L7** | `src/hooks/useMessages.ts` | Message polling, stats computation, delete trigger | `useMessages` | `api/client.ts`, `types/message.ts` |
 | **L7** | `src/api/client.ts` | Typed fetch wrapper, Bearer HMAC token storage, REST calls | `fetchMessages`, `fetchDeviceStatus`, etc. | `types/message.ts`, `types/status.ts` |
 | **L7** | `src/utils/formatters.ts` | Date/time formatters, phone number sanitizer, avatar colors | `formatTime`, `cleanPhone`, `getInitials`, etc. | None |
 

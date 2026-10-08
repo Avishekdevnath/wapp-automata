@@ -86,7 +86,7 @@ export interface IQueueRepository {
 
   /**
    * Automated retention cleanup: prunes bulky raw_payload envelopes older than retentionDays
-   * on non-pending messages, and purges delivered records older than 2x retentionDays.
+   * on non-pending messages, and deletes delivered records older than 2x retentionDays.
    * Keeps parsed route_ticks, carrier contacts, and vendors intact forever.
    */
   pruneOldPayloads(retentionDays?: number, nowMs?: number, deleteDelivered?: boolean): { prunedCount: number; deletedCount: number };

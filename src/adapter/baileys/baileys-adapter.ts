@@ -18,7 +18,7 @@ import { LidCacheManager } from './lid-cache';
 import { ArchiveCacheManager } from './archive-cache';
 import {
   writeSessionState,
-  purgeSessionFiles,
+  deleteSessionFiles,
   generateQrDataUrl,
   processPairCodeRequest
 } from './session-manager';
@@ -277,13 +277,13 @@ export class BaileysAdapter implements IWhatsAppAdapter {
           this.consecutive428Errors = 0;
         }
 
-        // Only purge if explicitly logged out by WhatsApp, or if stuck in repeated 428 loops without connecting
-        const shouldPurgeStaleSession = isLoggedOut || (this.consecutive428Errors >= 10);
+        // Only delete if explicitly logged out by WhatsApp, or if stuck in repeated 428 loops without connecting
+        const shoulddeleteStaleSession = isLoggedOut || (this.consecutive428Errors >= 10);
 
-        if (shouldPurgeStaleSession) {
+        if (shoulddeleteStaleSession) {
           this.transitionState('auth_required');
           logger.warn('WhatsApp session logged out or invalidated. Purging auth credentials and generating fresh pairing...');
-          purgeSessionFiles(resolvedSessionDir);
+          deleteSessionFiles(resolvedSessionDir);
           writeSessionState(this.sessionPath, {
             status: 'scan_qr',
             statusCode,
@@ -357,7 +357,7 @@ export class BaileysAdapter implements IWhatsAppAdapter {
           if (meta && Array.isArray(meta.participants)) {
             this.lidCache.processParticipants(meta.participants as unknown as Array<Record<string, unknown>>);
           }
-        } catch {}
+        } catch { }
       }
     });
 

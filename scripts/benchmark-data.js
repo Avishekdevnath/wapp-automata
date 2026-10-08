@@ -518,7 +518,7 @@ function seedBenchmarkRoutes(db, force = false) {
     `);
 
     db.transaction(() => {
-      // 1. Purge old benchmark records to prevent duplication ballooning
+      // 1. delete old benchmark records to prevent duplication ballooning
       db.prepare("DELETE FROM route_ticks WHERE id LIKE 'rt_bm_%'").run();
 
       // 2. Seed Routes with deterministic IDs

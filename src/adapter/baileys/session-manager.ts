@@ -39,7 +39,7 @@ export function writeSessionState(sessionPath: string, state: Record<string, unk
 /**
  * Cleans multi-file authentication keys while preserving state and caches.
  */
-export function purgeSessionFiles(sessionPath: string): void {
+export function deleteSessionFiles(sessionPath: string): void {
   try {
     if (fs.existsSync(sessionPath)) {
       const files = fs.readdirSync(sessionPath);
