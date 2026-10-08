@@ -241,6 +241,14 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     }));
   }
 
+  if (req.method === 'POST' && pathname === '/api/telecom/reparse') {
+    const { reparseAllMessagesFromDb } = require('./db');
+    const db = getTradingDb(req);
+    const result = reparseAllMessagesFromDb(db);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ status: 'ok', ...result }));
+  }
+
   if (req.method === 'GET' && pathname === '/api/storage/status') {
     const s = getStorageStats();
     res.writeHead(200, { 'Content-Type': 'application/json' });

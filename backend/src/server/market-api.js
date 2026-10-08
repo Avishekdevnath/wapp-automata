@@ -140,67 +140,84 @@ function formatRelativeTime(timestamp) {
 
 function handleVendorsGet(req, res) {
   const db = getTradingDb(req);
-  const contactsMap = new Map();
-
-  // 1. Read registered vendors from SQLite
-  if (db) {
-    try {
-      const dbVendors = db.prepare('SELECT * FROM vendors').all();
-      for (const v of dbVendors) {
-        if (!v.phone) continue;
-        const normKey = v.phone.trim();
-        contactsMap.set(normKey, {
-          id: 'v_' + normKey.replace(/\D/g, ''),
-          name: v.name && !v.name.startsWith('LID:') ? v.name : normKey,
-          company: v.company || '',
-          phone: normKey,
-          country: detectCountry(normKey),
-          offersCount: v.total_offers || 1,
-          lastSeenAt: v.last_seen_at || Date.now(),
-          verified: (v.total_offers || 1) >= 3
-        });
-      }
-    } catch (_) {}
+  if (!db) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Database unavailable' }));
   }
 
-  // 2. Aggregate across all live messages in store to capture all active contacts
-  try {
-    const { recentMessages } = require('./store');
-    if (Array.isArray(recentMessages)) {
-      for (const m of recentMessages) {
-        const phone = (m.sender_phone || m.sender_id || '').trim();
-        if (!phone) continue;
-        const existing = contactsMap.get(phone);
-        const ts = m.occurred_at ? new Date(m.occurred_at).getTime() : (m.timestamp || Date.now());
-        const validName = m.sender_name && !m.sender_name.startsWith('+') && !m.sender_name.startsWith('LID:')
-          ? m.sender_name
-          : (existing?.name || phone);
-        const company = m.chat_name || existing?.company || '';
+  const vendorsMap = new Map();
 
-        if (existing) {
-          existing.offersCount++;
-          if (ts > existing.lastSeenAt) existing.lastSeenAt = ts;
-          if (validName && validName !== phone) existing.name = validName;
-          if (m.chat_name && !existing.company) existing.company = m.chat_name;
-          if (existing.offersCount >= 3) existing.verified = true;
-        } else {
-          contactsMap.set(phone, {
-            id: 'c_' + phone.replace(/\D/g, ''),
-            name: validName,
-            company: company,
-            phone: phone,
-            country: detectCountry(phone),
-            offersCount: 1,
-            lastSeenAt: ts,
-            verified: false
-          });
-        }
+  try {
+    // 1. Read registered vendors from SQLite
+    const dbVendors = db.prepare('SELECT phone, name, company, avatar_url, total_offers, last_seen_at FROM vendors').all();
+    for (const v of dbVendors) {
+      if (!v.phone) continue;
+      const cleanP = v.phone.trim();
+      vendorsMap.set(cleanP, {
+        id: 'v_' + cleanP.replace(/\D/g, ''),
+        name: v.name && !v.name.startsWith('LID:') && !v.name.startsWith('+') ? v.name : cleanP,
+        company: v.company || '',
+        phone: cleanP,
+        country: detectCountry(cleanP),
+        offersCount: v.total_offers || 0,
+        lastSeenAt: v.last_seen_at || Date.now(),
+        verified: Boolean(v.company && v.company.length > 2) || (v.total_offers || 0) >= 2,
+        routes: []
+      });
+    }
+
+    // 2. Query route_ticks to calculate EXACT real offer counts and attach authentic routes
+    const routeRows = db.prepare(`
+      SELECT id, vendor_phone, vendor_name, company_name, country, route_type, billing_pulse, rate_per_min, intent, created_at
+      FROM route_ticks
+      WHERE vendor_phone IS NOT NULL AND vendor_phone != '' AND vendor_phone != 'unknown'
+      ORDER BY created_at DESC
+    `).all();
+
+    for (const r of routeRows) {
+      const p = r.vendor_phone.trim();
+      let v = vendorsMap.get(p);
+      if (!v) {
+        v = {
+          id: 'v_' + p.replace(/\D/g, ''),
+          name: r.vendor_name || p,
+          company: r.company_name || '',
+          phone: p,
+          country: detectCountry(p),
+          offersCount: 0,
+          lastSeenAt: r.created_at,
+          verified: false,
+          routes: []
+        };
+        vendorsMap.set(p, v);
+      }
+
+      v.offersCount++;
+      if (r.company_name && !v.company) v.company = r.company_name;
+      if (r.vendor_name && (!v.name || v.name === p)) v.name = r.vendor_name;
+      if (r.created_at > v.lastSeenAt) v.lastSeenAt = r.created_at;
+
+      if (v.routes.length < 5) {
+        v.routes.push({
+          country: r.country,
+          route_type: r.route_type,
+          billing_pulse: r.billing_pulse,
+          rate_per_min: r.rate_per_min,
+          intent: r.intent
+        });
+      }
+
+      if (v.offersCount >= 1 && (v.company || v.name !== v.phone)) {
+        v.verified = true;
       }
     }
-  } catch (_) {}
+  } catch (err) {
+    console.warn('[Vendors API] Error querying vendors from DB:', err.message);
+  }
 
-  // 3. Format relative time and sort by recency & activity
-  const vendorsList = Array.from(contactsMap.values())
+  // Only return genuine vendors who either have real route offers OR authentic carrier profiles
+  const vendorsList = Array.from(vendorsMap.values())
+    .filter(v => v.offersCount > 0 || (v.company && v.name !== v.phone))
     .map(v => ({
       ...v,
       lastSeen: formatRelativeTime(v.lastSeenAt)

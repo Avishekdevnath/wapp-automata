@@ -7,31 +7,65 @@
  */
 
 const COUNTRY_MAP = [
-  { name: 'USA', flags: ['🇺🇸', 'US', 'USA', 'UNITED STATES', 'AMERICA'], prefixes: ['1', '+1', '1800', '1888', '1877'] },
-  { name: 'Canada', flags: ['🇨🇦', 'CANADA', 'CA'], prefixes: ['1', '+1'] },
-  { name: 'United Kingdom', flags: ['🇬🇧', 'UK', 'UNITED KINGDOM', 'BRITAIN'], prefixes: ['44', '+44'] },
-  { name: 'Australia', flags: ['🇦🇺', 'AUSTRALIA', 'AUS'], prefixes: ['61', '+61', '614'] },
-  { name: 'Germany', flags: ['🇩🇪', 'GERMANY', 'DE'], prefixes: ['49', '+49'] },
-  { name: 'Hong Kong', flags: ['🇭🇰', 'HONG KONG', 'HK'], prefixes: ['852', '+852'] },
-  { name: 'Bangladesh', flags: ['🇧🇩', 'BANGLADESH', 'BD'], prefixes: ['880', '+880'] },
-  { name: 'India', flags: ['🇮🇳', 'INDIA', 'IND'], prefixes: ['91', '+91'] },
-  { name: 'Singapore', flags: ['🇸🇬', 'SINGAPORE', 'SG'], prefixes: ['65', '+65'] },
-  { name: 'Puerto Rico', flags: ['🇵🇷', 'PUERTO RICO', 'PR'], prefixes: ['1787', '1939'] },
-  { name: 'Japan', flags: ['🇯🇵', 'JAPAN', 'JP'], prefixes: ['81', '+81'] },
-  { name: 'Colombia', flags: ['🇨🇴', 'COLOMBIA'], prefixes: ['57', '+57'] },
-  { name: 'Mexico', flags: ['🇲🇽', 'MEXICO', 'MX'], prefixes: ['52', '+52'] },
-  { name: 'Brazil', flags: ['🇧🇷', 'BRAZIL', 'BR'], prefixes: ['55', '+55'] },
-  { name: 'Macau', flags: ['🇲🇴', 'MACAU', 'MACAO'], prefixes: ['853', '+853'] },
-  { name: 'Taiwan', flags: ['🇹🇼', 'TAIWAN', 'TW'], prefixes: ['886', '+886'] },
-  { name: 'Malaysia', flags: ['🇲🇾', 'MALAYSIA', 'MY'], prefixes: ['60', '+60'] },
-  { name: 'Indonesia', flags: ['🇮🇩', 'INDONESIA', 'ID'], prefixes: ['62', '+62'] },
-  { name: 'China', flags: ['🇨🇳', 'CHINA', 'CN'], prefixes: ['86', '+86'] },
-  { name: 'Philippines', flags: ['🇵🇭', 'PHILIPPINES', 'PH'], prefixes: ['63', '+63'] },
-  { name: 'Pakistan', flags: ['🇵🇰', 'PAKISTAN', 'PK'], prefixes: ['92', '+92'] },
-  { name: 'New Zealand', flags: ['🇳🇿', 'NEW ZEALAND', 'NZ'], prefixes: ['64', '+64'] },
-  { name: 'UAE', flags: ['🇦🇪', 'UAE', 'DUBAI'], prefixes: ['971', '+971'] },
-  { name: 'Saudi Arabia', flags: ['🇸🇦', 'SAUDI', 'KSA'], prefixes: ['966', '+966'] }
+  { name: 'USA', flags: ['🇺🇸', 'USA', 'UNITED STATES', 'AMERICA'], exactCodes: ['US'], prefixes: ['1', '+1', '1800', '1888', '1877'] },
+  { name: 'Canada', flags: ['🇨🇦', 'CANADA'], exactCodes: ['CA'], prefixes: ['1', '+1'] },
+  { name: 'United Kingdom', flags: ['🇬🇧', 'UNITED KINGDOM', 'BRITAIN', 'ENGLAND'], exactCodes: ['UK', 'GB'], prefixes: ['44', '+44'] },
+  { name: 'Australia', flags: ['🇦🇺', 'AUSTRALIA'], exactCodes: ['AU', 'AUS'], prefixes: ['61', '+61', '614'] },
+  { name: 'Germany', flags: ['🇩🇪', 'GERMANY'], exactCodes: ['DE'], prefixes: ['49', '+49'] },
+  { name: 'Hong Kong', flags: ['🇭🇰', 'HONG KONG'], exactCodes: ['HK'], prefixes: ['852', '+852'] },
+  { name: 'Bangladesh', flags: ['🇧🇩', 'BANGLADESH'], exactCodes: ['BD'], prefixes: ['880', '+880'] },
+  { name: 'India', flags: ['🇮🇳', 'INDIA'], exactCodes: ['IN', 'IND'], prefixes: ['91', '+91'] },
+  { name: 'Singapore', flags: ['🇸🇬', 'SINGAPORE'], exactCodes: ['SG'], prefixes: ['65', '+65'] },
+  { name: 'Puerto Rico', flags: ['🇵🇷', 'PUERTO RICO'], exactCodes: ['PR'], prefixes: ['1787', '1939'] },
+  { name: 'Japan', flags: ['🇯🇵', 'JAPAN'], exactCodes: ['JP'], prefixes: ['81', '+81'] },
+  { name: 'Colombia', flags: ['🇨🇴', 'COLOMBIA'], exactCodes: ['CO'], prefixes: ['57', '+57'] },
+  { name: 'Mexico', flags: ['🇲🇽', 'MEXICO'], exactCodes: ['MX'], prefixes: ['52', '+52'] },
+  { name: 'Brazil', flags: ['🇧🇷', 'BRAZIL'], exactCodes: ['BR'], prefixes: ['55', '+55'] },
+  { name: 'Macau', flags: ['🇲🇴', 'MACAU', 'MACAO'], exactCodes: ['MO'], prefixes: ['853', '+853'] },
+  { name: 'Taiwan', flags: ['🇹🇼', 'TAIWAN'], exactCodes: ['TW'], prefixes: ['886', '+886'] },
+  { name: 'Malaysia', flags: ['🇲🇾', 'MALAYSIA'], exactCodes: ['MY'], prefixes: ['60', '+60'] },
+  { name: 'Indonesia', flags: ['🇮🇩', 'INDONESIA'], exactCodes: ['ID'], prefixes: ['62', '+62'] },
+  { name: 'China', flags: ['🇨🇳', 'CHINA'], exactCodes: ['CN'], prefixes: ['86', '+86'] },
+  { name: 'Philippines', flags: ['🇵🇭', 'PHILIPPINES'], exactCodes: ['PH'], prefixes: ['63', '+63'] },
+  { name: 'Pakistan', flags: ['🇵🇰', 'PAKISTAN'], exactCodes: ['PK'], prefixes: ['92', '+92'] },
+  { name: 'New Zealand', flags: ['🇳🇿', 'NEW ZEALAND'], exactCodes: ['NZ'], prefixes: ['64', '+64'] },
+  { name: 'UAE', flags: ['🇦🇪', 'DUBAI'], exactCodes: ['UAE', 'AE'], prefixes: ['971', '+971'] },
+  { name: 'Saudi Arabia', flags: ['🇸🇦', 'SAUDI', 'KSA'], exactCodes: ['SA'], prefixes: ['966', '+966'] },
+  { name: 'Egypt', flags: ['🇪🇬', 'EGYPT'], exactCodes: ['EG'], prefixes: ['20', '+20'] },
+  { name: 'Nigeria', flags: ['🇳🇬', 'NIGERIA'], exactCodes: ['NG'], prefixes: ['234', '+234'] },
+  { name: 'South Africa', flags: ['🇿🇦', 'SOUTH AFRICA'], exactCodes: ['ZA'], prefixes: ['27', '+27'] },
+  { name: 'Turkey', flags: ['🇹🇷', 'TURKEY'], exactCodes: ['TR'], prefixes: ['90', '+90'] },
+  { name: 'Vietnam', flags: ['🇻🇳', 'VIETNAM'], exactCodes: ['VN'], prefixes: ['84', '+84'] },
+  { name: 'France', flags: ['🇫🇷', 'FRANCE'], exactCodes: ['FR'], prefixes: ['33', '+33'] },
+  { name: 'Spain', flags: ['🇪🇸', 'SPAIN'], exactCodes: ['ES'], prefixes: ['34', '+34'] },
+  { name: 'Italy', flags: ['🇮🇹', 'ITALY'], exactCodes: ['IT'], prefixes: ['39', '+39'] }
 ];
+
+function matchCountryInLine(line) {
+  if (!line || typeof line !== 'string') return null;
+  for (const c of COUNTRY_MAP) {
+    // 1. Full names & flag emojis (case-insensitive)
+    for (const f of c.flags) {
+      if (f.length > 2) {
+        const re = new RegExp(`(^|[^a-zA-Z0-9])${f}([^a-zA-Z0-9]|$)`, 'i');
+        if (re.test(line)) return c.name;
+      } else {
+        if (line.includes(f)) return c.name;
+      }
+    }
+    // 2. Exact 2-letter codes (STRICT UPPERCASE ONLY or followed by telecom keyword)
+    if (c.exactCodes) {
+      for (const code of c.exactCodes) {
+        const uppercaseMatch = new RegExp(`(^|[^a-zA-Z0-9])${code}([^a-zA-Z0-9]|$)`).test(line);
+        const telecomSuffixMatch = new RegExp(`(^|[^a-zA-Z0-9])${code}\\s+(?:cli|ncli|non-cli|cc|ivr|mobile|fixed|did|ani|pulse|rate)`, 'i').test(line);
+        if (uppercaseMatch || telecomSuffixMatch) {
+          return c.name;
+        }
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * Fast local regex & heuristic parser extracting telecom routes and market news
@@ -43,6 +77,9 @@ function parseTelecomMessage(rawText, senderPhone = '', senderName = '') {
 
   const text = rawText.trim();
   const lower = text.toLowerCase();
+
+  // STRICT PRE-FILTER: Must contain telecom wholesale trading keywords
+  const isWholesale = /\b(cli|non-cli|ncli|ivr|did|cc cli|cc|ani|pulse|rate|rates|route|routes|traffic|carrier|gateway|voip|dialer|ports|fas|asr|acd|wtb|wts|need|looking for|buying|selling|cpm|interconnect|termination|daily capacity)\b/i.test(text);
 
   // 1. Check if this is a telecom news or outage alert
   const isNews = /outage|down|maintenance|blocked|warning|regulation|ncc|fcc|scam|fraud|alert|degraded|latency|fiber cut/i.test(text);
@@ -72,41 +109,65 @@ function parseTelecomMessage(rawText, senderPhone = '', senderName = '') {
     };
   }
 
+  if (!isWholesale && !newsRecord) {
+    return {
+      isTelecom: false,
+      intent: 'WTS',
+      company: null,
+      vendor_name: senderName || null,
+      routes: [],
+      news: null
+    };
+  }
+
   // 2. Identify Intent: WTS (Selling / Available) vs WTB (Buying / Looking for / Need)
   let intent = 'WTS';
   if (/\b(wtb|need|looking for|urgently required|require|buying|buyer)\b/i.test(text) && !/\b(available|wts|selling|promoting)\b/i.test(text)) {
     intent = 'WTB';
   }
 
-  // 3. Extract Company Name & Vendor Name
+  // 3. Extract Company Name & Vendor Name from Signature / Sender
   let companyName = '';
   let contactName = senderName || '';
 
-  // Match company in bottom lines e.g. "Echolink Tel Ltd — HANI"
-  const lastLines = text.split(/\r?\n/).slice(-5);
+  // Extract from pushName if formatted like "Name | Company"
+  if (senderName && senderName.includes('|')) {
+    const parts = senderName.split('|').map(s => s.trim());
+    if (parts[0]) contactName = parts[0];
+    if (parts[1]) companyName = parts[1];
+  }
+
+  // Extract company from signature in bottom lines
+  const lines = text.split(/\r?\n+/);
+  const lastLines = lines.slice(-6);
   for (const l of lastLines) {
-    const compMatch = l.match(/([A-Za-z0-9\s.,&]+(?:Tel Ltd|Telecom|Telecoms|VoIP|Carrier|Networks|Communications))\s*(?:[—–-]\s*([A-Za-z0-9\s]+))?/i);
-    if (compMatch) {
+    const compMatch = l.match(/([A-Za-z0-9\s.,&]+(?:Tel Ltd|Telecom|Telecoms|VoIP|Carrier|Networks|Communications|Trading|Solutions))\s*(?:[—–|-]\s*([A-Za-z0-9\s]+))?/i);
+    if (compMatch && !compMatch[1].toLowerCase().includes('group')) {
       companyName = compMatch[1].trim();
-      if (compMatch[2] && !contactName) {
+      if (compMatch[2] && (!contactName || contactName.startsWith('+'))) {
         contactName = compMatch[2].trim();
       }
       break;
     }
+
+    // Email domain detection: e.g. sales@voicetrade.com -> VoiceTrade
+    const emailMatch = l.match(/[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})/);
+    if (emailMatch && !/gmail|yahoo|hotmail|outlook|proton/i.test(emailMatch[1])) {
+      const brand = emailMatch[1].replace(/[-_]/g, ' ');
+      if (!companyName) {
+        companyName = brand.charAt(0).toUpperCase() + brand.slice(1);
+      }
+    }
   }
 
-  // 4. Default Route Type from Header (e.g., "LIVE CC CLI ROUTES")
+  // 4. Default Route Type from Header
   let defaultRouteType = 'CLI';
   if (/cc\s*cli/i.test(text)) defaultRouteType = 'CC CLI';
   else if (/cli/i.test(text) && !/non[- ]?cli/i.test(text)) defaultRouteType = 'CLI';
   else if (/non[- ]?cli/i.test(text)) defaultRouteType = 'Non-CLI';
   else if (/cc/i.test(text)) defaultRouteType = 'CC';
 
-  // 5. Global FAS status
   const isFasFree = !/high fas|has fas/i.test(text);
-
-  // 6. Split message into lines to parse routes
-  const lines = text.split(/\r?\n+/);
   const detectedRoutes = [];
   let currentCountry = null;
 
@@ -114,28 +175,27 @@ function parseTelecomMessage(rawText, senderPhone = '', senderName = '') {
     const line = lines[i].trim();
     if (!line) continue;
 
-    // Check if line declares a Country
-    let foundCountryInLine = null;
-    for (const c of COUNTRY_MAP) {
-      const match = c.flags.some(flag => {
-        const re = new RegExp(`(^|[^a-zA-Z0-9])${flag}([^a-zA-Z0-9]|$)`, 'i');
-        return re.test(line);
-      });
-      if (match) {
-        foundCountryInLine = c.name;
-        break;
-      }
-    }
-
+    const foundCountryInLine = matchCountryInLine(line);
     if (foundCountryInLine) {
       currentCountry = foundCountryInLine;
     }
 
-    // Determine if this line has route attributes
-    const hasRouteIndicators = /cli|ivr|dtmf|cc|fas|ani|pulse|1\/1|60\/1|60\/60|crtp|ortp|rate|display|fixed|mobile/i.test(line);
+    // Determine if this line has genuine wholesale route attributes
+    const hasRouteIndicators = /cli|ivr|dtmf|cc|fas|ani|pulse|1\/1|60\/1|60\/60|crtp|ortp|rate|daily|ports|capacity|mobile|fixed/i.test(line);
 
-    if (currentCountry && (hasRouteIndicators || foundCountryInLine)) {
-      // Line-specific Route Type or inherit default
+    // Rate / Price per minute candidate
+    let rate = null;
+    const rateMatch = line.match(/(?:@|\$|rate:?|price:?|usd)?\s*([0-9]+\.[0-9]{2,6})\s*(?:usd|\/min|cents?|\$)?/i) ||
+                      line.match(/([0-9]+\.[0-9]{2,6})\s*(?:usd|\$|\/min)/i);
+    if (rateMatch) {
+      const parsedVal = parseFloat(rateMatch[1]);
+      if (parsedVal > 0 && parsedVal <= 5.0) {
+        rate = parsedVal;
+      }
+    }
+
+    // A valid route line MUST have a destination AND (a rate OR route quality OR explicit pulse)
+    if (currentCountry && (rate !== null || hasRouteIndicators)) {
       let routeType = defaultRouteType;
       if (/cc\s*cli/i.test(line) || (/cc/i.test(line) && /cli/i.test(line))) routeType = 'CC CLI';
       else if (/ivr/i.test(line)) routeType = 'IVR';
@@ -145,14 +205,12 @@ function parseTelecomMessage(rawText, senderPhone = '', senderName = '') {
       else if (/cli/i.test(line)) routeType = 'CLI';
       else if (/cc/i.test(line)) routeType = 'CC';
 
-      // Billing Pulse for this specific line
       let pulse = '1/1';
       if (/60\/1/i.test(line)) pulse = '60/1';
       else if (/60\/60/i.test(line)) pulse = '60/60';
       else if (/1\/1/i.test(line)) pulse = '1/1';
       else if (/60\/1/i.test(text)) pulse = '60/1';
 
-      // ANI Pass for this specific line
       let ani = null;
       const aniMatch = line.match(/(\+?\d+xx\/\+?\d+xx|\+?\d+xx|all ani|\+?1 & 86 ani|\d+ ani|\d+xxx)/i) ||
                        text.match(/(\+?\d+xx\/\+?\d+xx|\+?\d+xx|all ani|\+?1 & 86 ani|\d+ ani)/i);

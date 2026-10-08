@@ -134,6 +134,23 @@ export interface BackendVendorItem {
   offersCount: number;
   lastSeen: string;
   verified: boolean;
+  routes?: Array<{
+    country: string;
+    route_type: string;
+    billing_pulse?: string;
+    rate_per_min?: number;
+    intent?: string;
+  }>;
+}
+
+export async function triggerTelecomReparse(): Promise<{ status: string; parsedCount?: number }> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/telecom/reparse`, { method: 'POST' });
+    if (!res.ok) throw new Error('Reparse failed');
+    return await res.json();
+  } catch {
+    return { status: 'error' };
+  }
 }
 
 export async function fetchVendors(): Promise<BackendVendorItem[]> {

@@ -165,7 +165,9 @@ export class BaileysAdapter implements IWhatsAppAdapter {
       auth: state,
       browser: Browsers.ubuntu('Chrome'),
       syncFullHistory: false,
-      fireInitQueries: false,
+      fireInitQueries: true,
+      keepAliveIntervalMs: 25_000,
+      connectTimeoutMs: 60_000,
       shouldSyncHistoryMessage: (msg) => {
         if (!msg) return false;
         // Block massive FULL multi-year archives, but allow RECENT catch-up sync, PUSH_NAME, and INITIAL_BOOTSTRAP
@@ -262,11 +264,20 @@ export class BaileysAdapter implements IWhatsAppAdapter {
           accountJid: this.accountJid
         });
 
-        // STEALTH MODE: Run as passive silent observer.
-        // Never announce 'available' presence so WhatsApp keeps full audio and notification priority on mobile device.
+        // STEALTH MODE & CLOUD KEEP-ALIVE: Run as passive silent observer.
+        // Send lightweight presence update every 25 seconds to prevent cloud VPS NAT / firewall idle timeouts.
         try {
           await sock.sendPresenceUpdate('unavailable');
         } catch (_) { }
+
+        if (this.presenceTimer) clearInterval(this.presenceTimer);
+        this.presenceTimer = setInterval(async () => {
+          if (this.sock && this.state === 'authenticated') {
+            try {
+              await this.sock.sendPresenceUpdate('unavailable');
+            } catch (_) { }
+          }
+        }, 25_000);
       }
 
       if (connection === 'close') {

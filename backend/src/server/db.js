@@ -211,16 +211,10 @@ function backfillHistoricalTelecomData(recentMessages) {
   try {
     const db = getTradingDb();
     if (!db) return;
-    try {
-      const isCleared = db.prepare("SELECT value FROM system_settings WHERE key = 'user_cleared_routes'").get()?.value;
-      if (isCleared === 'true') {
-        return; // User explicitly cleared routes; preserve empty state until new messages arrive or re-seed is triggered
-      }
-    } catch (_) {}
     const count = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get()?.c || 0;
     if (count === 0 && recentMessages && recentMessages.length > 0) {
       const { parseTelecomMessage } = require('../telecom-parser');
-      console.log(`🔍 [Telecom Backfill] Seeding routes from ${recentMessages.length} existing messages...`);
+      console.log(`🔍 [Telecom Backfill] Scanning ${recentMessages.length} existing messages for authentic wholesale routes...`);
       for (const msg of recentMessages) {
         if (msg.text) {
           const parsed = parseTelecomMessage(msg.text, msg.sender_phone, msg.sender_name);
@@ -233,6 +227,40 @@ function backfillHistoricalTelecomData(recentMessages) {
   } catch (err) {
     console.warn('[Telecom Backfill] Warning:', err.message);
   }
+}
+
+function reparseAllMessagesFromDb(db) {
+  if (!db) db = getTradingDb();
+  if (!db) return { routesParsed: 0, vendorsCreated: 0 };
+  const { parseTelecomMessage } = require('../telecom-parser');
+  let count = 0;
+
+  try {
+    const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'").get();
+    if (!tableCheck) return { routesParsed: 0, vendorsCreated: 0 };
+
+    const rows = db.prepare("SELECT id, sender_id, source_name, message_text, created_at FROM messages WHERE message_text IS NOT NULL AND trim(message_text) != ''").all();
+    for (const r of rows) {
+      let senderPhone = '';
+      if (r.sender_id.includes('@s.whatsapp.net')) {
+        senderPhone = '+' + r.sender_id.split('@')[0].split(':')[0];
+      }
+      const parsed = parseTelecomMessage(r.message_text, senderPhone, r.source_name);
+      if (parsed && parsed.isTelecom) {
+        saveParsedTelecom(db, parsed, {
+          id: r.id,
+          sender_name: r.source_name || parsed.vendor_name,
+          sender_phone: senderPhone,
+          text: r.message_text,
+          created_at: r.created_at
+        });
+        count++;
+      }
+    }
+  } catch (err) {
+    console.warn('[Reparse Telecom] Error:', err.message);
+  }
+  return { parsedCount: count };
 }
 
 /**
@@ -324,6 +352,7 @@ module.exports = {
   getTradingDb,
   saveParsedTelecom,
   backfillHistoricalTelecomData,
+  reparseAllMessagesFromDb,
   pruneRawPayloads,
   isDmRecordingEnabled,
   setDmRecordingEnabled

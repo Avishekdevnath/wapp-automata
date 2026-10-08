@@ -364,6 +364,15 @@ export const VendorsView: React.FC = () => {
                                   </span>
                                 )}
                               </div>
+                              {vendor.routes && vendor.routes.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1 max-w-[260px]">
+                                  {vendor.routes.slice(0, 2).map((r, i) => (
+                                    <span key={i} className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-slate-100 dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-400">
+                                      {r.country} {r.route_type} {r.rate_per_min ? `$${r.rate_per_min}` : ''}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -371,7 +380,7 @@ export const VendorsView: React.FC = () => {
                         {/* Company / Desk */}
                         <td className="py-3 px-4">
                           <span className="text-slate-700 dark:text-slate-300 font-medium block truncate max-w-[200px]">
-                            {vendor.company}
+                            {vendor.company || '—'}
                           </span>
                         </td>
 
@@ -488,7 +497,7 @@ export const VendorsView: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-slate-600 dark:text-slate-400 block mt-0.5 truncate">{vendor.company}</span>
+                      <span className="text-xs text-slate-600 dark:text-slate-400 block mt-0.5 truncate">{vendor.company || '—'}</span>
                       <span className="text-[10px] text-slate-500 font-mono block mt-0.5">
                         {vendor.country}
                       </span>
@@ -498,6 +507,16 @@ export const VendorsView: React.FC = () => {
                     {vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}
                   </span>
                 </div>
+
+                {vendor.routes && vendor.routes.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {vendor.routes.slice(0, 3).map((r, i) => (
+                      <span key={i} className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-700 dark:text-slate-300">
+                        {r.country} {r.route_type} {r.rate_per_min ? `$${r.rate_per_min}` : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs font-mono">
                   <span className="text-slate-700 dark:text-slate-400 text-[11px] truncate max-w-[65%]">{vendor.phone}</span>
