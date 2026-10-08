@@ -182,6 +182,7 @@ function parseTelecomMessage(rawText, senderPhone = '', senderName = '') {
   const isFasFree = !/high fas|has fas/i.test(text);
   const detectedRoutes = [];
   let currentCountry = null;
+  const lines = text.split(/\r?\n/);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
