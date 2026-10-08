@@ -70,7 +70,6 @@ function getTradingDb(target) {
         total_offers INTEGER DEFAULT 1,
         last_seen_at INTEGER NOT NULL
       );
-      try { db.exec('ALTER TABLE vendors ADD COLUMN avatar_url TEXT'); } catch (_) {}
 
       CREATE TABLE IF NOT EXISTS vendor_avatars (
         phone TEXT PRIMARY KEY,
@@ -107,6 +106,7 @@ function getTradingDb(target) {
       CREATE INDEX IF NOT EXISTS idx_ai_tasks_created ON ai_tasks (created_at DESC);
     `);
 
+    try { db.exec(`ALTER TABLE vendors ADD COLUMN avatar_url TEXT;`); } catch (_) {}
     try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_risk_score INTEGER DEFAULT 0;`); } catch (_) {}
     try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_risk_level TEXT DEFAULT 'LOW';`); } catch (_) {}
     try { db.exec(`ALTER TABLE route_ticks ADD COLUMN fraud_flags TEXT;`); } catch (_) {}
