@@ -44,22 +44,22 @@ export const TrendsView: React.FC = () => {
     const list = filteredRoutes.length > 0 ? filteredRoutes : routes;
     if (list.length === 0) {
       return {
-        avgRate: '$0.0194',
-        lowestDip: '$0.0045',
-        totalQuotes: 1502,
-        currentRate: 0.0215,
+        avgRate: '—',
+        lowestDip: '—',
+        totalQuotes: 0,
+        currentRate: 0,
       };
     }
     const rates = list.map((r) => Number(r.rate_per_min) || 0.01).filter((r) => r > 0);
     const sum = rates.reduce((a, b) => a + b, 0);
-    const avg = rates.length > 0 ? sum / rates.length : 0.0194;
-    const min = rates.length > 0 ? Math.min(...rates) : 0.0045;
+    const avg = rates.length > 0 ? sum / rates.length : 0;
+    const min = rates.length > 0 ? Math.min(...rates) : 0;
     const latest = rates[0] || avg;
 
     return {
       avgRate: `$${avg.toFixed(4)}`,
       lowestDip: `$${min.toFixed(4)}`,
-      totalQuotes: list.length > 0 ? list.length : 1502,
+      totalQuotes: list.length,
       currentRate: latest,
     };
   }, [filteredRoutes, routes]);
@@ -154,46 +154,58 @@ export const TrendsView: React.FC = () => {
         </div>
 
         {/* High Precision SVG Chart Canvas */}
-        <div className="w-full h-72 relative flex flex-col justify-end pt-4 bg-slate-50/80 dark:bg-dark-950/40 rounded-xl border border-slate-200/80 dark:border-dark-800 p-4 transition-colors">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 800 200" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-            {/* Grid lines */}
-            <line x1="0" y1="40" x2="800" y2="40" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="4" />
-            <line x1="0" y1="90" x2="800" y2="90" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="4" />
-            <line x1="0" y1="140" x2="800" y2="140" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="4" />
+        <div className="w-full h-72 relative flex flex-col justify-center items-center bg-slate-50/80 dark:bg-dark-950/40 rounded-xl border border-slate-200/80 dark:border-dark-800 p-4 transition-colors">
+          {routes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center space-y-2 text-slate-400 p-8">
+              <TrendingUp className="w-8 h-8 text-slate-500 opacity-40" />
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No Historical Rate Trends Yet</p>
+              <span className="text-[11px] text-slate-500 max-w-sm">
+                Rate trend charts and corridor pricing dynamics will automatically graph here as carrier messages are received.
+              </span>
+            </div>
+          ) : (
+            <>
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 800 200" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                {/* Grid lines */}
+                <line x1="0" y1="40" x2="800" y2="40" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="4" />
+                <line x1="0" y1="90" x2="800" y2="90" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="4" />
+                <line x1="0" y1="140" x2="800" y2="140" stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeDasharray="4" />
 
-            {/* Gradient Fill */}
-            <path d={chartData.fillD} fill="url(#chartGradient)" />
+                {/* Gradient Fill */}
+                <path d={chartData.fillD} fill="url(#chartGradient)" />
 
-            {/* Main Price Line */}
-            <path
-              d={chartData.pathD}
-              fill="none"
-              stroke="#10b981"
-              strokeWidth="2.5"
-            />
+                {/* Main Price Line */}
+                <path
+                  d={chartData.pathD}
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="2.5"
+                />
 
-            {/* Data Points */}
-            {chartData.points.map((pt, idx) => (
-              <circle key={idx} cx={pt.x} cy={pt.y} r="4" fill="#10b981" className="cursor-pointer" />
-            ))}
-            <circle cx="800" cy={chartData.latestY} r="5" fill="#059669" className="animate-pulse" />
-          </svg>
+                {/* Data Points */}
+                {chartData.points.map((pt, idx) => (
+                  <circle key={idx} cx={pt.x} cy={pt.y} r="4" fill="#10b981" className="cursor-pointer" />
+                ))}
+                <circle cx="800" cy={chartData.latestY} r="5" fill="#059669" className="animate-pulse" />
+              </svg>
 
-          {/* Time axis */}
-          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-            <span>{period} days ago</span>
-            <span>{Math.round(period * 0.66)} days ago</span>
-            <span>{Math.round(period * 0.33)} days ago</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400">
-              Live Today ({kpis.avgRate})
-            </span>
-          </div>
+              {/* Time axis */}
+              <div className="w-full flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <span>{period} days ago</span>
+                <span>{Math.round(period * 0.66)} days ago</span>
+                <span>{Math.round(period * 0.33)} days ago</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  Live Today ({kpis.avgRate})
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono">

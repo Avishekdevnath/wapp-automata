@@ -23,61 +23,8 @@ import { ProfileAvatar } from '../common/ProfileAvatar';
 import { fetchVendors, type BackendVendorItem } from '../../api/client';
 import { matchesVendorSlug, getVendorSlug } from '../../utils/slug';
 
-const SAMPLE_VENDORS: BackendVendorItem[] = [
-  {
-    id: 'v1',
-    name: 'Sarah Khan',
-    company: 'Apex Telecom Global Ltd',
-    phone: '+44 7700 900142',
-    country: 'United Kingdom 🇬🇧',
-    offersCount: 24,
-    lastSeen: '12m ago',
-    verified: true,
-  },
-  {
-    id: 'v2',
-    name: 'Bilal Ahmed',
-    company: 'FastRoute Carrier Desk',
-    phone: '+1 202 555 0198',
-    country: 'United States 🇺🇸',
-    offersCount: 18,
-    lastSeen: '25m ago',
-    verified: true,
-  },
-  {
-    id: 'v3',
-    name: 'David Lim',
-    company: 'Nexus Voice Singapore Pte',
-    phone: '+65 6789 0123',
-    country: 'Singapore 🇸🇬',
-    offersCount: 15,
-    lastSeen: '1h ago',
-    verified: true,
-  },
-  {
-    id: 'v4',
-    name: 'Mohamed Salah',
-    company: 'NileCarrier Exchange',
-    phone: '+20 100 123 4567',
-    country: 'Egypt 🇪🇬',
-    offersCount: 9,
-    lastSeen: '3h ago',
-    verified: false,
-  },
-  {
-    id: 'v5',
-    name: 'Rodrigo Santos',
-    company: 'Manila Voice Desk',
-    phone: '+63 917 123 4567',
-    country: 'Philippines 🇵🇭',
-    offersCount: 7,
-    lastSeen: '5h ago',
-    verified: true,
-  },
-];
-
 export const VendorsView: React.FC = () => {
-  const [vendors, setVendors] = useState<BackendVendorItem[]>(SAMPLE_VENDORS);
+  const [vendors, setVendors] = useState<BackendVendorItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -91,11 +38,10 @@ export const VendorsView: React.FC = () => {
     setLoading(true);
     try {
       const data = await fetchVendors();
-      if (data && data.length > 0) {
-        setVendors(data);
-      }
+      setVendors(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load vendors:', err);
+      setVendors([]);
     } finally {
       setLoading(false);
     }
@@ -510,6 +456,10 @@ export const VendorsView: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      ) : paginatedVendors.length === 0 ? (
+        <div className="glass-card rounded-2xl p-12 text-center text-slate-400 text-xs border border-slate-200 dark:border-dark-700/80">
+          No matching contacts or carriers found.
         </div>
       ) : (
         /* 2. CARDS FORMAT */

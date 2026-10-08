@@ -22,6 +22,27 @@ import { ProfileAvatar } from '../common/ProfileAvatar';
 import { fetchRoutes } from '../../api/client';
 import { matchesRouteSlug } from '../../utils/slug';
 
+const COUNTRY_METADATA: Record<string, { flag: string; code: string }> = {
+  bangladesh: { flag: '🇧🇩', code: '880' },
+  india: { flag: '🇮🇳', code: '91' },
+  macau: { flag: '🇲🇴', code: '853' },
+  uae: { flag: '🇦🇪', code: '971' },
+  'puerto rico': { flag: '🇵🇷', code: '1787' },
+  pakistan: { flag: '🇵🇰', code: '92' },
+  egypt: { flag: '🇪🇬', code: '20' },
+  philippines: { flag: '🇵🇭', code: '63' },
+  france: { flag: '🇫🇷', code: '33' },
+  china: { flag: '🇨🇳', code: '86' },
+};
+
+function getCountryMeta(country: string): { flag: string; code: string } {
+  const norm = (country || '').toLowerCase().trim();
+  for (const [key, meta] of Object.entries(COUNTRY_METADATA)) {
+    if (norm.includes(key)) return meta;
+  }
+  return { flag: '🌐', code: '00' };
+}
+
 export interface RouteItem {
   id: string;
   destination: string;
@@ -42,146 +63,6 @@ export interface RouteItem {
   };
 }
 
-const DEFAULT_ROUTES: RouteItem[] = [
-  {
-    id: 'r1',
-    destination: 'Bangladesh Mobile',
-    code: '88017 / 88019',
-    flag: '🇧🇩',
-    type: 'Pure Direct CLI',
-    rate: 0.0215,
-    asr: 48,
-    acd: 4.2,
-    ports: 180,
-    vendor: 'Apex Telecom Global',
-    vendorPhone: '+44 7700 900142',
-    isHot: true,
-    activeAlert: {
-      category: 'OUTAGE',
-      text: 'Red Sea Subsea (+140ms)',
-      urgent: true,
-    },
-  },
-  {
-    id: 'r2',
-    destination: 'Pakistan Jazz',
-    code: '92300',
-    flag: '🇵🇰',
-    type: 'Direct CLI Stable',
-    rate: 0.0180,
-    asr: 44,
-    acd: 3.8,
-    ports: 120,
-    vendor: 'FastRoute Carrier Desk',
-    vendorPhone: '+1 202 555 0198',
-    isHot: true,
-  },
-  {
-    id: 'r3',
-    destination: 'India Airtel Clean',
-    code: '9198',
-    flag: '🇮🇳',
-    type: 'FAS-Free Tier-1',
-    rate: 0.0092,
-    asr: 52,
-    acd: 4.8,
-    ports: 250,
-    vendor: 'Nexus Voice Singapore',
-    vendorPhone: '+65 6789 0123',
-  },
-  {
-    id: 'r4',
-    destination: 'USA CC Flat',
-    code: '1',
-    flag: '🇺🇸',
-    type: 'Conversational CC',
-    rate: 0.0045,
-    asr: 65,
-    acd: 5.5,
-    ports: 500,
-    vendor: 'AmeriVoIP Carrier',
-    vendorPhone: '+1 415 555 2671',
-  },
-  {
-    id: 'r5',
-    destination: 'United Kingdom Mobile',
-    code: '447',
-    flag: '🇬🇧',
-    type: 'Pure CLI Route',
-    rate: 0.0125,
-    asr: 49,
-    acd: 4.1,
-    ports: 160,
-    vendor: 'BritTel Exchange',
-    vendorPhone: '+44 20 7946 0912',
-    activeAlert: {
-      category: 'REGULATION',
-      text: 'Ofcom CLI Block',
-      urgent: false,
-    },
-  },
-  {
-    id: 'r6',
-    destination: 'Egypt Vodafone',
-    code: '2010',
-    flag: '🇪🇬',
-    type: 'Direct White Route',
-    rate: 0.0850,
-    asr: 38,
-    acd: 3.2,
-    ports: 80,
-    vendor: 'NileCarrier Cairo',
-    vendorPhone: '+20 100 123 4567',
-  },
-  {
-    id: 'r7',
-    destination: 'Philippines Globe',
-    code: '639',
-    flag: '🇵🇭',
-    type: 'Direct NCLI High ACD',
-    rate: 0.0450,
-    asr: 42,
-    acd: 3.9,
-    ports: 90,
-    vendor: 'Manila Voice Desk',
-    vendorPhone: '+63 917 123 4567',
-  },
-];
-
-const COUNTRY_METADATA: Record<string, { flag: string; code: string }> = {
-  usa: { flag: '🇺🇸', code: '1' },
-  'united states': { flag: '🇺🇸', code: '1' },
-  canada: { flag: '🇨🇦', code: '1' },
-  colombia: { flag: '🇨🇴', code: '57' },
-  mexico: { flag: '🇲🇽', code: '52' },
-  brazil: { flag: '🇧🇷', code: '55' },
-  'united kingdom': { flag: '🇬🇧', code: '44' },
-  uk: { flag: '🇬🇧', code: '44' },
-  germany: { flag: '🇩🇪', code: '49' },
-  australia: { flag: '🇦🇺', code: '61' },
-  'hong kong': { flag: '🇭🇰', code: '852' },
-  singapore: { flag: '🇸🇬', code: '65' },
-  bangladesh: { flag: '🇧🇩', code: '880' },
-  india: { flag: '🇮🇳', code: '91' },
-  japan: { flag: '🇯🇵', code: '81' },
-  macau: { flag: '🇲🇴', code: '853' },
-  uae: { flag: '🇦🇪', code: '971' },
-  'puerto rico': { flag: '🇵🇷', code: '1787' },
-  pakistan: { flag: '🇵🇰', code: '92' },
-  egypt: { flag: '🇪🇬', code: '20' },
-  philippines: { flag: '🇵🇭', code: '63' },
-  france: { flag: '🇫🇷', code: '33' },
-  china: { flag: '🇨🇳', code: '86' },
-};
-
-function getCountryMeta(country: string): { flag: string; code: string } {
-  const norm = (country || '').toLowerCase().trim();
-  for (const [key, meta] of Object.entries(COUNTRY_METADATA)) {
-    if (norm.includes(key)) return meta;
-  }
-  return { flag: '🌐', code: '00' };
-}
-
 export interface RoutesViewProps {
   onSelectRoute?: (route: RouteItem) => void;
   onOpenPostRoute?: () => void;
@@ -191,7 +72,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
   onSelectRoute,
   onOpenPostRoute,
 }) => {
-  const [routes, setRoutes] = useState<RouteItem[]>(DEFAULT_ROUTES);
+  const [routes, setRoutes] = useState<RouteItem[]>([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -202,7 +83,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
   const loadRoutes = useCallback(async () => {
     try {
       const data = await fetchRoutes();
-      if (data && data.routes && data.routes.length > 0) {
+      if (data && data.routes && Array.isArray(data.routes)) {
         const mapped: RouteItem[] = data.routes.map((r, i) => {
           const meta = getCountryMeta(r.country);
           return {
@@ -216,7 +97,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             acd: Number((3.5 + ((i % 5) * 0.4)).toFixed(1)),
             ports: 100 + (i * 20),
             vendor: r.vendor_name || r.company_name || 'Carrier Partner',
-            vendorPhone: r.vendor_phone || '+8801874819713',
+            vendorPhone: r.vendor_phone || '',
             isHot: Boolean(r.is_best_trusted_price || i < 3),
             activeAlert: r.active_news ? {
               category: (r.active_news.category as any) || 'OUTAGE',
@@ -226,9 +107,12 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
           };
         });
         setRoutes(mapped);
+      } else {
+        setRoutes([]);
       }
     } catch (err) {
       console.warn('Failed to load routes:', err);
+      setRoutes([]);
     }
   }, []);
 
@@ -316,6 +200,11 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
     });
   };
 
+  const topYieldRoute = useMemo(() => {
+    if (routes.length === 0) return null;
+    return [...routes].sort((a, b) => b.rate - a.rate)[0];
+  }, [routes]);
+
   return (
     <div id="view-routes" className="space-y-4">
       {/* 1. Top KPI Strip */}
@@ -331,10 +220,12 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
                 {routes.length}
               </span>
               <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
+                <span className={`w-1.5 h-1.5 rounded-full ${routes.length > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} /> {routes.length > 0 ? 'Live' : 'Empty'}
               </span>
             </div>
-            <span className="text-[10px] text-slate-500 block">Across 16 destinations</span>
+            <span className="text-[10px] text-slate-500 block">
+              {routes.length > 0 ? `Across ${new Set(routes.map(r => r.code)).size} destinations` : 'Awaiting route stream'}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
             <Radio className="w-5 h-5" />
@@ -349,12 +240,12 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             </span>
             <div className="flex items-baseline gap-1.5">
               <span className="text-2xl font-black font-mono text-amber-500 dark:text-amber-400 tracking-tight">
-                ${(uniquePrices[0] ?? 0.0045).toFixed(4)}
+                {routes.length > 0 && uniquePrices.length > 0 ? `$${uniquePrices[0].toFixed(4)}` : '—'}
               </span>
-              <span className="text-[10px] text-slate-400">/min</span>
+              {routes.length > 0 && <span className="text-[10px] text-slate-400">/min</span>}
             </div>
             <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium block">
-              🥇 #1 Market Floor
+              {routes.length > 0 ? '🥇 #1 Market Floor' : 'No offers yet'}
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400 shrink-0">
@@ -370,11 +261,15 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             </span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black font-mono text-sky-400 tracking-tight">
-                1.8x
+                {routes.length > 0 ? '1.8x' : '—'}
               </span>
-              <span className="text-[10px] text-sky-400 font-medium">Buy/Sell Spread</span>
+              <span className="text-[10px] text-sky-400 font-medium">
+                {routes.length > 0 ? 'Buy/Sell Spread' : 'No pairs'}
+              </span>
             </div>
-            <span className="text-[10px] text-slate-500 block">Strong Trading Depth</span>
+            <span className="text-[10px] text-slate-500 block">
+              {routes.length > 0 ? 'Strong Trading Depth' : 'Awaiting stream pairs'}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
             <TrendingUp className="w-5 h-5" />
@@ -389,12 +284,14 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             </span>
             <div className="flex items-baseline gap-1.5">
               <span className="text-2xl font-black font-mono text-amber-400 tracking-tight">
-                $0.0180
+                {topYieldRoute ? `$${topYieldRoute.rate.toFixed(4)}` : '—'}
               </span>
-              <span className="text-[10px] text-slate-400">PK Jazz</span>
+              <span className="text-[10px] text-slate-400">
+                {topYieldRoute ? topYieldRoute.destination : 'None'}
+              </span>
             </div>
             <span className="text-[10px] text-amber-400/80 font-medium block">
-              High Margin 120 Ports
+              {topYieldRoute ? `High Margin ${topYieldRoute.ports} Ports` : 'No high-yield routes'}
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
@@ -525,7 +422,14 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-dark-800/60 text-xs">
-              {sortedRoutes.map((r) => {
+              {sortedRoutes.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
+                    No routes captured yet. Wholesale rates will appear here as incoming messages are parsed.
+                  </td>
+                </tr>
+              ) : (
+                sortedRoutes.map((r) => {
                 const rawP = cleanPhone(r.vendorPhone);
                 const knockUrl = rawP ? `https://wa.me/${rawP}` : null;
                 const rankIndex = uniquePrices.indexOf(r.rate);
@@ -674,7 +578,8 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
                     </td>
                   </tr>
                 );
-              })}
+              })
+            )}
             </tbody>
           </table>
         </div>

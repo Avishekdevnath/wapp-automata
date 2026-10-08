@@ -13,14 +13,14 @@ export const PostRouteModal: React.FC<PostRouteModalProps> = ({
   onClose,
   onPostRoute,
 }) => {
-  const [country, setCountry] = useState('Bangladesh');
+  const [country, setCountry] = useState('');
   const [intent, setIntent] = useState('WTS');
   const [routeType, setRouteType] = useState('Direct CLI');
   const [pulse, setPulse] = useState('1/1');
-  const [rate, setRate] = useState('0.0210');
+  const [rate, setRate] = useState('');
   const [vendorName, setVendorName] = useState('');
-  const [vendorPhone, setVendorPhone] = useState('+8801874819713');
-  const [notes, setNotes] = useState('Clean FAS-free traffic, 100 ports available');
+  const [vendorPhone, setVendorPhone] = useState('');
+  const [notes, setNotes] = useState('');
   const [fasFree, setFasFree] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -188,7 +188,7 @@ export const PostRouteModal: React.FC<PostRouteModalProps> = ({
                 value={vendorPhone}
                 onChange={(e) => setVendorPhone(e.target.value)}
                 required
-                placeholder="+8801874819713"
+                placeholder="+1234567890"
                 className="w-full bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>

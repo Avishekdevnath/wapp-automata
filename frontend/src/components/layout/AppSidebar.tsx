@@ -17,7 +17,6 @@ import {
 import type { StreamStats } from '../../types/message';
 import type { DeviceStatus } from '../../types/status';
 import { fetchSidebarCounts, fetchSettingsStats, type SidebarCounts } from '../../api/client';
-import { DeskSwitcher } from './DeskSwitcher';
 import { useUI } from '../../context/UIContext';
 
 export type ViewType =
@@ -253,10 +252,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </button>
           </div>
 
-          {/* WhatsApp Desk Workspace Switcher */}
-          <DeskSwitcher />
-
-          {/* Navigation Links */}
+            {/* Navigation Links */}
           <nav className="p-3 space-y-1">
             {navItems
               .filter((item) => item.id === 'settings' || sidebarMenuPrefs[item.id] !== false)

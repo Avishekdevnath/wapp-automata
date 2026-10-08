@@ -27,7 +27,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
   onRefresh,
 }) => {
   const [activeTab, setActiveTab] = useState<'qr' | 'code'>('qr');
-  const [phoneInput, setPhoneInput] = useState('+8801874819713');
+  const [phoneInput, setPhoneInput] = useState('');
   const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [codeLoading, setCodeLoading] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
   if (!isOpen) return null;
 
   const isConnected = deviceStatus.connected || deviceStatus.status === 'authenticated';
-  const displayPhone = deviceStatus.phone || (isConnected ? '+8801874819713' : 'Unlinked');
+  const displayPhone = deviceStatus.phone || (isConnected ? 'Connected' : 'Unlinked');
 
   const handleRequestPairCode = async () => {
     setCodeLoading(true);
@@ -268,7 +268,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
                       type="tel"
                       value={phoneInput}
                       onChange={(e) => setPhoneInput(e.target.value)}
-                      placeholder="+8801874819713"
+                      placeholder="+1234567890"
                       className="flex-1 bg-white dark:bg-dark-950 border border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-emerald-500"
                     />
                     <button

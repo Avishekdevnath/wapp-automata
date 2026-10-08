@@ -421,7 +421,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Active Routes
             </span>
             <span className="text-base font-extrabold font-mono text-emerald-700 dark:text-emerald-400 mt-0.5 block">
-              {stats?.counts ? Number(stats.counts.routes).toLocaleString() : '21 Live'}
+              {stats?.counts ? Number(stats.counts.routes).toLocaleString() : '0'}
             </span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-950/60 border border-slate-200 dark:border-dark-800">
@@ -429,7 +429,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               AI Tasks
             </span>
             <span className="text-base font-extrabold font-mono text-purple-700 dark:text-purple-400 mt-0.5 block">
-              {stats?.counts ? Number(stats.counts.aiTasks).toLocaleString() : '1,502'}
+              {stats?.counts ? Number(stats.counts.aiTasks).toLocaleString() : '0'}
             </span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-950/60 border border-slate-200 dark:border-dark-800">
@@ -437,7 +437,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Telco Outages
             </span>
             <span className="text-base font-extrabold font-mono text-rose-700 dark:text-rose-400 mt-0.5 block">
-              {stats?.counts ? Number(stats.counts.news).toLocaleString() : '3 Active'}
+              {stats?.counts ? Number(stats.counts.news).toLocaleString() : '0'}
             </span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-950/60 border border-slate-200 dark:border-dark-800">
@@ -445,7 +445,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Vendors
             </span>
             <span className="text-base font-extrabold font-mono text-amber-700 dark:text-amber-400 mt-0.5 block">
-              {stats?.counts ? Number(stats.counts.vendors).toLocaleString() : '8 Desks'}
+              {stats?.counts ? Number(stats.counts.vendors).toLocaleString() : '0'}
             </span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-950/60 border border-slate-200 dark:border-dark-800">
@@ -453,7 +453,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Disk Space
             </span>
             <span className="text-base font-extrabold font-mono text-sky-700 dark:text-sky-400 mt-0.5 block">
-              {stats?.storage?.disk ? `${stats.storage.disk.usedPercent}% Used` : '12% Used'}
+              {stats?.storage?.disk ? `${stats.storage.disk.usedPercent}% Used` : '—'}
             </span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-950/60 border border-slate-200 dark:border-dark-800">
@@ -461,7 +461,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Media Cache
             </span>
             <span className="text-base font-extrabold font-mono text-slate-800 dark:text-slate-200 mt-0.5 block">
-              {stats?.storage?.media ? `${stats.storage.media.totalSizeMb} MB` : '3.3 MB (WAL)'}
+              {stats?.storage?.media ? `${stats.storage.media.totalSizeMb} MB` : '—'}
             </span>
           </div>
         </div>
@@ -502,7 +502,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex justify-between items-center">
                 <span className="text-slate-600 dark:text-slate-400 font-medium">Linked WhatsApp Number:</span>
                 <span className="font-mono font-semibold text-slate-900 dark:text-white">
-                  {deviceStatus.phone || '+8801874819713'}
+                  {deviceStatus.phone || (isConnected ? 'Connected' : 'Unlinked')}
                 </span>
               </div>
               <div className="flex justify-between items-center">

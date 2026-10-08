@@ -14,6 +14,7 @@ import {
 import type { ViewType } from './AppSidebar';
 import type { DeviceStatus } from '../../types/status';
 import { useUI } from '../../context/UIContext';
+import { cleanPhone } from '../../utils/formatters';
 
 interface AppHeaderProps {
   activeView: ViewType;
@@ -79,7 +80,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   const meta = VIEW_METADATA[activeView] || VIEW_METADATA.routes;
   const isLinked = deviceStatus.connected || deviceStatus.status === 'authenticated';
-  const displayPhone = deviceStatus.phone || (isLinked ? '+8801874819713' : 'Unlinked');
+  const displayPhone = deviceStatus.phone ? cleanPhone(deviceStatus.phone) : (isLinked ? 'Linked' : 'Unlinked');
 
   return (
     <header className="shrink-0 z-20 border-b border-slate-200 dark:border-dark-700/80 bg-white/95 dark:bg-dark-950/90 backdrop-blur-xl transition-colors">

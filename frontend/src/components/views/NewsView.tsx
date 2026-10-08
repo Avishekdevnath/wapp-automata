@@ -40,98 +40,7 @@ interface NormalizedNewsItem {
   timeAgo: string;
 }
 
-const FALLBACK_NEWS: BackendNewsItem[] = [
-  {
-    id: 'news_bm_0',
-    message_id: 'bm_news_msg_0',
-    category: 'OUTAGE',
-    headline: 'Red Sea Subsea Cable Cut (SMW4/AAE-1) Severing Primary Europe-Asia Latency Corridor',
-    affected_countries: 'Egypt, India, Bangladesh, UAE',
-    urgency: 'HIGH',
-    raw_text: 'CRITICAL ALERT: Physical subsea cable cut confirmed in Red Sea corridor near Jeddah. Latency increased by 140ms on South Asia voice trunks. Carriers rerouting via terrestrial and Cape of Good Hope routes with heavy transit congestion.',
-    created_at: Date.now() - 720000,
-  },
-  {
-    id: 'news_bm_1',
-    message_id: 'bm_news_msg_1',
-    category: 'REGULATION',
-    headline: 'BTRC Bangladesh Mandates Real-Time A-Number Verification on Inbound International Gateways',
-    affected_countries: 'Bangladesh, India',
-    urgency: 'HIGH',
-    raw_text: 'DIRECTIVE: BTRC order 2026-BTRC-04 requires Tier-1 ICX and IGW operators to drop non-standard ANI/CLI strings. Unregistered VoIP traffic terminating to BD Mobile 880 prefixes facing immediate 403 Forbidden response.',
-    created_at: Date.now() - 2880000,
-  },
-  {
-    id: 'news_bm_2',
-    message_id: 'bm_news_msg_2',
-    category: 'OUTAGE',
-    headline: 'Backbone Terrestrial Fiber Cut Near Bogota Impacting Tier-1 Interconnects',
-    affected_countries: 'Colombia, Panama, Ecuador',
-    urgency: 'HIGH',
-    raw_text: 'ALERT: Major terrestrial fiber cut reported on Bogota-Medellin mountain pass. Multiple carriers reporting 35% ASR drop on Colombia Mobile Claro/Tigo. Microwave failover active with reduced capacity.',
-    created_at: Date.now() - 5400000,
-  },
-  {
-    id: 'news_bm_3',
-    message_id: 'bm_news_msg_3',
-    category: 'FRAUD',
-    headline: 'High-Volume False Answer Supervision (FAS) Burst Detected on Pakistan Mobile 923 Ranges',
-    affected_countries: 'Pakistan, UAE, UK',
-    urgency: 'HIGH',
-    raw_text: 'FRAUD WARNING: Telecom security sensors detected unauthorized 12-second pre-answer audio loops on rogue Pakistan route offers. Immediate vendor quarantine advised for untrusted VoIP accounts.',
-    created_at: Date.now() - 7920000,
-  },
-  {
-    id: 'news_bm_4',
-    message_id: 'bm_news_msg_4',
-    category: 'REGULATION',
-    headline: 'FCC STIR/SHAKEN Mandate: Robocall Mitigation Database Verification for US 800 Toll-Free Trunks',
-    affected_countries: 'USA, Canada',
-    urgency: 'HIGH',
-    raw_text: 'REGULATORY: FCC Tier-1 enforcement deadline reached. Intermediate providers must block all incoming session initiation protocol calls lacking full Level-A cryptographic attestation tokens.',
-    created_at: Date.now() - 12600000,
-  },
-  {
-    id: 'news_bm_5',
-    message_id: 'bm_news_msg_5',
-    category: 'MAINTENANCE',
-    headline: 'Tata Communications Scheduled Subsea Core Gateway Maintenance (02:00 - 04:00 GMT)',
-    affected_countries: 'India, Singapore, UAE',
-    urgency: 'MEDIUM',
-    raw_text: 'SCHEDULED: Core router firmware upgrade on Europe-Asia subsea transit. Minimal latency fluctuations of 15-25ms anticipated during failover convergence.',
-    created_at: Date.now() - 23400000,
-  },
-  {
-    id: 'news_bm_6',
-    message_id: 'bm_news_msg_6',
-    category: 'REGULATION',
-    headline: 'UK Ofcom Anti-Spoofing Directive on International VoIP Inbound to +44 7 Mobile Ranges',
-    affected_countries: 'United Kingdom, Germany',
-    urgency: 'MEDIUM',
-    raw_text: 'BULLETIN: Ofcom implementation guidance mandates carrier boundary drop for foreign CLI claiming UK local origin without roaming clearinghouse tokens.',
-    created_at: Date.now() - 28800000,
-  },
-  {
-    id: 'news_bm_7',
-    message_id: 'bm_news_msg_7',
-    category: 'MAINTENANCE',
-    headline: 'SEACOM West Africa Subsea Cable Emergency Wet Plant Maintenance',
-    affected_countries: 'South Africa, Kenya, Tanzania',
-    urgency: 'MEDIUM',
-    raw_text: 'ADVISORY: Repair ship dispatched off the coast of Mtunzini. Traffic rerouted via WACS and Equiano fiber systems during scheduled daylight hours.',
-    created_at: Date.now() - 36000000,
-  },
-  {
-    id: 'news_bm_8',
-    message_id: 'bm_news_msg_8',
-    category: 'INFRASTRUCTURE',
-    headline: 'PLDT Trans-Pacific AAG Segment Fault Repairs Successfully Completed',
-    affected_countries: 'Philippines, USA, Japan',
-    urgency: 'LOW',
-    raw_text: 'RECOVERY: Full restoration confirmed on Asia-America Gateway segment 1. Latency on Manila-San Jose voice trunks returned to baseline 155ms.',
-    created_at: Date.now() - 68400000,
-  },
-];
+
 
 function formatRelativeTime(timestamp: number): string {
   const diffSec = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
@@ -238,13 +147,13 @@ export const NewsView: React.FC = () => {
       if (Array.isArray(data)) {
         setNewsItems(normalizeNews(data));
       } else {
-        setNewsItems(normalizeNews(FALLBACK_NEWS));
+        setNewsItems([]);
       }
       setLastRefreshed(new Date());
       window.dispatchEvent(new CustomEvent('wapp:news-changed'));
     } catch (err) {
-      console.warn('NewsView API fallback:', err);
-      setNewsItems(normalizeNews(FALLBACK_NEWS));
+      console.warn('NewsView API load error:', err);
+      setNewsItems([]);
       window.dispatchEvent(new CustomEvent('wapp:news-changed'));
     } finally {
       setLoading(false);

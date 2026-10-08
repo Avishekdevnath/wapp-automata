@@ -31,12 +31,12 @@ export const InsightsView: React.FC = () => {
   });
 
   // Pitch form state
-  const [destination, setDestination] = useState('Bangladesh Mobile (88017)');
-  const [currentQuote, setCurrentQuote] = useState('$0.0215');
-  const [targetOffer, setTargetOffer] = useState('$0.0195');
-  const [volume, setVolume] = useState('50k mins/day');
-  const [vendorName, setVendorName] = useState('Apex Telecom');
-  const [vendorPhone, setVendorPhone] = useState('447700900142');
+  const [destination, setDestination] = useState('');
+  const [currentQuote, setCurrentQuote] = useState('');
+  const [targetOffer, setTargetOffer] = useState('');
+  const [volume, setVolume] = useState('');
+  const [vendorName, setVendorName] = useState('');
+  const [vendorPhone, setVendorPhone] = useState('');
 
   const [pitches, setPitches] = useState<TradePitchItem[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -51,42 +51,10 @@ export const InsightsView: React.FC = () => {
         fetchRoutes(),
       ]);
 
-      if (arbData.status === 'fulfilled' && arbData.value.length > 0) {
+      if (arbData.status === 'fulfilled' && Array.isArray(arbData.value)) {
         setOpportunities(arbData.value);
       } else {
-        // Fallback default benchmark opportunities if DB has no opposite pairs
-        setOpportunities([
-          {
-            country: 'Bangladesh Mobile (88017 / 88019)',
-            route_type: 'CLI',
-            sell_rate: 0.0215,
-            seller_name: 'Apex Telecom',
-            seller_phone: '447700900142',
-            seller_company: 'Apex Global',
-            buy_rate: 0.025,
-            buyer_name: 'Voice Hub UK',
-            buyer_phone: '447700900188',
-            buyer_company: 'Voice Hub',
-            spread: 0.0035,
-            marginPercent: 16.3,
-            isProfitable: true,
-          },
-          {
-            country: 'Pakistan Jazz (92300)',
-            route_type: 'CLI Direct',
-            sell_rate: 0.018,
-            seller_name: 'FastRoute Direct',
-            seller_phone: '12025550198',
-            seller_company: 'FastRoute LLC',
-            buy_rate: 0.0208,
-            buyer_name: 'Telecom One',
-            buyer_phone: '12025550144',
-            buyer_company: 'Telecom One',
-            spread: 0.0028,
-            marginPercent: 15.6,
-            isProfitable: true,
-          },
-        ]);
+        setOpportunities([]);
       }
 
       if (insData.status === 'fulfilled' && insData.value?.summary) {
@@ -239,7 +207,12 @@ export const InsightsView: React.FC = () => {
         </div>
 
         <div className="space-y-3">
-          {opportunities.map((opp, idx) => {
+          {opportunities.length === 0 ? (
+            <div className="p-8 text-center rounded-xl bg-slate-50/50 dark:bg-dark-950/40 border border-dashed border-slate-300 dark:border-dark-800 text-slate-400 text-xs">
+              No arbitrage opportunities detected yet. Live buy/sell spreads will appear here as wholesale routes are ingested.
+            </div>
+          ) : (
+            opportunities.map((opp, idx) => {
             const spreadPositive = opp.spread > 0;
             const waPhone = opp.seller_phone ? opp.seller_phone.replace(/\D/g, '') : '';
             return (
@@ -300,7 +273,8 @@ export const InsightsView: React.FC = () => {
                 </div>
               </div>
             );
-          })}
+          })
+        )}
         </div>
       </div>
 
@@ -332,6 +306,7 @@ export const InsightsView: React.FC = () => {
               type="text"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
+              placeholder="e.g. Bangladesh Mobile (88017)"
               className="w-full bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
             />
           </div>
@@ -344,6 +319,7 @@ export const InsightsView: React.FC = () => {
               type="text"
               value={currentQuote}
               onChange={(e) => setCurrentQuote(e.target.value)}
+              placeholder="e.g. $0.0215"
               className="w-full bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 font-mono transition-colors"
             />
           </div>
@@ -356,6 +332,7 @@ export const InsightsView: React.FC = () => {
               type="text"
               value={targetOffer}
               onChange={(e) => setTargetOffer(e.target.value)}
+              placeholder="e.g. $0.0195"
               className="w-full bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 font-mono transition-colors"
             />
           </div>
@@ -368,6 +345,7 @@ export const InsightsView: React.FC = () => {
               type="text"
               value={volume}
               onChange={(e) => setVolume(e.target.value)}
+              placeholder="e.g. 50k mins/day"
               className="w-full bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-dark-700 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 font-mono transition-colors"
             />
           </div>
