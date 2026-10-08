@@ -14,6 +14,7 @@ interface StreamFilterBarProps {
   onExportCsv: () => void;
   onOpenDeleteModal: () => void;
   onRefresh: () => void;
+  isRefreshing?: boolean;
 }
 
 export const StreamFilterBar: React.FC<StreamFilterBarProps> = ({
@@ -27,6 +28,7 @@ export const StreamFilterBar: React.FC<StreamFilterBarProps> = ({
   onExportCsv,
   onOpenDeleteModal,
   onRefresh,
+  isRefreshing = false,
 }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,10 +125,11 @@ export const StreamFilterBar: React.FC<StreamFilterBarProps> = ({
 
           <button
             onClick={onRefresh}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all shrink-0"
-            title="Refresh stream"
+            disabled={isRefreshing}
+            className="p-2 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all shrink-0 cursor-pointer disabled:opacity-50"
+            title={isRefreshing ? "Refreshing stream..." : "Refresh stream"}
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-500' : ''}`} />
           </button>
         </div>
       </div>

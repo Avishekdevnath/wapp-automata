@@ -28,6 +28,19 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
 }) => {
   const { messageId } = useParams<{ messageId?: string }>();
   const lastOpenedMsgRef = useRef<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await Promise.resolve(onRefresh());
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 400);
+    }
+  };
 
   useEffect(() => {
     if (messageId && messages.length > 0 && lastOpenedMsgRef.current !== messageId) {
@@ -76,7 +89,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         onExportJson={exportJson}
         onExportCsv={exportCsv}
         onOpenDeleteModal={onOpenDeleteModal}
-        onRefresh={onRefresh}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
       />
 
       {/* 2. Scrollable Native Table / Privacy Lock when Unlinked */}

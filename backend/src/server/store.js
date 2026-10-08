@@ -2,6 +2,7 @@
  * In-Memory Message Feed & JSON/SQLite Persistence Store
  */
 const fs = require('fs');
+const path = require('path');
 const { DATA_DIR, HISTORY_FILE, SQLITE_FILE, MAX_HISTORY_MESSAGES, formatDateTime } = require('./config');
 
 function saveMessagesToDisk(messages) {
@@ -15,14 +16,24 @@ function saveMessagesToDisk(messages) {
   }
 }
 
-function loadSavedMessages() {
+function loadSavedMessages(skipDiskSave = false) {
   const map = new Map();
 
-  // 1. Read from SQLite DB (up to MAX_HISTORY_MESSAGES) to guarantee lifetime historical retention
-  try {
-    if (fs.existsSync(SQLITE_FILE)) {
-      const Database = require('better-sqlite3');
-      const db = new Database(SQLITE_FILE, { readonly: true, fileMustExist: true });
+  // 1. Read from SQLite DBs (both collector.sqlite and accounts/default.sqlite) to guarantee zero message loss
+  const dbFilesToScan = new Set();
+  if (fs.existsSync(SQLITE_FILE)) dbFilesToScan.add(SQLITE_FILE);
+  const accountsDefault = path.join(DATA_DIR, 'accounts', 'default.sqlite');
+  if (fs.existsSync(accountsDefault)) dbFilesToScan.add(accountsDefault);
+
+  const Database = require('better-sqlite3');
+  for (const dbPath of dbFilesToScan) {
+    try {
+      const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+      const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'").get();
+      if (!tableCheck) {
+        db.close();
+        continue;
+      }
       const rows = db.prepare(`
         SELECT id, chat_id, sender_id, chat_type, source_name, message_timestamp, message_text, has_media, media_type, media_metadata, raw_payload, created_at, status
         FROM messages
@@ -34,6 +45,7 @@ function loadSavedMessages() {
 
       if (rows && rows.length > 0) {
         for (const r of rows) {
+          if (map.has(r.id)) continue;
           let senderPhone = '';
           if (r.sender_id.includes('@s.whatsapp.net')) {
             senderPhone = '+' + r.sender_id.split('@')[0].split(':')[0];
@@ -94,9 +106,9 @@ function loadSavedMessages() {
           });
         }
       }
+    } catch (err) {
+      console.warn(`[Store] Could not load history from ${dbPath}:`, err.message);
     }
-  } catch (err) {
-    console.warn('Could not load history from SQLite:', err.message);
   }
 
   // 2. Read persistent JSON file to overlay any in-flight live metadata or forwarder status
@@ -124,7 +136,9 @@ function loadSavedMessages() {
   const result = Array.from(map.values());
   result.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
   const capped = result.slice(0, MAX_HISTORY_MESSAGES);
-  saveMessagesToDisk(capped);
+  if (!skipDiskSave) {
+    saveMessagesToDisk(capped);
+  }
   return capped;
 }
 
@@ -147,8 +161,16 @@ for (const m of recentMessages) {
   if (m.sender_phone) stats.sendersCount.add(m.sender_phone);
 }
 
+function getRecentMessages() {
+  const fresh = loadSavedMessages(true);
+  recentMessages.length = 0;
+  recentMessages.push(...fresh);
+  return recentMessages;
+}
+
 module.exports = {
   recentMessages,
+  getRecentMessages,
   serverStartTime,
   stats,
   saveMessagesToDisk,

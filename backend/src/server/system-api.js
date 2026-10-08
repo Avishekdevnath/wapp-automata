@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const { SESSION_PATH, MEDIA_DIR, SQLITE_FILE, FORWARD_WEBHOOK_URL, computeSignature } = require('./config');
-const { recentMessages, stats, serverStartTime, saveMessagesToDisk } = require('./store');
+const { recentMessages, getRecentMessages, stats, serverStartTime, saveMessagesToDisk } = require('./store');
 const { getSessionState } = require('./auth');
 const { getStorageStats, deleteMediaFiles, dismissStorageWarning } = require('./media');
 const { processWebhookDelivery } = require('./webhook-receiver');
@@ -176,7 +176,8 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     if (!isAuth) {
       return res.end(JSON.stringify([]));
     }
-    return res.end(JSON.stringify(recentMessages));
+    const msgs = getRecentMessages();
+    return res.end(JSON.stringify(msgs));
   }
 
   if (req.method === 'GET' && pathname === '/api/stats') {
@@ -205,7 +206,7 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
     if (db) {
       try {
         const info = db.prepare('DELETE FROM messages').run();
-        deletedCount = info.changes;
+        deletedCount += info.changes;
         if (parsedUrl?.query?.all === 'true' || parsedUrl?.query?.dummy === 'true') {
           db.prepare('DELETE FROM route_ticks').run();
           db.prepare('DELETE FROM vendors').run();
@@ -216,6 +217,19 @@ async function handleSystemApi(req, res, pathname, parsedUrl) {
       } catch (err) {
         console.warn('[delete Stream] SQLite messages table wipe notice:', err.message);
       }
+    }
+
+    if (fs.existsSync(SQLITE_FILE)) {
+      try {
+        const Database = require('better-sqlite3');
+        const legacyDb = new Database(SQLITE_FILE);
+        const tbl = legacyDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'").get();
+        if (tbl) {
+          const info = legacyDb.prepare('DELETE FROM messages').run();
+          deletedCount += info.changes;
+        }
+        legacyDb.close();
+      } catch (_) { }
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
