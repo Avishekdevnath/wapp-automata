@@ -149,7 +149,7 @@ function handleVendorsGet(req, res) {
 
   try {
     // 1. Read registered vendors from SQLite
-    const dbVendors = db.prepare('SELECT phone, name, company, avatar_url, total_offers, last_seen_at FROM vendors').all();
+    const dbVendors = db.prepare('SELECT phone, name, company, total_offers, last_seen_at FROM vendors').all();
     for (const v of dbVendors) {
       if (!v.phone) continue;
       const cleanP = v.phone.trim();

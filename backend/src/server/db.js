@@ -70,6 +70,7 @@ function getTradingDb(target) {
         total_offers INTEGER DEFAULT 1,
         last_seen_at INTEGER NOT NULL
       );
+      try { db.exec('ALTER TABLE vendors ADD COLUMN avatar_url TEXT'); } catch (_) {}
 
       CREATE TABLE IF NOT EXISTS vendor_avatars (
         phone TEXT PRIMARY KEY,
