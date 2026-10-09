@@ -89,9 +89,9 @@ export const WhatsAppConnectionCard: React.FC<WhatsAppConnectionCardProps> = ({
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-slate-600 dark:text-slate-400 font-medium">Profile Name / Platform:</span>
-            <span className="font-medium text-slate-800 dark:text-slate-300">
-              {deviceStatus.platform || 'Baileys Multi-Device Socket'}
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Profile Name:</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
+              {deviceStatus.pushName || (isConnected ? 'DNA' : 'Unlinked')}
             </span>
           </div>
           <div className="flex justify-between items-center">
