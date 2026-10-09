@@ -107,7 +107,10 @@ export function parseTelecomMessage(rawText, senderPhone = '', senderName = '') 
   }
 
   let intent = 'WTS';
-  if (/\b(wtb|need|looking for|urgently required|require|buying|buyer)\b/i.test(text) && !/\b(available|wts|selling|promoting)\b/i.test(text)) {
+  if (
+    /\b(wtb|need|want|looking for|urgently required|require|required|buying|buyer|demand|traffic ready|seeking|traffic available)\b/i.test(text) &&
+    !/\b(available route|wts|selling|offering route)\b/i.test(text)
+  ) {
     intent = 'WTB';
   }
 
@@ -190,6 +193,13 @@ export function parseTelecomMessage(rawText, senderPhone = '', senderName = '') 
       else if (/dtmf/i.test(line)) quality = 'DTMF Supported';
       else if (/outbound|live calls passing/i.test(line)) quality = 'Live Calls Passing';
 
+      let lineIntent = intent;
+      if (/\b(wtb|need|want|looking for|urgently required|require|required|buying|buyer|demand|seeking)\b/i.test(line)) {
+        lineIntent = 'WTB';
+      } else if (/\b(wts|available|selling|offering|supplier|pushing)\b/i.test(line)) {
+        lineIntent = 'WTS';
+      }
+
       detectedRoutes.push({
         country: currentCountry,
         route_type: routeType,
@@ -198,7 +208,7 @@ export function parseTelecomMessage(rawText, senderPhone = '', senderName = '') 
         ani_pass: ani,
         quality_notes: quality || null,
         fas_free: isFasFree ? 1 : 0,
-        intent,
+        intent: lineIntent,
         vendor_name: contactName || senderName || 'Direct Vendor',
         vendor_phone: senderPhone || 'Unknown Phone',
         company_name: companyName || null,

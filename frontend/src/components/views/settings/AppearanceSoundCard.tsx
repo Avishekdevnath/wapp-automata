@@ -11,6 +11,8 @@ export const AppearanceSoundCard: React.FC = () => {
     toggleSound,
     routePageSize,
     setRoutePageSize,
+    showPitchGenerator,
+    setShowPitchGenerator,
   } = useUI();
 
   return (
@@ -119,6 +121,32 @@ export const AppearanceSoundCard: React.FC = () => {
             <ToggleSwitch
               checked={isSoundOn}
               onChange={toggleSound}
+              size="md"
+            />
+          </div>
+        </div>
+
+        {/* AI Trade Pitch Generator Feature Toggle */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-dark-950/60 border border-slate-200 dark:border-dark-800">
+          <div>
+            <span className="font-semibold text-slate-900 dark:text-white block">
+              AI Trade Pitch Generator
+            </span>
+            <span className="text-[11px] text-slate-600 dark:text-slate-400">
+              Display 1-Click AI negotiation pitch generator in Insights view
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-[11px] font-bold ${
+                showPitchGenerator ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {showPitchGenerator ? 'VISIBLE' : 'HIDDEN'}
+            </span>
+            <ToggleSwitch
+              checked={showPitchGenerator}
+              onChange={() => setShowPitchGenerator(!showPitchGenerator)}
               size="md"
             />
           </div>

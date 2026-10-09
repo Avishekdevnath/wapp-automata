@@ -42,6 +42,10 @@ interface UIContextValue {
   routePageSize: number;
   setRoutePageSize: (size: number) => void;
 
+  // Feature Toggles (ADR-015)
+  showPitchGenerator: boolean;
+  setShowPitchGenerator: (val: boolean) => void;
+
   // Modal Manager
   activeModal: ModalType | null;
   modalPayload: unknown;
@@ -207,7 +211,21 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setRoutePageSizeState(size);
   }, []);
 
-  // 6. Modal Window Manager
+  // 6. Feature Toggles (AI Pitch Generator)
+  const [showPitchGenerator, setShowPitchGeneratorState] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('wapp_show_pitch_generator');
+      if (saved !== null) return saved === 'true';
+    } catch (_) {}
+    return true;
+  });
+
+  const setShowPitchGenerator = useCallback((val: boolean) => {
+    localStorage.setItem('wapp_show_pitch_generator', String(val));
+    setShowPitchGeneratorState(val);
+  }, []);
+
+  // 7. Modal Window Manager
   const [activeModal, setActiveModal] = useState<ModalType | null>(null);
   const [modalPayload, setModalPayload] = useState<unknown>(null);
 
@@ -276,6 +294,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         resetSidebarMenus,
         routePageSize,
         setRoutePageSize,
+        showPitchGenerator,
+        setShowPitchGenerator,
         activeModal,
         modalPayload,
         openModal,

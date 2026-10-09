@@ -71,6 +71,7 @@ export interface RouteItem {
   type: string;
   rate: number;
   pulse?: string;
+  intent: 'WTS' | 'WTB' | string;
   createdAt: number;
   asr: number;
   acd: number;
@@ -121,6 +122,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             type: r.route_type || 'Direct CLI',
             rate: r.rate_per_min || 0.005,
             pulse: r.billing_pulse || '1/1',
+            intent: (r.intent || 'WTS').toUpperCase(),
             createdAt: r.created_at ? Number(r.created_at) : (Date.now() - i * 60000),
             asr: 45 + (i % 20),
             acd: Number((3.5 + ((i % 5) * 0.4)).toFixed(1)),
@@ -169,10 +171,14 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [routes]);
 
-  const [sortField, setSortField] = useState<'time' | 'destination' | 'type' | 'quality' | 'rate' | 'vendor'>('time');
+  const [intentFilter, setIntentFilter] = useState<'all' | 'wts' | 'wtb'>('all');
+  const [sortField, setSortField] = useState<'time' | 'destination' | 'intent' | 'type' | 'quality' | 'rate' | 'vendor'>('time');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  const toggleSort = (field: 'time' | 'destination' | 'type' | 'quality' | 'rate' | 'vendor') => {
+  const sellCount = useMemo(() => routes.filter((r) => r.intent !== 'WTB').length, [routes]);
+  const buyCount = useMemo(() => routes.filter((r) => r.intent === 'WTB').length, [routes]);
+
+  const toggleSort = (field: 'time' | 'destination' | 'intent' | 'type' | 'quality' | 'rate' | 'vendor') => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -184,10 +190,11 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
   // Reset page when any filter criteria change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, typeFilter, countryFilter, quickFilter, pageSize]);
+  }, [search, intentFilter, typeFilter, countryFilter, quickFilter, pageSize]);
 
   const resetFilters = () => {
     setSearch('');
+    setIntentFilter('all');
     setTypeFilter('all');
     setCountryFilter('all');
     setQuickFilter('all');
@@ -195,6 +202,12 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
 
   const filtered = useMemo(() => {
     return routes.filter((r) => {
+      if (intentFilter === 'wts' && r.intent === 'WTB') {
+        return false;
+      }
+      if (intentFilter === 'wtb' && r.intent !== 'WTB') {
+        return false;
+      }
       if (typeFilter !== 'all' && !r.type.toLowerCase().includes(typeFilter.toLowerCase())) {
         return false;
       }
@@ -223,7 +236,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
         (r.country && r.country.toLowerCase().includes(q))
       );
     });
-  }, [routes, search, typeFilter, countryFilter, quickFilter]);
+  }, [routes, search, intentFilter, typeFilter, countryFilter, quickFilter]);
 
   const sortedRoutes = useMemo(() => {
     const list = [...filtered];
@@ -231,6 +244,8 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
       let cmp = 0;
       if (sortField === 'time') {
         cmp = a.createdAt - b.createdAt;
+      } else if (sortField === 'intent') {
+        cmp = a.intent.localeCompare(b.intent);
       } else if (sortField === 'destination') {
         cmp = a.destination.localeCompare(b.destination);
       } else if (sortField === 'type') {
@@ -290,9 +305,10 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
 
   const handleExportCsv = () => {
     if (sortedRoutes.length === 0) return;
-    const headers = ['Destination', 'Country', 'Dial Code', 'Route Type', 'Rate ($/min)', 'Pulse', 'Recorded Time', 'ASR (%)', 'ACD (min)', 'Ports', 'Vendor Name', 'Vendor Phone'];
+    const headers = ['Destination', 'Trade Intent', 'Country', 'Dial Code', 'Route Type', 'Rate ($/min)', 'Pulse', 'Recorded Time', 'ASR (%)', 'ACD (min)', 'Ports', 'Vendor Name', 'Vendor Phone'];
     const rows = sortedRoutes.map((r) => [
       `"${r.destination.replace(/"/g, '""')}"`,
+      `"${r.intent === 'WTB' ? 'BUY / NEED' : 'SELL / AVAILABLE'}"`,
       `"${r.country.replace(/"/g, '""')}"`,
       `"${r.code}"`,
       `"${r.type.replace(/"/g, '""')}"`,
@@ -490,8 +506,59 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
           </div>
         </div>
 
-        {/* Quick Filter Trading Pills */}
+        {/* Trade Intent Tabs & Filter Pills */}
         <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-dark-800/60 overflow-x-auto pb-1 text-xs">
+          <span className="text-[11px] text-slate-400 font-medium whitespace-nowrap">Intent:</span>
+
+          <button
+            onClick={() => setIntentFilter('all')}
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              intentFilter === 'all'
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-dark-950 shadow-xs'
+                : 'bg-slate-100 dark:bg-dark-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-dark-800'
+            }`}
+          >
+            <span>All Offers</span>
+            <span className="px-1.5 py-0.2 rounded-md bg-black/10 dark:bg-black/20 text-[10px] font-mono">
+              {routes.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setIntentFilter('wts')}
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              intentFilter === 'wts'
+                ? 'bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-400'
+                : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+            }`}
+            title="Filter to supply / selling offers only"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
+            <span>Sell / Available</span>
+            <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-[10px] font-mono">
+              {sellCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setIntentFilter('wtb')}
+            className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              intentFilter === 'wtb'
+                ? 'bg-sky-600 text-white shadow-xs ring-1 ring-sky-400'
+                : 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/30 hover:bg-sky-500/20'
+            }`}
+            title="Filter to buyer demand / traffic requests only"
+          >
+            <span className="w-2 h-2 rounded-full bg-sky-400 inline-block" />
+            <span>Buy / Need</span>
+            <span className="px-1.5 py-0.2 rounded-md bg-sky-500/20 text-[10px] font-mono">
+              {buyCount}
+            </span>
+          </button>
+
+          <div className="h-4 w-px bg-slate-300 dark:bg-dark-700 mx-1 shrink-0" />
+
+          {/* Quick Filter Trading Pills */}
           <span className="text-[11px] text-slate-400 font-medium whitespace-nowrap">Presets:</span>
           
           <button
@@ -563,7 +630,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             <span>Latest Offers {sortField === 'time' && (sortDirection === 'desc' ? '↓' : '↑')}</span>
           </button>
 
-          {(search || typeFilter !== 'all' || countryFilter !== 'all' || quickFilter !== 'all') && (
+          {(search || intentFilter !== 'all' || typeFilter !== 'all' || countryFilter !== 'all' || quickFilter !== 'all') && (
             <button
               onClick={resetFilters}
               className="ml-auto text-[11px] font-medium text-slate-500 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 flex items-center gap-1 cursor-pointer"
@@ -590,6 +657,20 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
                   <div className="flex items-center gap-1.5">
                     <span>Destination</span>
                     {sortField === 'destination' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-500" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <ArrowUpDown className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleSort('intent')}
+                  className="py-3 px-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors group select-none"
+                  title="Sort by Trade Intent (Sell vs Buy)"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Trade Intent</span>
+                    {sortField === 'intent' ? (
                       sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-500" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-500" />
                     ) : (
                       <ArrowUpDown className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
@@ -677,7 +758,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             <tbody className="divide-y divide-slate-100 dark:divide-dark-800/60 text-xs">
               {paginatedRoutes.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
+                  <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
                     {routes.length === 0 ? (
                       'No routes captured yet. Wholesale rates will appear here as incoming messages are parsed.'
                     ) : (
@@ -706,7 +787,15 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
                 let rankBadge = null;
                 let cellBg = '';
 
-                if (bestPriceRank === 1) {
+                if (r.intent === 'WTB') {
+                  rateColor = 'text-sky-600 dark:text-sky-400 font-bold';
+                  cellBg = 'bg-sky-500/5 dark:bg-sky-500/10 border-x border-sky-500/20';
+                  rankBadge = (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30">
+                      Target Rate
+                    </span>
+                  );
+                } else if (bestPriceRank === 1) {
                   rateColor = 'text-amber-500 dark:text-amber-400 font-black drop-shadow-sm';
                   cellBg = 'bg-amber-500/10 dark:bg-amber-500/15 border-x border-amber-500/30';
                   rankBadge = (
@@ -772,6 +861,20 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
                           </span>
                         </div>
                       </div>
+                    </td>
+
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {r.intent === 'WTB' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 shadow-xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+                          <span>BUY / NEED</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shadow-xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span>SELL / AVAILABLE</span>
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3 px-4">

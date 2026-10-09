@@ -232,8 +232,8 @@ export function recordLiveMessageRoutes(message) {
   const SPAM_WINDOW_MS = 2 * 60 * 60 * 1000; // 2-hour anti-spam duplicate window
 
   const checkExisting = db.prepare(`
-    SELECT id, rate_per_min, created_at FROM route_ticks
-    WHERE vendor_phone = ? AND country = ? AND route_type = ?
+    SELECT id, rate_per_min, intent, created_at FROM route_ticks
+    WHERE vendor_phone = ? AND country = ? AND route_type = ? AND intent = ?
     ORDER BY created_at DESC LIMIT 1
   `);
 
@@ -265,7 +265,8 @@ export function recordLiveMessageRoutes(message) {
       if (!r.country || !r.route_type) continue;
 
       const vendorPhone = r.vendor_phone || message.sender_phone || 'Direct Interconnect';
-      const existing = checkExisting.get(vendorPhone, r.country, r.route_type);
+      const rIntent = r.intent || 'WTS';
+      const existing = checkExisting.get(vendorPhone, r.country, r.route_type, rIntent);
 
       if (existing) {
         const isSameRate = Math.abs((existing.rate_per_min || 0) - (r.rate_per_min || 0)) < 0.00001;
