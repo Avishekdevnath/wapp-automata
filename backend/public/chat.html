@@ -1221,14 +1221,16 @@
       const pairingDisplay = document.getElementById('pairing-display');
       const pairingCode = document.getElementById('pairing-code');
 
-      if (data.status === 'connected') {
+      if (data.status === 'connected' || data.connected || data.status === 'authenticated') {
         const user = data.user || {};
-        const label = `${user.phone || 'Linked'} (${user.name || 'User'})`;
+        const phone = data.phone || user.phone || (user.id ? ('+' + user.id.split('@')[0].split(':')[0]) : null);
+        const name = data.pushName || data.name || user.name || 'User';
+        const label = `${phone || 'Linked'} (${name})`;
         phoneEl.innerText = label;
         phoneEl.style.color = '#4ade80';
 
         const sbText = document.getElementById('sidebar-live-text');
-        if (sbText) sbText.innerText = `Live • ${user.phone || 'Connected'}`;
+        if (sbText) sbText.innerText = `Live • ${phone || 'Connected'}`;
 
         const dashAcc = document.getElementById('dash-account');
         if (dashAcc) dashAcc.innerText = label;
@@ -1371,7 +1373,7 @@
         const avatarIcon = isGroup ? '👥' : '👤';
 
         let title = chat.chat_name;
-        if (!title || title === chat.remote_jid) {
+        if (!title || title === chat.remote_jid || title.toLowerCase() === 'me' || title.toLowerCase() === 'you' || title.startsWith('LID:')) {
           if (isGroup) {
             title = 'Group: ' + chat.remote_jid.split('@')[0];
           } else {

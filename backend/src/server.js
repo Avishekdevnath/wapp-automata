@@ -20,7 +20,8 @@ import {
   deleteChatMessages,
   clearMessages,
   getStats,
-  getAllMessagesForExport
+  getAllMessagesForExport,
+  repairExistingChatNames
 } from './storage/storage.js';
 import {
   connectWhatsApp,
@@ -250,6 +251,20 @@ app.post(['/api/chats/sync-names', '/api/sync-groups'], async (req, res) => {
     const result = await syncGroupNames();
     broadcastSse('groups_synced', result);
     res.json({ status: 'ok', ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Clean up and repair historical chat and sender names
+app.post(['/api/chats/repair-names', '/api/repair-names'], (req, res) => {
+  try {
+    const status = getStatus();
+    const phone = status.phone || null;
+    const name = status.pushName || status.name || 'You';
+    const result = repairExistingChatNames(phone, name);
+    broadcastSse('names_repaired', result);
+    res.json({ status: 'ok', result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

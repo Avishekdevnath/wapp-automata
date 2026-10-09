@@ -62,15 +62,32 @@ export async function fetchDeviceStatus(): Promise<DeviceStatus> {
     const res = await authenticatedFetch(`${API_BASE}/session/status`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    const isConn = Boolean(data.status === 'authenticated' || data.connected);
+    const isConn = Boolean(
+      data.status === 'authenticated' ||
+      data.status === 'connected' ||
+      data.connected === true
+    );
+    const isAwaitingQr = Boolean(data.status === 'awaiting_qr' || data.status === 'qr_required');
+    const isConnecting = Boolean(data.status === 'connecting');
+
+    let mappedStatus: 'authenticated' | 'connecting' | 'qr_required' | 'disconnected' = 'disconnected';
+    if (isConn) mappedStatus = 'authenticated';
+    else if (isAwaitingQr) mappedStatus = 'qr_required';
+    else if (isConnecting) mappedStatus = 'connecting';
+
+    let rawPhone = data.phone || data.user?.phone || data.user?.id?.split('@')[0]?.split(':')[0] || data.accountJid?.split('@')[0]?.split(':')[0] || null;
+    if (rawPhone && !rawPhone.startsWith('+')) rawPhone = `+${rawPhone}`;
+
+    const pushName = data.pushName || data.name || data.user?.name || null;
+
     return {
       connected: isConn,
-      status: data.status || 'disconnected',
-      phone: isConn ? (data.phone || data.accountJid?.split('@')[0]?.split(':')[0] || null) : null,
-      pushName: isConn ? (data.name || null) : null,
+      status: mappedStatus,
+      phone: isConn ? rawPhone : null,
+      pushName: isConn ? pushName : null,
       platform: data.platform || null,
       qrCode: data.qrDataUrl || data.qr || null,
-      uptime: data.updatedAt ? Math.floor((Date.now() - data.updatedAt) / 1000) : null,
+      uptime: data.connectedAt ? Math.floor((Date.now() - data.connectedAt) / 1000) : (data.updatedAt ? Math.floor((Date.now() - data.updatedAt) / 1000) : null),
     };
   } catch {
     return {

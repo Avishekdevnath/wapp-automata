@@ -96,16 +96,121 @@ export function resolveSenderDisplayName(jid) {
   }
 }
 
+export function saveGroupsBatch(groups) {
+  if (!Array.isArray(groups) || groups.length === 0) return 0;
+  const db = getDb();
+  const insertStmt = db.prepare(`
+    INSERT OR REPLACE INTO whatsapp_groups (
+      jid, subject, owner, creation, description, participants_count, updated_at
+    ) VALUES (
+      @jid, @subject, @owner, @creation, @description, @participants_count, @updated_at
+    )
+  `);
+
+  const runBatch = db.transaction((items) => {
+    let count = 0;
+    const now = Date.now();
+    for (const g of items) {
+      if (!g.jid || !g.subject) continue;
+      insertStmt.run({
+        jid: g.jid,
+        subject: g.subject,
+        owner: g.owner || null,
+        creation: g.creation || null,
+        description: g.description || null,
+        participants_count: g.participants_count || (Array.isArray(g.participants) ? g.participants.length : 0),
+        updated_at: now
+      });
+      count++;
+    }
+
+    // High-speed update for caught_messages matching these groups
+    db.prepare(`
+      UPDATE caught_messages
+      SET chat_name = (SELECT subject FROM whatsapp_groups WHERE jid = caught_messages.remote_jid),
+          chat_type = 'group'
+      WHERE remote_jid LIKE '%@g.us'
+        AND EXISTS (SELECT 1 FROM whatsapp_groups WHERE jid = caught_messages.remote_jid)
+    `).run();
+
+    return count;
+  });
+
+  return runBatch(groups);
+}
+
+export function getStoredGroups() {
+  try {
+    const db = getDb();
+    return db.prepare('SELECT * FROM whatsapp_groups ORDER BY updated_at DESC').all();
+  } catch (_) {
+    return [];
+  }
+}
+
+export function isInvalidChatName(name, remoteJid) {
+  if (!name || typeof name !== 'string') return true;
+  const trimmed = name.trim();
+  if (!trimmed) return true;
+  if (trimmed === remoteJid) return true;
+  const lower = trimmed.toLowerCase();
+  if (lower === 'me' || lower === 'you' || lower === 'unknown sender' || lower === 'unknown' || lower === 'null' || lower === 'undefined') return true;
+  if (trimmed.startsWith('LID:')) return true;
+  return false;
+}
+
+export function getStoredChatName(remoteJid) {
+  if (!remoteJid) return null;
+  try {
+    const db = getDb();
+    if (remoteJid.endsWith('@g.us')) {
+      const g = db.prepare('SELECT subject FROM whatsapp_groups WHERE jid = ?').get(remoteJid);
+      if (g && g.subject) return g.subject;
+    }
+    const row = db.prepare(`
+      SELECT chat_name FROM caught_messages
+      WHERE remote_jid = ?
+        AND chat_name IS NOT NULL
+        AND chat_name != remote_jid
+        AND LOWER(chat_name) NOT IN ('me', 'you', 'unknown sender', 'unknown', 'null', 'undefined')
+        AND chat_name NOT LIKE 'LID:%'
+      LIMIT 1
+    `).get(remoteJid);
+    if (row && row.chat_name) return row.chat_name;
+
+    const lidRow = db.prepare('SELECT display_name FROM lid_mappings WHERE (phone_jid = ? OR lid = ?) AND display_name IS NOT NULL AND display_name != "" AND display_name NOT LIKE "LID:%" LIMIT 1').get(remoteJid, remoteJid);
+    if (lidRow && lidRow.display_name) return lidRow.display_name;
+
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
 export function saveCaughtMessage(msg) {
   try {
     const db = getDb();
     let remoteJid = resolveCanonicalJid(msg.remote_jid || '');
     let chatName = msg.chat_name || '';
 
-    if ((!chatName || chatName === remoteJid || chatName === 'DNA' || chatName === 'Me') && remoteJid) {
-      const existing = db.prepare('SELECT chat_name FROM caught_messages WHERE remote_jid = ? AND chat_name != remote_jid AND chat_name != "DNA" AND chat_name != "Me" AND chat_name IS NOT NULL LIMIT 1').get(remoteJid);
-      if (existing && existing.chat_name) {
-        chatName = existing.chat_name;
+    // If chatName is invalid or missing, resolve a proper name
+    if (isInvalidChatName(chatName, remoteJid)) {
+      chatName = getStoredChatName(remoteJid) || '';
+      if (!chatName) {
+        if (remoteJid.endsWith('@s.whatsapp.net')) {
+          chatName = '+' + remoteJid.split('@')[0].split(':')[0];
+        } else if (remoteJid.endsWith('@g.us')) {
+          chatName = 'Group: ' + remoteJid.split('@')[0];
+        } else {
+          chatName = remoteJid;
+        }
+      }
+    }
+
+    let senderName = msg.sender_name || '';
+    if (msg.is_from_me) {
+      if (!senderName || senderName.toLowerCase() === 'me' || senderName === 'Unknown Sender') {
+        senderName = 'You';
       }
     }
 
@@ -125,10 +230,10 @@ export function saveCaughtMessage(msg) {
       id: msg.id,
       remote_jid: remoteJid,
       chat_name: chatName,
-      chat_type: msg.chat_type || 'direct',
+      chat_type: msg.chat_type || (remoteJid.endsWith('@g.us') ? 'group' : 'direct'),
       sender_jid: msg.sender_jid || '',
       sender_phone: msg.sender_phone || '',
-      sender_name: msg.sender_name || '',
+      sender_name: senderName,
       message_text: msg.message_text || '',
       has_media: msg.has_media ? 1 : 0,
       media_type: msg.media_type || null,
@@ -227,15 +332,54 @@ export function getChatsList(options = {}) {
   const filter = options.filter || 'all';
 
   let sql = `
-    SELECT 
-      remote_jid,
-      COALESCE(MAX(CASE WHEN chat_name != remote_jid AND chat_name IS NOT NULL THEN chat_name END), MAX(chat_name), remote_jid) as chat_name,
-      chat_type,
-      COUNT(*) as count,
-      MAX(timestamp) as last_ts,
-      (SELECT message_text FROM caught_messages m2 WHERE m2.remote_jid = caught_messages.remote_jid ORDER BY timestamp DESC LIMIT 1) as last_text,
-      (SELECT sender_name FROM caught_messages m2 WHERE m2.remote_jid = caught_messages.remote_jid ORDER BY timestamp DESC LIMIT 1) as last_sender
-    FROM caught_messages
+    WITH active_chats AS (
+      SELECT 
+        c.remote_jid,
+        COALESCE(
+          (SELECT subject FROM whatsapp_groups WHERE jid = c.remote_jid),
+          MAX(CASE 
+            WHEN c.chat_name IS NOT NULL 
+             AND c.chat_name != c.remote_jid 
+             AND LOWER(c.chat_name) NOT IN ('me', 'you', 'unknown sender', 'unknown', 'null', 'undefined')
+             AND c.chat_name NOT LIKE 'LID:%'
+            THEN c.chat_name 
+          END),
+          (SELECT display_name FROM lid_mappings WHERE (phone_jid = c.remote_jid OR lid = c.remote_jid) AND display_name IS NOT NULL AND display_name != '' AND display_name NOT LIKE 'LID:%' LIMIT 1),
+          MAX(CASE 
+            WHEN c.remote_jid LIKE '%@s.whatsapp.net' 
+            THEN '+' || SUBSTR(c.remote_jid, 1, INSTR(c.remote_jid, '@') - 1)
+            WHEN c.remote_jid LIKE '%@g.us'
+            THEN 'Group: ' || SUBSTR(c.remote_jid, 1, INSTR(c.remote_jid, '@') - 1)
+            ELSE c.remote_jid
+          END)
+        ) as chat_name,
+        c.chat_type,
+        COUNT(*) as count,
+        MAX(c.timestamp) as last_ts,
+        (SELECT message_text FROM caught_messages m2 WHERE m2.remote_jid = c.remote_jid ORDER BY timestamp DESC LIMIT 1) as last_text,
+        (SELECT sender_name FROM caught_messages m2 WHERE m2.remote_jid = c.remote_jid ORDER BY timestamp DESC LIMIT 1) as last_sender
+      FROM caught_messages c
+      WHERE c.remote_jid != 'status@broadcast'
+      GROUP BY c.remote_jid
+    ),
+    all_groups AS (
+      SELECT
+        g.jid as remote_jid,
+        g.subject as chat_name,
+        'group' as chat_type,
+        0 as count,
+        g.updated_at as last_ts,
+        'Group joined (' || g.participants_count || ' members)' as last_text,
+        'System' as last_sender
+      FROM whatsapp_groups g
+      WHERE NOT EXISTS (SELECT 1 FROM caught_messages WHERE remote_jid = g.jid)
+    ),
+    combined_chats AS (
+      SELECT * FROM active_chats
+      UNION ALL
+      SELECT * FROM all_groups
+    )
+    SELECT * FROM combined_chats
     WHERE 1=1
   `;
   const params = [];
@@ -248,15 +392,107 @@ export function getChatsList(options = {}) {
   if (filter === 'groups') {
     sql += " AND chat_type = 'group'";
   } else if (filter === 'dms') {
-    sql += " AND chat_type = 'direct' AND remote_jid != 'status@broadcast'";
-  } else if (filter === 'status') {
-    sql += " AND remote_jid = 'status@broadcast'";
-  } else {
-    sql += " AND remote_jid != 'status@broadcast'";
+    sql += " AND chat_type = 'direct'";
   }
 
-  sql += ' GROUP BY remote_jid ORDER BY last_ts DESC';
+  sql += ' ORDER BY last_ts DESC';
   return db.prepare(sql).all(...params);
+}
+
+export function repairExistingChatNames(userPhone = null, userName = 'You') {
+  try {
+    const db = getDb();
+    console.log('[Storage] Running comprehensive chat and sender name repair...');
+
+    const runRepair = db.transaction(() => {
+      // 1. Repair outgoing sender_name where it was saved as 'me'
+      const infoMe = db.prepare(`
+        UPDATE caught_messages
+        SET sender_name = ?,
+            sender_phone = CASE WHEN (sender_phone IS NULL OR sender_phone = '' OR sender_phone = 'me') AND ? IS NOT NULL THEN ? ELSE sender_phone END
+        WHERE is_from_me = 1
+          AND (sender_name IS NULL OR LOWER(sender_name) IN ('me', 'unknown sender', ''))
+      `).run(userName || 'You', userPhone, userPhone);
+
+      // 2. Repair groups chat_name from whatsapp_groups
+      const infoGroups = db.prepare(`
+        UPDATE caught_messages
+        SET chat_name = (SELECT subject FROM whatsapp_groups WHERE jid = caught_messages.remote_jid),
+            chat_type = 'group'
+        WHERE remote_jid LIKE '%@g.us'
+          AND EXISTS (SELECT 1 FROM whatsapp_groups WHERE jid = caught_messages.remote_jid)
+      `).run();
+
+      // 3. Repair DMs where chat_name was set to 'me', 'you', null, or raw LID
+      const infoLidDms = db.prepare(`
+        UPDATE caught_messages
+        SET chat_name = (SELECT display_name FROM lid_mappings WHERE (phone_jid = caught_messages.remote_jid OR lid = caught_messages.remote_jid) AND display_name IS NOT NULL AND display_name != '' AND display_name NOT LIKE 'LID:%' LIMIT 1)
+        WHERE (chat_name IS NULL OR LOWER(chat_name) IN ('me', 'you', 'unknown sender', 'unknown', '') OR chat_name LIKE '%@lid' OR chat_name LIKE 'LID:%')
+          AND remote_jid NOT LIKE '%@g.us'
+          AND EXISTS (SELECT 1 FROM lid_mappings WHERE (phone_jid = caught_messages.remote_jid OR lid = caught_messages.remote_jid) AND display_name IS NOT NULL AND display_name != '' AND display_name NOT LIKE 'LID:%')
+      `).run();
+
+      // For remaining DMs with invalid chat_name, copy from another message in same chat
+      const infoOtherMsgs = db.prepare(`
+        UPDATE caught_messages
+        SET chat_name = (
+          SELECT m2.chat_name FROM caught_messages m2
+          WHERE m2.remote_jid = caught_messages.remote_jid
+            AND m2.chat_name IS NOT NULL
+            AND m2.chat_name != m2.remote_jid
+            AND LOWER(m2.chat_name) NOT IN ('me', 'you', 'unknown sender', 'unknown', 'null', 'undefined', '')
+            AND m2.chat_name NOT LIKE 'LID:%'
+          LIMIT 1
+        )
+        WHERE (chat_name IS NULL OR LOWER(chat_name) IN ('me', 'you', 'unknown sender', 'unknown', '') OR chat_name LIKE '%@lid' OR chat_name LIKE 'LID:%')
+          AND remote_jid NOT LIKE '%@g.us'
+          AND EXISTS (
+            SELECT 1 FROM caught_messages m2
+            WHERE m2.remote_jid = caught_messages.remote_jid
+              AND m2.chat_name IS NOT NULL
+              AND m2.chat_name != m2.remote_jid
+              AND LOWER(m2.chat_name) NOT IN ('me', 'you', 'unknown sender', 'unknown', 'null', 'undefined', '')
+              AND m2.chat_name NOT LIKE 'LID:%'
+          )
+      `).run();
+
+      // Format remaining direct messages as +phone
+      const infoPhoneDms = db.prepare(`
+        UPDATE caught_messages
+        SET chat_name = '+' || SUBSTR(remote_jid, 1, INSTR(remote_jid, '@') - 1)
+        WHERE (chat_name IS NULL OR LOWER(chat_name) IN ('me', 'you', 'unknown sender', 'unknown', '') OR chat_name = remote_jid OR chat_name LIKE '%@lid' OR chat_name LIKE 'LID:%')
+          AND remote_jid LIKE '%@s.whatsapp.net'
+      `).run();
+
+      // Ensure chat_type is properly set
+      db.prepare(`
+        UPDATE caught_messages
+        SET chat_type = 'group'
+        WHERE remote_jid LIKE '%@g.us' AND chat_type != 'group'
+      `).run();
+
+      db.prepare(`
+        UPDATE caught_messages
+        SET chat_type = 'direct'
+        WHERE remote_jid NOT LIKE '%@g.us' AND remote_jid != 'status@broadcast' AND chat_type != 'direct'
+      `).run();
+
+      return {
+        repairedMe: infoMe.changes,
+        repairedGroups: infoGroups.changes,
+        repairedLidDms: infoLidDms.changes,
+        repairedOtherMsgs: infoOtherMsgs.changes,
+        repairedPhoneDms: infoPhoneDms.changes
+      };
+    });
+
+    const res = runRepair();
+    console.log(`✅ [Storage] Repaired chat names: ${JSON.stringify(res)}`);
+    return res;
+  } catch (err) {
+    console.error('[Storage] Error during repairExistingChatNames:', err.message);
+    return null;
+  }
 }
 
 export function getChatTotal(remoteJid) {
@@ -332,15 +568,25 @@ export function getRawMessage(id) {
 export function getStats() {
   const db = getDb();
   const total = db.prepare('SELECT COUNT(*) as count FROM caught_messages').get().count;
-  const groups = db.prepare("SELECT COUNT(DISTINCT remote_jid) as count FROM caught_messages WHERE chat_type = 'group'").get().count;
+  const groupCountRow = db.prepare(`
+    SELECT COUNT(DISTINCT jid) as count FROM (
+      SELECT remote_jid as jid FROM caught_messages WHERE chat_type = 'group'
+      UNION
+      SELECT jid FROM whatsapp_groups
+    )
+  `).get();
+  const groups = groupCountRow ? groupCountRow.count : 0;
   const dms = db.prepare("SELECT COUNT(DISTINCT remote_jid) as count FROM caught_messages WHERE chat_type = 'direct'").get().count;
   const media = db.prepare('SELECT COUNT(*) as count FROM caught_messages WHERE has_media = 1').get().count;
   const lastMsg = db.prepare('SELECT timestamp FROM caught_messages ORDER BY timestamp DESC LIMIT 1').get();
 
   return {
     totalMessages: total,
+    total,
     uniqueGroups: groups,
+    groups,
     uniqueDms: dms,
+    dms,
     mediaMessages: media,
     lastMessageTimestamp: lastMsg ? lastMsg.timestamp : null
   };

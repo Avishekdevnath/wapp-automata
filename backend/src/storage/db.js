@@ -53,6 +53,18 @@ function initializeSchemas(db) {
     );
     CREATE INDEX IF NOT EXISTS idx_lid_phone ON lid_mappings (phone_jid);
 
+    -- 2b. WhatsApp Groups Directory
+    CREATE TABLE IF NOT EXISTS whatsapp_groups (
+      jid TEXT PRIMARY KEY,
+      subject TEXT NOT NULL,
+      owner TEXT,
+      creation INTEGER,
+      description TEXT,
+      participants_count INTEGER DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_groups_subject ON whatsapp_groups (subject);
+
     -- 3. Telecom Wholesale Route Ticks
     CREATE TABLE IF NOT EXISTS route_ticks (
       id TEXT PRIMARY KEY,

@@ -17,11 +17,16 @@ import {
   resolveSenderDisplayName,
   updateEditedMessage,
   markMessageDeleted,
-  getRawMessage
+  getRawMessage,
+  saveGroupsBatch,
+  getStoredChatName,
+  repairExistingChatNames
 } from '../storage/storage.js';
 import { getAccountPaths, getActiveAccountId } from '../storage/account.js';
 
 let sock = null;
+const groupNamesCache = new Map();
+
 let connectionState = {
   status: 'disconnected', // 'disconnected' | 'connecting' | 'awaiting_qr' | 'connected'
   qrCode: null,
@@ -50,8 +55,26 @@ export function addEventListener(fn) {
 }
 
 export function getStatus() {
+  const isConnected = connectionState.status === 'connected';
+  const rawUser = connectionState.user || (sock?.user) || null;
+  let phone = rawUser?.id ? rawUser.id.split('@')[0].split(':')[0] : null;
+  if (phone && !phone.startsWith('+')) phone = '+' + phone;
+  const pushName = rawUser?.name || null;
+
   return {
     ...connectionState,
+    connected: isConnected,
+    phone: isConnected ? phone : null,
+    pushName: isConnected ? pushName : null,
+    name: isConnected ? pushName : null,
+    accountJid: rawUser?.id || null,
+    user: rawUser ? {
+      id: rawUser.id,
+      name: pushName || 'User',
+      phone: phone || null
+    } : null,
+    status: isConnected ? 'authenticated' : connectionState.status,
+    rawStatus: connectionState.status,
     accountId: getActiveAccountId(),
     stats: getStats()
   };
@@ -160,15 +183,51 @@ function extractMessageDetails(msg) {
   const isGroup = remoteJid.endsWith('@g.us');
   const chatType = isGroup ? 'group' : (remoteJid.includes('@broadcast') ? 'broadcast' : 'direct');
 
-  let senderJid = key.participant || (isFromMe ? 'me' : remoteJid);
+  // Determine sender JID
+  let senderJid = remoteJid;
+  if (isGroup) {
+    senderJid = key.participant || msg.participant || remoteJid;
+  }
+  if (isFromMe && (connectionState.user?.id || sock?.user?.id)) {
+    senderJid = connectionState.user?.id || sock?.user?.id;
+  }
+
   let senderPhone = '';
   if (senderJid && senderJid.includes('@s.whatsapp.net')) {
     senderPhone = '+' + senderJid.split('@')[0].split(':')[0];
   } else if (senderJid && senderJid.includes('@lid')) {
-    senderPhone = 'LID:' + senderJid.split('@')[0];
+    const canonical = resolveCanonicalJid(senderJid);
+    if (canonical && canonical.includes('@s.whatsapp.net')) {
+      senderPhone = '+' + canonical.split('@')[0].split(':')[0];
+      senderJid = canonical;
+    } else {
+      senderPhone = 'LID:' + senderJid.split('@')[0];
+    }
   }
 
-  let senderName = msg.pushName || resolveSenderDisplayName(senderJid) || senderPhone || 'Unknown Sender';
+  const myName = connectionState.user?.name || sock?.user?.name || 'You';
+  let senderName = isFromMe ? myName : (msg.pushName || null);
+  if (!senderName || senderName.startsWith('LID:') || senderName.toLowerCase() === 'me') {
+    const resolved = resolveSenderDisplayName(senderJid);
+    senderName = resolved || senderPhone || 'Unknown Sender';
+  }
+
+  // Determine Destination Chat Name
+  let chatName = remoteJid;
+  if (isGroup) {
+    chatName = msg.chatName || groupNamesCache.get(remoteJid) || getStoredChatName(remoteJid) || null;
+  } else if (remoteJid === 'status@broadcast') {
+    chatName = '📢 WhatsApp Status Stories';
+  } else {
+    // Direct DM:
+    if (!isFromMe) {
+      chatName = msg.pushName || resolveSenderDisplayName(remoteJid) || (remoteJid.includes('@s.whatsapp.net') ? ('+' + remoteJid.split('@')[0].split(':')[0]) : remoteJid);
+    } else {
+      // Outgoing message sent by user: chatName is the recipient contact, NEVER the sender's own name
+      const resolvedRecipient = resolveSenderDisplayName(remoteJid);
+      chatName = resolvedRecipient || (remoteJid.includes('@s.whatsapp.net') ? ('+' + remoteJid.split('@')[0].split(':')[0]) : remoteJid);
+    }
+  }
 
   // Quoted reply context
   const contextInfo = m.extendedTextMessage?.contextInfo ||
@@ -210,7 +269,7 @@ function extractMessageDetails(msg) {
   return {
     id: messageId,
     remote_jid: remoteJid,
-    chat_name: isGroup ? null : senderName,
+    chat_name: chatName,
     chat_type: chatType,
     sender_jid: senderJid,
     sender_phone: senderPhone,
@@ -327,6 +386,13 @@ export async function connectWhatsApp() {
         startWatchdog();
         emitUpdate('status', getStatus());
         console.log(`✅ [WhatsApp] Connected successfully! Account: ${sock.user?.id || 'Unknown'}`);
+
+        // Automatically sync group subjects/titles & participant mappings
+        setTimeout(() => {
+          syncGroupNames().then(res => {
+            console.log(`👥 [WhatsApp] Auto-synced ${res.groups} groups on connection`);
+          }).catch(e => console.warn('[WhatsApp] Group sync error on connect:', e.message));
+        }, 1500);
       }
 
       if (connection === 'close') {
@@ -411,6 +477,25 @@ export async function connectWhatsApp() {
       if (batch.length > 0) saveLidMappingsBatch(batch);
     });
 
+    sock.ev.on('groups.update', async (groupUpdates) => {
+      const items = [];
+      for (const update of groupUpdates) {
+        if (update.id && update.subject) {
+          groupNamesCache.set(update.id, update.subject);
+          updateChatName(update.id, update.subject);
+          items.push({
+            jid: update.id,
+            subject: update.subject,
+            description: update.desc || null
+          });
+        }
+      }
+      if (items.length > 0) {
+        saveGroupsBatch(items);
+        emitUpdate('status', getStatus());
+      }
+    });
+
   } catch (err) {
     connectionState.status = 'disconnected';
     connectionState.lastError = err.message;
@@ -470,11 +555,21 @@ export async function syncGroupNames() {
     const groups = await sock.groupFetchAllParticipating();
     let groupCount = 0;
     const participantMappings = [];
+    const groupItems = [];
 
     for (const [jid, meta] of Object.entries(groups)) {
       if (meta && meta.subject) {
+        groupNamesCache.set(jid, meta.subject);
         updateChatName(jid, meta.subject);
         groupCount++;
+        groupItems.push({
+          jid,
+          subject: meta.subject,
+          owner: meta.owner || null,
+          creation: meta.creation || null,
+          description: meta.desc || null,
+          participants_count: Array.isArray(meta.participants) ? meta.participants.length : 0
+        });
       }
 
       if (meta && Array.isArray(meta.participants)) {
@@ -491,12 +586,22 @@ export async function syncGroupNames() {
       }
     }
 
+    if (groupItems.length > 0) {
+      saveGroupsBatch(groupItems);
+    }
+
     let mappedCount = 0;
     if (participantMappings.length > 0) {
       mappedCount = saveLidMappingsBatch(participantMappings);
     }
 
-    console.log(`👥 [WhatsApp] Synced names for ${groupCount} groups and mapped ${mappedCount} participants!`);
+    // Repair existing messages that had 'me' or raw numbers
+    const rawUser = connectionState.user || sock?.user;
+    const userPhone = rawUser?.id ? ('+' + rawUser.id.split('@')[0].split(':')[0]) : null;
+    const userName = rawUser?.name || 'You';
+    repairExistingChatNames(userPhone, userName);
+
+    console.log(`👥 [WhatsApp] Synced ${groupCount} groups and mapped ${mappedCount} participants!`);
     emitUpdate('status', getStatus());
     return { groups: groupCount, participants: mappedCount };
   } catch (err) {
