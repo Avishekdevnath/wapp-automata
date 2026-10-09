@@ -21,6 +21,7 @@ export interface RouteDetailItem {
   acd?: number;
   ports?: number;
   pulse?: string;
+  createdAt?: number;
   intent?: string;
   fasFree?: boolean;
   vendor: string;
@@ -48,7 +49,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
   const knockUrl = rawPhone ? `https://wa.me/${rawPhone}` : null;
 
   const handleCopyTicket = () => {
-    const ticket = `[TELCIA TRADE TICKET]\nDestination: ${route.destination} (${route.code})\nIntent: ${route.intent || 'WTS'}\nType: ${route.type}\nRate: $${route.rate.toFixed(4)}/min\nPulse: ${route.pulse || '1/1'}\nASR/ACD: ${route.asr || 45}% / ${route.acd || 4.2}m\nVendor: ${route.vendor} (${route.vendorPhone})\nNotes: ${route.notes || '100% FAS-Free Verified'}`;
+    const ticket = `[TELCIA TRADE TICKET]\nDestination: ${route.destination} (${route.code})\nIntent: ${route.intent || 'WTS'}\nType: ${route.type}\nRate: $${route.rate.toFixed(4)}/min\nPulse: ${route.pulse || '1/1'}\nRecorded: ${route.createdAt ? new Date(route.createdAt).toLocaleString() : 'Live'}\nASR/ACD: ${route.asr || 45}% / ${route.acd || 4.2}m\nVendor: ${route.vendor} (${route.vendorPhone})\nNotes: ${route.notes || '100% FAS-Free Verified'}`;
     navigator.clipboard.writeText(ticket).then(() => {
       setCopiedTicket(true);
       setTimeout(() => setCopiedTicket(false), 1500);
@@ -70,7 +71,9 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
             <span className="text-2xl select-none leading-none shrink-0">{route.flag}</span>
             <div className="min-w-0">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white leading-tight truncate">{route.destination}</h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">Wholesale Carrier Specification • Code: {route.code}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                Wholesale Carrier Specification • Code: {route.code} {route.createdAt ? `• ⏱️ Recorded ${new Date(route.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">

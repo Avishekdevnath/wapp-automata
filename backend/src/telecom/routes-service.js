@@ -209,3 +209,109 @@ export function reparseHistoricalMessages(batchLimit = 5000) {
   runTx(messages);
   return { scanned: messages.length, newRoutes, newNews };
 }
+
+/**
+ * Record live incoming telecom message routes with smart anti-spam deduplication.
+ * Prevents duplicate spam from the same vendor within a 2-hour window, while never
+ * missing unique routes or price updates.
+ */
+export function recordLiveMessageRoutes(message) {
+  if (!message || !message.message_text) return { newRoutes: 0 };
+  const parsed = parseTelecomMessage(
+    message.message_text,
+    message.sender_phone || '',
+    message.sender_name || ''
+  );
+  if (!parsed.isTelecom || !parsed.routes || parsed.routes.length === 0) {
+    return { newRoutes: 0 };
+  }
+
+  const db = getDb();
+  let addedCount = 0;
+  const now = message.timestamp || Date.now();
+  const SPAM_WINDOW_MS = 2 * 60 * 60 * 1000; // 2-hour anti-spam duplicate window
+
+  const checkExisting = db.prepare(`
+    SELECT id, rate_per_min, created_at FROM route_ticks
+    WHERE vendor_phone = ? AND country = ? AND route_type = ?
+    ORDER BY created_at DESC LIMIT 1
+  `);
+
+  const updateTime = db.prepare(`
+    UPDATE route_ticks SET created_at = ?, message_id = ?, raw_text = ? WHERE id = ?
+  `);
+
+  const insertStmt = db.prepare(`
+    INSERT INTO route_ticks (
+      id, message_id, vendor_name, vendor_phone, company_name,
+      country, route_type, billing_pulse, rate_per_min, ani_pass,
+      quality_notes, fas_free, intent, raw_text, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const updateVendor = db.prepare(`
+    INSERT INTO vendors (phone, name, company, total_offers, last_seen_at)
+    VALUES (?, ?, ?, 1, ?)
+    ON CONFLICT(phone) DO UPDATE SET
+      name = COALESCE(excluded.name, vendors.name),
+      company = COALESCE(excluded.company, vendors.company),
+      total_offers = total_offers + 1,
+      last_seen_at = excluded.last_seen_at
+  `);
+
+  const runTx = db.transaction(() => {
+    for (let idx = 0; idx < parsed.routes.length; idx++) {
+      const r = parsed.routes[idx];
+      if (!r.country || !r.route_type) continue;
+
+      const vendorPhone = r.vendor_phone || message.sender_phone || 'Direct Interconnect';
+      const existing = checkExisting.get(vendorPhone, r.country, r.route_type);
+
+      if (existing) {
+        const isSameRate = Math.abs((existing.rate_per_min || 0) - (r.rate_per_min || 0)) < 0.00001;
+        const isWithinWindow = (now - existing.created_at) < SPAM_WINDOW_MS;
+
+        if (isSameRate && isWithinWindow) {
+          // Identical quote within 2h - refresh timestamp to show it's active, but prevent spam rows
+          updateTime.run(now, message.id, r.raw_text, existing.id);
+          continue;
+        }
+      }
+
+      // Unique route offer or price change - record new tick
+      const rId = `rt_${now}_${Math.random().toString(36).slice(2, 6)}_${idx}`;
+      insertStmt.run(
+        rId,
+        message.id,
+        r.vendor_name || message.sender_name || 'Carrier Partner',
+        vendorPhone,
+        r.company_name || parsed.company || null,
+        r.country,
+        r.route_type,
+        r.billing_pulse || '1/1',
+        r.rate_per_min,
+        r.ani_pass || null,
+        r.quality_notes || null,
+        r.fas_free ? 1 : 0,
+        r.intent || 'WTS',
+        r.raw_text || message.message_text,
+        now
+      );
+      addedCount++;
+
+      if (vendorPhone && vendorPhone !== 'Direct Interconnect') {
+        try {
+          updateVendor.run(
+            vendorPhone,
+            r.vendor_name || message.sender_name || 'Carrier',
+            r.company_name || parsed.company || null,
+            now
+          );
+        } catch (_) {}
+      }
+    }
+  });
+
+  runTx();
+  return { newRoutes: addedCount };
+}

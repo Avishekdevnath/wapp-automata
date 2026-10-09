@@ -23,6 +23,7 @@ import {
   repairExistingChatNames
 } from '../storage/storage.js';
 import { getAccountPaths, getActiveAccountId } from '../storage/account.js';
+import { recordLiveMessageRoutes } from '../telecom/routes-service.js';
 
 let sock = null;
 const groupNamesCache = new Map();
@@ -431,6 +432,14 @@ export async function connectWhatsApp() {
 
         if (parsed.message_text) {
           saveCaughtMessage(parsed);
+          try {
+            const routeRes = recordLiveMessageRoutes(parsed);
+            if (routeRes && routeRes.newRoutes > 0) {
+              emitUpdate('routes_updated', { newRoutes: routeRes.newRoutes });
+            }
+          } catch (rErr) {
+            console.warn('[Telecom] Route auto-extract notice:', rErr.message);
+          }
           emitUpdate('message', parsed);
         }
       }
@@ -443,6 +452,9 @@ export async function connectWhatsApp() {
           const parsed = extractMessageDetails(m);
           if (parsed && !parsed.isEdit && !parsed.isRevoke && parsed.message_text) {
             saveCaughtMessage(parsed);
+            try {
+              recordLiveMessageRoutes(parsed);
+            } catch (_) {}
           }
         }
       }

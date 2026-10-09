@@ -20,6 +20,7 @@ import {
   ChevronRight,
   X,
   Zap,
+  Clock,
 } from 'lucide-react';
 import { cleanPhone } from '../../utils/formatters';
 import { ProfileAvatar } from '../common/ProfileAvatar';
@@ -47,6 +48,20 @@ function getCountryMeta(country: string): { flag: string; code: string } {
   return { flag: '🌐', code: '00' };
 }
 
+function formatRecordedTime(ts?: number): string {
+  if (!ts) return 'Just now';
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'Just now';
+  const min = Math.floor(diff / 60000);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const days = Math.floor(hr / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
 export interface RouteItem {
   id: string;
   country: string;
@@ -55,6 +70,8 @@ export interface RouteItem {
   flag: string;
   type: string;
   rate: number;
+  pulse?: string;
+  createdAt: number;
   asr: number;
   acd: number;
   ports: number;
@@ -103,6 +120,8 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             flag: meta.flag,
             type: r.route_type || 'Direct CLI',
             rate: r.rate_per_min || 0.005,
+            pulse: r.billing_pulse || '1/1',
+            createdAt: r.created_at ? Number(r.created_at) : (Date.now() - i * 60000),
             asr: 45 + (i % 20),
             acd: Number((3.5 + ((i % 5) * 0.4)).toFixed(1)),
             ports: 100 + (i * 20),
@@ -150,15 +169,15 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [routes]);
 
-  const [sortField, setSortField] = useState<'destination' | 'type' | 'quality' | 'rate' | 'vendor'>('rate');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState<'time' | 'destination' | 'type' | 'quality' | 'rate' | 'vendor'>('time');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  const toggleSort = (field: 'destination' | 'type' | 'quality' | 'rate' | 'vendor') => {
+  const toggleSort = (field: 'time' | 'destination' | 'type' | 'quality' | 'rate' | 'vendor') => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection(field === 'time' ? 'desc' : 'asc');
     }
   };
 
@@ -210,7 +229,9 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
     const list = [...filtered];
     list.sort((a, b) => {
       let cmp = 0;
-      if (sortField === 'destination') {
+      if (sortField === 'time') {
+        cmp = a.createdAt - b.createdAt;
+      } else if (sortField === 'destination') {
         cmp = a.destination.localeCompare(b.destination);
       } else if (sortField === 'type') {
         cmp = a.type.localeCompare(b.type);
@@ -269,13 +290,15 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
 
   const handleExportCsv = () => {
     if (sortedRoutes.length === 0) return;
-    const headers = ['Destination', 'Country', 'Dial Code', 'Route Type', 'Rate ($/min)', 'ASR (%)', 'ACD (min)', 'Ports', 'Vendor Name', 'Vendor Phone'];
+    const headers = ['Destination', 'Country', 'Dial Code', 'Route Type', 'Rate ($/min)', 'Pulse', 'Recorded Time', 'ASR (%)', 'ACD (min)', 'Ports', 'Vendor Name', 'Vendor Phone'];
     const rows = sortedRoutes.map((r) => [
       `"${r.destination.replace(/"/g, '""')}"`,
       `"${r.country.replace(/"/g, '""')}"`,
       `"${r.code}"`,
       `"${r.type.replace(/"/g, '""')}"`,
       r.rate.toFixed(4),
+      `"${r.pulse || '1/1'}"`,
+      `"${new Date(r.createdAt).toISOString()}"`,
       r.asr,
       r.acd,
       r.ports,
@@ -509,7 +532,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
           </button>
 
           <button
-            onClick={() => setQuickFilter(quickFilter === 'sub1c' ? 'all' : 'sub1c')}
+            onClick={() => setQuickFilter('sub1c')}
             className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
               quickFilter === 'sub1c'
                 ? 'bg-emerald-600 text-white shadow-xs'
@@ -518,6 +541,26 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             title="Filter routes priced under $0.01/min"
           >
             <span>Sub-Cent (&lt; $0.01)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (sortField === 'time') {
+                setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+              } else {
+                setSortField('time');
+                setSortDirection('desc');
+              }
+            }}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
+              sortField === 'time'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 hover:bg-sky-500/20'
+            }`}
+            title="Sort routes by recorded time (Latest to Oldest)"
+          >
+            <Clock className="w-3 h-3" />
+            <span>Latest Offers {sortField === 'time' && (sortDirection === 'desc' ? '↓' : '↑')}</span>
           </button>
 
           {(search || typeFilter !== 'all' || countryFilter !== 'all' || quickFilter !== 'all') && (
@@ -582,17 +625,36 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
                   </div>
                 </th>
                 <th
-                  onClick={() => toggleSort('rate')}
-                  className="py-3 px-4 font-mono cursor-pointer hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors group"
-                  title="Sort by Rate ($/min)"
+                  className="py-3 px-4 font-mono select-none"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Rate ($/min)</span>
-                    {sortField === 'rate' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-500" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-500" />
-                    ) : (
-                      <ArrowUpDown className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
-                    )}
+                  <div className="flex items-center justify-between gap-1.5">
+                    <button
+                      onClick={() => toggleSort('rate')}
+                      className="flex items-center gap-1 hover:text-emerald-500 transition-colors cursor-pointer group"
+                      title="Sort by Rate ($/min)"
+                    >
+                      <span>Rate ($/min)</span>
+                      {sortField === 'rate' ? (
+                        sortDirection === 'asc' ? <ArrowUp className="w-3.5 h-3.5 text-emerald-500" /> : <ArrowDown className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => toggleSort('time')}
+                      className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
+                        sortField === 'time'
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30'
+                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                      }`}
+                      title="Sort by Recorded Time"
+                    >
+                      <Clock className="w-3 h-3" />
+                      <span>{sortField === 'time' ? (sortDirection === 'desc' ? 'Latest' : 'Oldest') : 'Time'}</span>
+                      {sortField === 'time' && (
+                        sortDirection === 'desc' ? <ArrowDown className="w-3 h-3 text-emerald-500" /> : <ArrowUp className="w-3 h-3 text-emerald-500" />
+                      )}
+                    </button>
                   </div>
                 </th>
                 <th
@@ -728,16 +790,33 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
                     </td>
 
                     <td className={`py-2.5 px-4 font-mono transition-colors ${cellBg}`}>
-                      <div className="flex flex-col items-start gap-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-sm tracking-tight ${rateColor}`}>
-                            ${r.rate.toFixed(4)}
-                          </span>
-                          {rankBadge}
+                      <div className="flex flex-col gap-1 min-w-[210px]">
+                        {/* Line 1: Rate /min and Pulse + Rank badge */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-baseline gap-1">
+                            <span className={`text-sm tracking-tight ${rateColor}`}>
+                              ${r.rate.toFixed(4)}
+                            </span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                              /min
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] text-slate-600 dark:text-slate-300 font-mono font-medium px-1.5 py-0.2 rounded bg-slate-100 dark:bg-dark-800 border border-slate-200/80 dark:border-dark-700/80">
+                              {r.pulse || '1/1'}
+                            </span>
+                            {rankBadge}
+                          </div>
                         </div>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                          /min • 1/1
-                        </span>
+
+                        {/* Line 2: Recorded relative timestamp */}
+                        <div
+                          className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono"
+                          title={`Recorded: ${new Date(r.createdAt).toLocaleString()}`}
+                        >
+                          <span className="select-none text-[11px] leading-none">⏱️</span>
+                          <span>Recorded {formatRecordedTime(r.createdAt)}</span>
+                        </div>
                       </div>
                     </td>
 
