@@ -21,7 +21,8 @@ import {
   clearMessages,
   getStats,
   getAllMessagesForExport,
-  repairExistingChatNames
+  repairExistingChatNames,
+  hasOlderChatMessages
 } from './storage/storage.js';
 import {
   connectWhatsApp,
@@ -233,16 +234,48 @@ app.get('/api/chats', (req, res) => {
 
 app.get('/api/chats/:jid/messages', (req, res) => {
   const { jid } = req.params;
-  const limit = req.query.limit || '200';
+  const limitParam = req.query.limit;
+  const before = req.query.before ? Number(req.query.before) : null;
   const search = req.query.search || '';
-  const messages = getChatMessages(jid, { limit, search });
+
+  let days = null;
+  let limit = '150';
+
+  if (limitParam === '30d' || (!limitParam && !req.query.days && !before)) {
+    days = 30;
+    limit = '150';
+  } else if (limitParam === '60d') {
+    days = 60;
+    limit = '300';
+  } else if (limitParam === '90d') {
+    days = 90;
+    limit = '500';
+  } else if (limitParam === 'all') {
+    limit = 'all';
+    days = null;
+  } else if (limitParam) {
+    limit = limitParam;
+    days = req.query.days ? Number(req.query.days) : null;
+  }
+
+  // If scrolling backwards with before parameter and days is specified or default
+  if (before && (req.query.days || limitParam === '30d' || !limitParam)) {
+    days = Number(req.query.days) || 30;
+  }
+
+  const messages = getChatMessages(jid, { limit, before, days, search });
   const total = getChatTotal(jid);
+  const oldestLoaded = messages.length > 0 ? messages[0].timestamp : null;
+  const hasMore = oldestLoaded ? hasOlderChatMessages(jid, oldestLoaded) : false;
+
   res.json({
     jid,
     total,
     totalInDb: total,
     count: messages.length,
     loadedCount: messages.length,
+    hasMore,
+    oldestTimestamp: oldestLoaded,
     messages
   });
 });

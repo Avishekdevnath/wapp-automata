@@ -507,16 +507,38 @@ export function getChatTotal(remoteJid) {
 
 export function getChatMessages(remoteJid, options = {}) {
   const db = getDb();
-  let limit;
-  if (options.limit === 'all' || !options.limit) {
-    limit = 50000;
-  } else {
-    limit = Math.min(Math.max(Number(options.limit) || 200, 1), 50000);
-  }
   const search = options.search ? `%${options.search.trim()}%` : null;
+  const before = options.before ? Number(options.before) : null;
+  const days = options.days ? Number(options.days) : null;
+
+  let limit;
+  if (options.limit === 'all') {
+    limit = 10000;
+  } else {
+    limit = Math.min(Math.max(Number(options.limit) || 150, 1), 5000);
+  }
 
   let innerSql = 'SELECT * FROM caught_messages WHERE remote_jid = ?';
   const params = [remoteJid];
+
+  if (before) {
+    innerSql += ' AND timestamp < ?';
+    params.push(before);
+  }
+
+  if (days && !search) {
+    // If days is specified (e.g. 30), calculate timestamp threshold relative to the reference point (before or latest)
+    let refTs = before;
+    if (!refTs) {
+      const latestRow = db.prepare('SELECT timestamp FROM caught_messages WHERE remote_jid = ? ORDER BY timestamp DESC LIMIT 1').get(remoteJid);
+      refTs = latestRow ? latestRow.timestamp : null;
+    }
+    if (refTs) {
+      const minTs = refTs - (days * 86400000);
+      innerSql += ' AND timestamp >= ?';
+      params.push(minTs);
+    }
+  }
 
   if (search) {
     innerSql += ' AND (message_text LIKE ? OR sender_name LIKE ? OR sender_phone LIKE ?)';
@@ -527,7 +549,30 @@ export function getChatMessages(remoteJid, options = {}) {
   params.push(limit);
 
   const sql = `SELECT * FROM (${innerSql}) ORDER BY timestamp ASC`;
-  return db.prepare(sql).all(...params);
+  let rows = db.prepare(sql).all(...params);
+
+  // If days filter resulted in very few messages (e.g. inactive chat in those 30 days) and no 'before' was given,
+  // ensure at least min 30-50 messages are returned so user doesn't see an empty screen
+  if (!before && !search && days && rows.length < 30) {
+    const fallbackSql = `SELECT * FROM (SELECT * FROM caught_messages WHERE remote_jid = ? ORDER BY timestamp DESC LIMIT 50) ORDER BY timestamp ASC`;
+    const fallbackRows = db.prepare(fallbackSql).all(remoteJid);
+    if (fallbackRows.length > rows.length) {
+      rows = fallbackRows;
+    }
+  }
+
+  return rows;
+}
+
+export function hasOlderChatMessages(remoteJid, oldestTimestamp) {
+  try {
+    if (!remoteJid || !oldestTimestamp) return false;
+    const db = getDb();
+    const row = db.prepare('SELECT 1 FROM caught_messages WHERE remote_jid = ? AND timestamp < ? LIMIT 1').get(remoteJid, oldestTimestamp);
+    return Boolean(row);
+  } catch (_) {
+    return false;
+  }
 }
 
 export function updateChatName(remoteJid, chatName) {

@@ -513,6 +513,32 @@
       margin: 10px 0;
     }
 
+    /* Load Older Messages Bar */
+    .load-older-bar {
+      align-self: center;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px dashed rgba(0, 168, 132, 0.45);
+      color: var(--accent);
+      padding: 7px 18px;
+      margin: 6px auto 12px auto;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .load-older-bar:hover {
+      background: rgba(0, 168, 132, 0.18);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
     /* Message Bubble */
     .msg-bubble-wrap {
       display: flex;
@@ -1009,10 +1035,12 @@
 
               <!-- Limit Selector -->
               <select id="msg-limit-select" onchange="changeMsgLimit()" style="background: var(--bg-dark); border: 1px solid var(--card-border); border-radius: 6px; padding: 4px 6px; color: #fff; font-size: 11px;">
-                <option value="all" selected>All Messages</option>
-                <option value="500">Latest 500</option>
-                <option value="300">Latest 300</option>
+                <option value="30d" selected>Recent 30 Days</option>
+                <option value="60d">Recent 60 Days</option>
+                <option value="90d">Recent 90 Days</option>
                 <option value="100">Latest 100</option>
+                <option value="300">Latest 300</option>
+                <option value="all">All Messages (Slow)</option>
               </select>
 
               <button onclick="exportCurrentChat()" class="btn btn-outline" title="Export this chat as JSON">
@@ -1453,6 +1481,9 @@
     }
 
     // 8. Load Messages for Currently Active Chat
+    let chatHasMoreOlder = false;
+    let isLoadingOlderMessages = false;
+
     async function loadActiveChatMessages(forceLimit) {
       if (!activeChatJid) return;
       const wrap = document.getElementById('chat-messages-wrap');
@@ -1468,7 +1499,7 @@
         if (forceLimit) {
           limitSelect.value = forceLimit;
         }
-        const limit = limitSelect.value || 'all';
+        const limit = limitSelect ? (limitSelect.value || '30d') : '30d';
         const query = new URLSearchParams({
           limit,
           search: msgSearchQuery
@@ -1477,9 +1508,10 @@
         const res = await fetch(`/api/chats/${encodeURIComponent(activeChatJid)}/messages?${query.toString()}`);
         const data = await res.json();
         currentChatMessages = data.messages || [];
+        chatHasMoreOlder = Boolean(data.hasMore);
 
         const totalInDb = (typeof data.totalInDb === 'number') ? data.totalInDb : ((typeof data.total === 'number') ? data.total : currentChatMessages.length);
-        const loadedCount = (typeof data.loadedCount === 'number') ? data.loadedCount : currentChatMessages.length;
+        const loadedCount = currentChatMessages.length;
 
         // Sync with activeChatMeta & sidebar badge
         if (activeChatMeta) {
@@ -1506,15 +1538,107 @@
         } else {
           countEl.innerHTML = `
             <span style="color: #fbbf24; font-weight: 600;">Showing ${loadedCount.toLocaleString()} of ${totalInDb.toLocaleString()} messages</span>
-            <button class="btn btn-accent" style="padding: 2px 8px; font-size: 11px; margin-left: 6px; border-radius: 6px; cursor: pointer;" onclick="loadAllChatMessages()">Load All</button>
-            <button class="btn btn-secondary" style="padding: 2px 9px; font-size: 11px; margin-left: 6px; border-radius: 6px; cursor: pointer;" onclick="requestPhoneCatchup(this)" title="Request older history packets directly from your WhatsApp phone">📥 Fetch Older from Phone</button>
+            <button class="btn btn-accent" style="padding: 2px 8px; font-size: 11px; margin-left: 6px; border-radius: 6px; cursor: pointer;" onclick="loadOlderMessages(this)">⬆️ Load Older 30 Days</button>
+            <button class="btn btn-secondary" style="padding: 2px 9px; font-size: 11px; margin-left: 6px; border-radius: 6px; cursor: pointer;" onclick="requestPhoneCatchup(this)" title="Request older history packets directly from your WhatsApp phone">📥 Fetch from Phone</button>
           `;
         }
 
-        renderChatMessages(totalInDb, loadedCount);
+        renderChatMessages(totalInDb, loadedCount, true);
+        initScrollPagination();
       } catch (err) {
         console.error('Failed to load chat messages:', err);
         wrap.innerHTML = `<div class="empty-placeholder"><p style="color: #f87171;">Failed to load messages: ${escapeHtml(err.message)}</p></div>`;
+      }
+    }
+
+    function initScrollPagination() {
+      const wrap = document.getElementById('chat-messages-wrap');
+      if (!wrap || wrap._hasPaginationListener) return;
+      wrap._hasPaginationListener = true;
+
+      let scrollTimeout = null;
+      wrap.addEventListener('scroll', () => {
+        if (wrap.scrollTop < 80 && chatHasMoreOlder && !isLoadingOlderMessages) {
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            if (wrap.scrollTop < 100 && chatHasMoreOlder && !isLoadingOlderMessages) {
+              loadOlderMessages();
+            }
+          }, 100);
+        }
+      });
+    }
+
+    async function loadOlderMessages(bannerBtn) {
+      if (!activeChatJid || !chatHasMoreOlder || isLoadingOlderMessages) return;
+      if (!currentChatMessages || currentChatMessages.length === 0) return;
+
+      const oldestMsg = currentChatMessages[0];
+      const oldestTs = oldestMsg.timestamp;
+      if (!oldestTs) return;
+
+      isLoadingOlderMessages = true;
+      const banner = document.getElementById('load-older-banner') || bannerBtn;
+      if (banner) {
+        banner.innerHTML = `<span>⏳ Loading previous 30 days...</span>`;
+      }
+
+      try {
+        const query = new URLSearchParams({
+          before: oldestTs,
+          days: '30',
+          limit: '150',
+          search: msgSearchQuery
+        });
+
+        const res = await fetch(`/api/chats/${encodeURIComponent(activeChatJid)}/messages?${query.toString()}`);
+        const data = await res.json();
+        const olderMsgs = data.messages || [];
+
+        chatHasMoreOlder = Boolean(data.hasMore);
+
+        if (olderMsgs.length > 0) {
+          const wrap = document.getElementById('chat-messages-wrap');
+          const prevScrollHeight = wrap.scrollHeight;
+          const prevScrollTop = wrap.scrollTop;
+
+          const existingIds = new Set(currentChatMessages.map(m => m.id));
+          const freshOlder = olderMsgs.filter(m => !existingIds.has(m.id));
+
+          if (freshOlder.length > 0) {
+            currentChatMessages = [...freshOlder, ...currentChatMessages];
+            const totalInDb = (typeof data.totalInDb === 'number') ? data.totalInDb : activeChatMeta.count;
+
+            const countEl = document.getElementById('active-chat-count');
+            if (currentChatMessages.length >= totalInDb) {
+              countEl.innerHTML = `
+                <span style="color: #4ade80; font-weight: 700;">✓ ${totalInDb.toLocaleString()} messages (All Loaded)</span>
+                <button class="btn btn-secondary" style="padding: 2px 9px; font-size: 11px; margin-left: 8px; border-radius: 6px; cursor: pointer;" onclick="requestPhoneCatchup(this)">📥 Fetch Older from Phone</button>
+              `;
+            } else {
+              countEl.innerHTML = `
+                <span style="color: #fbbf24; font-weight: 600;">Showing ${currentChatMessages.length.toLocaleString()} of ${totalInDb.toLocaleString()} messages</span>
+                <button class="btn btn-accent" style="padding: 2px 8px; font-size: 11px; margin-left: 6px; border-radius: 6px; cursor: pointer;" onclick="loadOlderMessages(this)">⬆️ Load Older 30 Days</button>
+                <button class="btn btn-secondary" style="padding: 2px 9px; font-size: 11px; margin-left: 6px; border-radius: 6px; cursor: pointer;" onclick="requestPhoneCatchup(this)">📥 Fetch from Phone</button>
+              `;
+            }
+
+            renderChatMessages(totalInDb, currentChatMessages.length, false);
+
+            // Preserve scroll position perfectly
+            requestAnimationFrame(() => {
+              wrap.scrollTop = prevScrollTop + (wrap.scrollHeight - prevScrollHeight);
+            });
+          }
+        } else {
+          chatHasMoreOlder = false;
+          if (banner) banner.remove();
+        }
+      } catch (err) {
+        console.error('Failed to load older messages:', err);
+        if (banner) banner.innerHTML = `<span>⚠️ Failed to load older messages (click to retry)</span>`;
+      } finally {
+        isLoadingOlderMessages = false;
       }
     }
 
@@ -1535,7 +1659,7 @@
     }
 
     // 9. Render Chat Messages as WhatsApp Bubbles
-    function renderChatMessages(totalInDb = 0, loadedCount = 0) {
+    function renderChatMessages(totalInDb = 0, loadedCount = 0, autoScrollBottom = false) {
       const wrap = document.getElementById('chat-messages-wrap');
       const dateRangeEl = document.getElementById('active-chat-daterange');
 
@@ -1561,17 +1685,12 @@
 
       let html = '';
 
-      // Older messages notice banner if limited
-      if (loadedCount < totalInDb) {
-        const remaining = totalInDb - loadedCount;
+      // Older messages top banner
+      if (chatHasMoreOlder) {
+        const remaining = Math.max(0, totalInDb - currentChatMessages.length);
         html += `
-          <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 10px 14px; text-align: center; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
-            <span style="color: #fbbf24; font-size: 12px; font-weight: 600;">
-              ⚠️ Showing latest ${loadedCount.toLocaleString()} messages (${remaining.toLocaleString()} older messages in database)
-            </span>
-            <button onclick="loadAllChatMessages()" class="btn btn-accent" style="padding: 3px 10px; font-size: 11px;">
-              ⬆️ Load All ${totalInDb.toLocaleString()} Messages
-            </button>
+          <div id="load-older-banner" class="load-older-bar" onclick="loadOlderMessages(this)" title="Click or scroll up to load previous 30 days">
+            <span>⬆️ Load previous 30 days ${remaining > 0 ? '(' + remaining.toLocaleString() + ' older)' : ''}</span>
           </div>
         `;
       }
@@ -1590,8 +1709,9 @@
       });
 
       wrap.innerHTML = html;
-      // Scroll to bottom to view latest message
-      wrap.scrollTop = wrap.scrollHeight;
+      if (autoScrollBottom) {
+        wrap.scrollTop = wrap.scrollHeight;
+      }
     }
 
     function appendSingleMessageBubble(msg, smoothScroll = true) {
