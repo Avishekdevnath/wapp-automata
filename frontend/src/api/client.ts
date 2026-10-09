@@ -638,6 +638,19 @@ export async function restartWhatsAppSession(): Promise<boolean> {
   }
 }
 
+export async function wipeAccountAndAllData(): Promise<{ success: boolean; message: string }> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/account/wipe`, { method: 'POST' });
+    const data = await res.json();
+    return {
+      success: res.ok && Boolean(data.success),
+      message: data.message || 'WhatsApp account session and all data wiped successfully.',
+    };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Network error while wiping account' };
+  }
+}
+
 export async function clearData(
   target: 'routes' | 'analysis' | 'news' | 'all'
 ): Promise<{ success: boolean; message: string }> {

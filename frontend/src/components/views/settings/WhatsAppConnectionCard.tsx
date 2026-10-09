@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Smartphone, LogOut, RefreshCw, QrCode } from 'lucide-react';
+import { Smartphone, LogOut, RefreshCw, QrCode, Trash2 } from 'lucide-react';
 import type { DeviceStatus } from '../../../types/status';
 import { unlinkWhatsAppSession, restartWhatsAppSession } from '../../../api/client';
+import { WipeAccountModal } from '../../modals/WipeAccountModal';
 
 interface WhatsAppConnectionCardProps {
   deviceStatus: DeviceStatus;
@@ -17,6 +18,7 @@ export const WhatsAppConnectionCard: React.FC<WhatsAppConnectionCardProps> = ({
   onStatsReload,
 }) => {
   const [sessionActionLoading, setSessionActionLoading] = useState(false);
+  const [isWipeModalOpen, setIsWipeModalOpen] = useState(false);
   const isConnected = deviceStatus.connected || deviceStatus.status === 'authenticated';
 
   const handleUnlinkWhatsApp = async () => {
@@ -107,10 +109,22 @@ export const WhatsAppConnectionCard: React.FC<WhatsAppConnectionCardProps> = ({
           onClick={handleUnlinkWhatsApp}
           disabled={sessionActionLoading}
           className="btn btn-danger btn-sm text-xs font-semibold flex items-center gap-1.5"
+          title="Disconnect active WhatsApp session without deleting database history"
         >
           <LogOut className="w-3.5 h-3.5" />
-          <span>Log Out Current Account & Link Another</span>
+          <span>Log Out & Switch</span>
         </button>
+
+        <button
+          onClick={() => setIsWipeModalOpen(true)}
+          disabled={sessionActionLoading}
+          className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50 h-[30px]"
+          title="Permanently wipe WhatsApp session credentials AND all messages, routes, contacts & media"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Wipe Account & All Data</span>
+        </button>
+
         <button
           onClick={handleRestartSocket}
           disabled={sessionActionLoading}
@@ -120,6 +134,7 @@ export const WhatsAppConnectionCard: React.FC<WhatsAppConnectionCardProps> = ({
           <RefreshCw className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>Restart Socket</span>
         </button>
+
         <button
           onClick={onOpenDeviceModal}
           className="btn btn-secondary btn-sm text-xs font-medium flex items-center gap-1.5"
@@ -129,6 +144,20 @@ export const WhatsAppConnectionCard: React.FC<WhatsAppConnectionCardProps> = ({
           <span>Show QR / Pair Modal</span>
         </button>
       </div>
+
+      {/* Full Wipe Confirmation Modal */}
+      <WipeAccountModal
+        isOpen={isWipeModalOpen}
+        onClose={() => setIsWipeModalOpen(false)}
+        onWiped={() => {
+          onRefreshStatus();
+          onStatsReload();
+          setTimeout(() => {
+            onOpenDeviceModal();
+          }, 800);
+        }}
+        deviceStatus={deviceStatus}
+      />
     </div>
   );
 };

@@ -309,7 +309,7 @@ app.post('/api/accounts/switch', async (req, res) => {
   }
 });
 
-app.post('/api/accounts/reset', async (req, res) => {
+app.post(['/api/accounts/reset', '/api/account/wipe'], async (req, res) => {
   try {
     const currentId = getActiveAccountId();
     console.log(`⚠️ [Account] Full factory reset requested for [${currentId}]...`);
@@ -333,14 +333,24 @@ app.post('/api/accounts/reset', async (req, res) => {
       } catch (_) {}
     }
 
+    // Wipe downloaded media files
+    const mediaDir = path.join(paths.dataDir, 'media');
+    if (fs.existsSync(mediaDir)) {
+      try {
+        fs.rmSync(mediaDir, { recursive: true, force: true });
+        fs.mkdirSync(mediaDir, { recursive: true });
+      } catch (_) {}
+    }
+
     // Re-initialize blank database with schemas
     getDb(currentId);
     broadcastSse('account_reset', { accountId: currentId });
+    broadcastSse('cleared', { count: 0 });
 
     // Re-connect WhatsApp with fresh pairing QR code
     connectWhatsApp().catch(e => console.warn('[WhatsApp] Auto-connect error on reset:', e.message));
 
-    res.json({ success: true, message: `Account [${currentId}] fully reset from scratch` });
+    res.json({ success: true, message: `Account [${currentId}] session and all data fully wiped from scratch.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
