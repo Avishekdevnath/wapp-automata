@@ -15,6 +15,7 @@ import {
 import type { WhatsAppMessage } from '../../types/message';
 import { formatTime, formatDate, cleanPhone } from '../../utils/formatters';
 import { ProfileAvatar } from '../common/ProfileAvatar';
+import { WhatsAppMarkdown } from '../common/WhatsAppMarkdown';
 
 interface MessageDetailModalProps {
   message: WhatsAppMessage | null;
@@ -25,6 +26,7 @@ export const MessageDetailModal: React.FC<MessageDetailModalProps> = ({ message,
   const [copiedText, setCopiedText] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
+  const [viewRawText, setViewRawText] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -190,7 +192,35 @@ export const MessageDetailModal: React.FC<MessageDetailModalProps> = ({ message,
           {/* Full Verbatim Text Box */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400">
-              <span>Message Text</span>
+              <div className="flex items-center gap-2">
+                <span>Message Text</span>
+                {message.text && message.text.trim() && (
+                  <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-800/80 border border-slate-300/50 dark:border-slate-700/60 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setViewRawText(false)}
+                      className={`px-2 py-0.5 rounded-md font-medium transition-all cursor-pointer ${
+                        !viewRawText
+                          ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Formatted
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewRawText(true)}
+                      className={`px-2 py-0.5 rounded-md font-medium transition-all cursor-pointer ${
+                        viewRawText
+                          ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Raw
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={handleCopyText}
@@ -210,9 +240,15 @@ export const MessageDetailModal: React.FC<MessageDetailModalProps> = ({ message,
                 )}
               </button>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 font-sans text-xs text-slate-900 dark:text-slate-100 leading-relaxed whitespace-pre-wrap break-words select-text selection:bg-emerald-500/30">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 font-sans text-xs text-slate-900 dark:text-slate-100 leading-relaxed break-words select-text selection:bg-emerald-500/30">
               {message.text && message.text.trim() ? (
-                message.text.trim()
+                viewRawText ? (
+                  <pre className="font-mono text-xs whitespace-pre-wrap leading-relaxed select-text text-slate-800 dark:text-slate-200">
+                    {message.text.trim()}
+                  </pre>
+                ) : (
+                  <WhatsAppMarkdown content={message.text.trim()} />
+                )
               ) : (
                 <span className="italic text-slate-400 dark:text-slate-500">
                   {mediaObj ? '[Media attachment without text caption]' : '[No text payload]'}

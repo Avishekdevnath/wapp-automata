@@ -18,6 +18,7 @@ import {
 import type { WhatsAppMessage } from '../../types/message';
 import { formatTime, formatDate, cleanPhone } from '../../utils/formatters';
 import { ProfileAvatar } from '../common/ProfileAvatar';
+import { WhatsAppMarkdown } from '../common/WhatsAppMarkdown';
 
 interface MessageRowProps {
   message: WhatsAppMessage;
@@ -208,10 +209,10 @@ const MessageRowInner: React.FC<MessageRowProps> = ({ message, onViewDetail }) =
           {message.text ? (
             <div className="space-y-1">
               <div
-                className="text-xs text-slate-800 dark:text-slate-200 font-sans leading-relaxed break-words whitespace-pre-line line-clamp-2 sm:line-clamp-3 select-text group-hover:text-emerald-800 dark:group-hover:text-emerald-200 transition-colors"
+                className="text-xs text-slate-800 dark:text-slate-200 font-sans leading-relaxed break-words line-clamp-2 sm:line-clamp-3 select-text group-hover:text-emerald-800 dark:group-hover:text-emerald-200 transition-colors"
                 title="Click row to open full message modal"
               >
-                {message.text.trim()}
+                <WhatsAppMarkdown content={message.text.trim()} compact />
               </div>
               {(message.text.length > 100 || message.text.includes('\n')) && (
                 <button
