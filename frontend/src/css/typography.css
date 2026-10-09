@@ -354,7 +354,7 @@ html:not(.dark) .bg-dark-800 {
 button.bg-rose-600, button.bg-emerald-600, button.bg-purple-600,
 .sidebar-nav-btn.active .sidebar-badge,
 .sidebar-nav-btn.active span[id*="-badge"],
-.btn-primary, .btn-danger {
+.btn-primary {
   color: #ffffff !important;
 }
 
@@ -362,13 +362,35 @@ html:not(.dark) .bg-emerald-600 *, html:not(.dark) .bg-emerald-700 *,
 html:not(.dark) .bg-purple-600 *, html:not(.dark) .bg-purple-700 *,
 html:not(.dark) .bg-rose-600 *, html:not(.dark) .bg-rose-700 *,
 html:not(.dark) button.bg-rose-600 *, html:not(.dark) button.bg-emerald-600 *,
-html:not(.dark) .btn-primary *, html:not(.dark) .btn-danger *,
+html:not(.dark) .btn-primary *,
 .bg-emerald-600 *, .bg-emerald-700 *,
 .bg-purple-600 *, .bg-purple-700 *,
 .bg-rose-600 *, .bg-rose-700 *,
 .bg-sky-600 *, .bg-blue-600 *,
 .sidebar-nav-btn.active .sidebar-badge *,
 .sidebar-nav-btn.active span[id*="-badge"] *,
-.btn-primary *, .btn-danger * {
+.btn-primary * {
+  color: #ffffff !important;
+}
+
+/* Danger Button Typography & Icon High Contrast Protection */
+html:not(.dark) .btn-danger,
+html:not(.dark) .btn-danger *,
+html:not(.dark) .btn-danger svg {
+  color: #e11d48 !important;
+}
+html:not(.dark) .btn-danger:hover,
+html:not(.dark) .btn-danger:hover *,
+html:not(.dark) .btn-danger:hover svg {
+  color: #be123c !important;
+}
+.dark .btn-danger,
+.dark .btn-danger *,
+.dark .btn-danger svg {
+  color: #fb7185 !important;
+}
+.dark .btn-danger:hover,
+.dark .btn-danger:hover *,
+.dark .btn-danger:hover svg {
   color: #ffffff !important;
 }
