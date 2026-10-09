@@ -461,3 +461,84 @@ export async function requestPairingCode(phoneNumber) {
   emitUpdate('status', getStatus());
   return code;
 }
+
+export async function syncGroupNames() {
+  if (!sock || connectionState.status !== 'connected') {
+    return { groups: 0, participants: 0 };
+  }
+  try {
+    const groups = await sock.groupFetchAllParticipating();
+    let groupCount = 0;
+    const participantMappings = [];
+
+    for (const [jid, meta] of Object.entries(groups)) {
+      if (meta && meta.subject) {
+        updateChatName(jid, meta.subject);
+        groupCount++;
+      }
+
+      if (meta && Array.isArray(meta.participants)) {
+        for (const p of meta.participants) {
+          const lid = p.lid || (p.id?.endsWith('@lid') ? p.id : null);
+          const phoneJid = p.jid || (p.id?.endsWith('@s.whatsapp.net') ? p.id : null);
+          const name = p.name || p.notify || null;
+          if (lid && phoneJid) {
+            participantMappings.push({ lid, phoneJid, name });
+          } else if (lid && name) {
+            participantMappings.push({ lid, phoneJid: lid, name });
+          }
+        }
+      }
+    }
+
+    let mappedCount = 0;
+    if (participantMappings.length > 0) {
+      mappedCount = saveLidMappingsBatch(participantMappings);
+    }
+
+    console.log(`👥 [WhatsApp] Synced names for ${groupCount} groups and mapped ${mappedCount} participants!`);
+    emitUpdate('status', getStatus());
+    return { groups: groupCount, participants: mappedCount };
+  } catch (err) {
+    console.warn('[WhatsApp] Could not fetch group names & participants:', err.message);
+    return { groups: 0, participants: 0 };
+  }
+}
+
+export async function catchupRecentChats(count = 50) {
+  if (!sock || connectionState.status !== 'connected') {
+    return { status: 'not_connected', requested: 0 };
+  }
+  try {
+    const { getDb } = await import('../storage/db.js');
+    const db = getDb();
+    const activeChats = db.prepare(`
+      SELECT remote_jid, MAX(id) as last_id, MAX(timestamp) as last_ts, MAX(is_from_me) as is_from_me
+      FROM caught_messages
+      GROUP BY remote_jid
+      ORDER BY last_ts DESC
+      LIMIT 15
+    `).all();
+
+    let requestedCount = 0;
+    for (const chat of activeChats) {
+      try {
+        const key = {
+          remoteJid: chat.remote_jid,
+          fromMe: Boolean(chat.is_from_me),
+          id: chat.last_id
+        };
+        if (typeof sock.fetchMessageHistory === 'function') {
+          await sock.fetchMessageHistory(count, key, chat.last_ts);
+          requestedCount++;
+          await new Promise(r => setTimeout(r, 600));
+        }
+      } catch (_) {}
+    }
+    return { status: 'ok', requested: requestedCount };
+  } catch (err) {
+    console.warn('[WhatsApp] Catch-up error:', err.message);
+    return { status: 'error', error: err.message, requested: 0 };
+  }
+}
+

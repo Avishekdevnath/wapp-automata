@@ -19,7 +19,8 @@ import {
   getChatTotal,
   deleteChatMessages,
   clearMessages,
-  getStats
+  getStats,
+  getAllMessagesForExport
 } from './storage/storage.js';
 import {
   connectWhatsApp,
@@ -27,6 +28,8 @@ import {
   logoutWhatsApp,
   requestPairingCode,
   getStatus,
+  syncGroupNames,
+  catchupRecentChats,
   addEventListener as addWhatsAppListener
 } from './collector/whatsapp.js';
 import {
@@ -152,6 +155,43 @@ app.post('/api/accounts/switch', async (req, res) => {
   }
 });
 
+app.post('/api/accounts/reset', async (req, res) => {
+  try {
+    const currentId = getActiveAccountId();
+    console.log(`⚠️ [Account] Full factory reset requested for [${currentId}]...`);
+    await logoutWhatsApp();
+    closeDb();
+
+    const paths = getAccountPaths(currentId);
+    // Delete SQLite database files
+    const sqliteFiles = [paths.dbPath, `${paths.dbPath}-wal`, `${paths.dbPath}-shm`];
+    for (const file of sqliteFiles) {
+      if (fs.existsSync(file)) {
+        try { fs.unlinkSync(file); } catch (_) {}
+      }
+    }
+
+    // Wipe session folder
+    if (fs.existsSync(paths.sessionDir)) {
+      try {
+        fs.rmSync(paths.sessionDir, { recursive: true, force: true });
+        fs.mkdirSync(paths.sessionDir, { recursive: true });
+      } catch (_) {}
+    }
+
+    // Re-initialize blank database with schemas
+    getDb(currentId);
+    broadcastSse('account_reset', { accountId: currentId });
+
+    // Re-connect WhatsApp with fresh pairing QR code
+    connectWhatsApp().catch(e => console.warn('[WhatsApp] Auto-connect error on reset:', e.message));
+
+    res.json({ success: true, message: `Account [${currentId}] fully reset from scratch` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ==========================================
 // 3. Messages & Chats APIs
 // ==========================================
@@ -203,6 +243,50 @@ app.delete('/api/chats/:jid', (req, res) => {
   const count = deleteChatMessages(jid);
   res.json({ success: true, deleted: count });
 });
+
+// Sync group names and participant LIDs
+app.post(['/api/chats/sync-names', '/api/sync-groups'], async (req, res) => {
+  try {
+    const result = await syncGroupNames();
+    broadcastSse('groups_synced', result);
+    res.json({ status: 'ok', ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Catch up active chats history from phone
+app.post(['/api/sync-history', '/api/catchup'], async (req, res) => {
+  try {
+    const result = await catchupRecentChats(50);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Export all messages as JSON
+app.get('/api/export', (req, res) => {
+  const messages = getAllMessagesForExport();
+  res.writeHead(200, {
+    'Content-Type': 'application/json',
+    'Content-Disposition': `attachment; filename="wapp_messages_${Date.now()}.json"`
+  });
+  res.end(JSON.stringify({ count: messages.length, messages }, null, 2));
+});
+
+// Export single chat messages as JSON
+app.get('/api/chats/:jid/export', (req, res) => {
+  const { jid } = req.params;
+  const messages = getChatMessages(jid, { limit: 10000 });
+  const safeName = jid.replace(/[^a-zA-Z0-9_-]/g, '_');
+  res.writeHead(200, {
+    'Content-Type': 'application/json',
+    'Content-Disposition': `attachment; filename="chat_${safeName}_${Date.now()}.json"`
+  });
+  res.end(JSON.stringify({ remoteJid: jid, count: messages.length, messages }, null, 2));
+});
+
 
 // ==========================================
 // 4. Telecom Wholesale Routes APIs
@@ -314,13 +398,23 @@ app.get('/api/stream', (req, res) => {
 });
 
 // ==========================================
-// 8. Static React Frontend Hosting
+// 8. Static UIs Hosting (React Dashboard & WhatsApp Web UI)
 // ==========================================
+
+const CHAT_UI_PATH = path.join(ROOT_DIR, 'backend', 'public', 'chat.html');
+
+// Dedicated Authentic WhatsApp Web UI route
+app.get(['/chat', '/chat/*', '/wp', '/wp/*'], (req, res) => {
+  if (fs.existsSync(CHAT_UI_PATH)) {
+    return res.sendFile(CHAT_UI_PATH);
+  }
+  res.status(404).send('WhatsApp Web UI not found at backend/public/chat.html');
+});
 
 if (fs.existsSync(FRONTEND_DIST)) {
   app.use(express.static(FRONTEND_DIST));
   app.use((req, res, next) => {
-    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/chat') && !req.path.startsWith('/wp')) {
       return res.sendFile(path.join(FRONTEND_DIST, 'index.html'));
     }
     next();
