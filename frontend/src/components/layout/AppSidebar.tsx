@@ -218,15 +218,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         <div>
           <div className="h-16 px-5 border-b border-slate-200 dark:border-dark-700/80 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#006a4e] via-emerald-500 to-[#004d38] p-[2px] shadow-md shadow-emerald-950/20 shrink-0 relative group"
-                title="Telcia • Telecom Intelligent Agent"
-              >
-                <div className="w-full h-full bg-[#005a42] dark:bg-slate-950 rounded-[9px] flex items-center justify-center relative overflow-hidden">
-                  <span className="absolute w-4 h-4 rounded-full bg-[#f42a41] opacity-95 shadow-[0_0_10px_rgba(244,42,65,0.8)]" />
-                  <Radio className="w-4 h-4 text-white relative z-10 drop-shadow-md" />
-                </div>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Telcia"
+                className="w-10 h-10 rounded-xl object-cover shadow-md shadow-emerald-950/20 shrink-0 border border-emerald-500/30"
+                title="Telcia • Bangladesh Telecom Intelligence"
+              />
 
               <div className="sidebar-brand-text">
                 <div className="flex items-center gap-1.5">
@@ -235,11 +232,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   </span>
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black tracking-wider uppercase bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#f42a41] inline-block animate-pulse" />
-                    AI
+                    BD
                   </span>
                 </div>
                 <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-700 dark:text-emerald-400 block mt-0.5">
-                  Intelligent Agent
+                  Telecom Intelligence
                 </span>
               </div>
             </div>
