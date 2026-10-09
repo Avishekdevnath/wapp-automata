@@ -116,6 +116,19 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     loadCounts();
   }, [activeView, loadCounts]);
 
+  const formatCompactCount = (count: number | string | undefined): string => {
+    if (count === undefined || count === null) return '0';
+    const num = typeof count === 'number' ? count : Number(count);
+    if (isNaN(num)) return String(count);
+    if (num >= 1_000_000) {
+      return `${(num / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+    }
+    if (num > 999) {
+      return `${Math.floor(num / 1000)}k`;
+    }
+    return String(num);
+  };
+
   const navItems = [
     {
       id: 'routes' as ViewType,
@@ -123,8 +136,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'Route Matrix',
       icon: Table,
       iconColor: 'text-emerald-400',
-      badge: String(counts.routes ?? 0),
-      badgeClass: 'sidebar-badge',
+      badge: formatCompactCount(counts.routes ?? 0),
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
     },
     {
       id: 'trends' as ViewType,
@@ -133,7 +146,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       icon: TrendingUp,
       iconColor: 'text-blue-400',
       badge: 'Charts',
-      badgeClass: 'text-[10px] text-slate-500',
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-600 dark:text-blue-400',
     },
     {
       id: 'insights' as ViewType,
@@ -142,7 +155,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       icon: Sparkles,
       iconColor: 'text-amber-400',
       badge: 'Signals',
-      badgeClass: 'sidebar-badge text-[9px]',
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400',
     },
     {
       id: 'news' as ViewType,
@@ -150,8 +163,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'Telco News',
       icon: Newspaper,
       iconColor: 'text-rose-400',
-      badge: String(counts.news ?? 0),
-      badgeClass: 'sidebar-badge',
+      badge: formatCompactCount(counts.news ?? 0),
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-600 dark:text-rose-400',
     },
     {
       id: 'vendors' as ViewType,
@@ -159,8 +172,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'Carriers & Vendors',
       icon: Users,
       iconColor: 'text-purple-400',
-      badge: String(counts.vendors ?? 0),
-      badgeClass: 'sidebar-badge',
+      badge: formatCompactCount(counts.vendors ?? 0),
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-600 dark:text-purple-400',
     },
     {
       id: 'terminal' as ViewType,
@@ -168,8 +181,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'Live Messages Stream',
       icon: Radio,
       iconColor: 'text-emerald-400 animate-pulse',
-      badge: String(stats.total || '0'),
-      badgeClass: 'sidebar-badge',
+      badge: formatCompactCount(stats.total || 0),
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
     },
     {
       id: 'chat' as any,
@@ -177,7 +190,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       label: 'WhatsApp Web UI',
       icon: MessageSquare,
       iconColor: 'text-emerald-400',
-      badge: stats.total > 0 ? (stats.total > 999 ? `${Math.floor(stats.total / 1000)}k` : String(stats.total)) : '132k',
+      badge: formatCompactCount(stats.total || 0),
       badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
       isExternal: true,
     },
@@ -188,7 +201,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       icon: Cpu,
       iconColor: 'text-purple-400',
       badge: 'Live AI',
-      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 uppercase',
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 uppercase',
     },
     {
       id: 'dev' as ViewType,
@@ -197,7 +210,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       icon: Code2,
       iconColor: 'text-sky-400',
       badge: 'API',
-      badgeClass: 'text-[10px] text-slate-500',
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-600 dark:text-sky-400',
     },
     {
       id: 'settings' as ViewType,
@@ -206,7 +219,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       icon: Settings,
       iconColor: 'text-emerald-400',
       badge: 'Admin',
-      badgeClass: 'text-[10px] text-slate-500',
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-500/20 text-slate-600 dark:text-slate-400',
     },
     {
       id: 'help' as ViewType,
@@ -215,7 +228,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       icon: HelpCircle,
       iconColor: 'text-amber-400',
       badge: 'Guide',
-      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300',
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-300',
     },
   ];
 
