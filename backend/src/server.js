@@ -405,7 +405,7 @@ const CHAT_UI_PATH = path.join(ROOT_DIR, 'backend', 'public', 'chat.html');
 
 // Dedicated Authentic WhatsApp Web UI route
 app.use((req, res, next) => {
-  if (req.method === 'GET' && (req.path === '/chat' || req.path.startsWith('/chat/') || req.path === '/wp' || req.path.startsWith('/wp/'))) {
+  if ((req.method === 'GET' || req.method === 'HEAD') && (req.path === '/chat' || req.path.startsWith('/chat/') || req.path === '/wp' || req.path.startsWith('/wp/'))) {
     if (fs.existsSync(CHAT_UI_PATH)) {
       return res.sendFile(CHAT_UI_PATH);
     }
@@ -417,7 +417,7 @@ app.use((req, res, next) => {
 if (fs.existsSync(FRONTEND_DIST)) {
   app.use(express.static(FRONTEND_DIST));
   app.use((req, res, next) => {
-    if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/chat') && !req.path.startsWith('/wp')) {
+    if ((req.method === 'GET' || req.method === 'HEAD') && !req.path.startsWith('/api') && !req.path.startsWith('/chat') && !req.path.startsWith('/wp')) {
       return res.sendFile(path.join(FRONTEND_DIST, 'index.html'));
     }
     next();
