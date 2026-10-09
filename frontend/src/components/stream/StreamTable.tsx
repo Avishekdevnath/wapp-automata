@@ -7,6 +7,7 @@ import { MessageRow } from './MessageRow';
 interface StreamTableProps {
   messages: WhatsAppMessage[];
   searchQuery: string;
+  filterType?: string;
   autoScroll: boolean;
   sortField?: MessageSortField;
   sortDirection?: SortDirection;
@@ -18,6 +19,7 @@ interface StreamTableProps {
 export const StreamTable: React.FC<StreamTableProps> = ({
   messages,
   searchQuery,
+  filterType = 'all',
   autoScroll,
   sortField = 'time',
   sortDirection = 'desc',
@@ -46,22 +48,25 @@ export const StreamTable: React.FC<StreamTableProps> = ({
   }, [sortField, sortDirection]);
 
   if (messages.length === 0) {
+    const isFiltered = Boolean(searchQuery || (filterType && filterType !== 'all'));
     return (
       <div className="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center p-8 text-center select-none shadow-md">
-        {searchQuery ? (
+        {isFiltered ? (
           <>
             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-500 dark:text-amber-400 mb-3 shadow-inner">
               <SearchX className="w-6 h-6" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">No messages match "{searchQuery}"</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">
+              {searchQuery ? `No messages match "${searchQuery}"` : 'No messages match selected filter'}
+            </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-              No live records in the buffer match your search terms or filter selection.
+              No live records in the buffer match your search terms or active stream filter.
             </p>
             <button
               onClick={onResetFilters}
-              className="mt-4 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-sm transition-all"
+              className="mt-4 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-sm transition-all cursor-pointer"
             >
-              Reset Filters
+              Reset Filters & Search
             </button>
           </>
         ) : (

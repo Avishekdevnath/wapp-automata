@@ -16,6 +16,10 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Zap,
 } from 'lucide-react';
 import { cleanPhone } from '../../utils/formatters';
 import { ProfileAvatar } from '../common/ProfileAvatar';
@@ -45,6 +49,7 @@ function getCountryMeta(country: string): { flag: string; code: string } {
 
 export interface RouteItem {
   id: string;
+  country: string;
   destination: string;
   code: string;
   flag: string;
@@ -75,6 +80,10 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
   const [routes, setRoutes] = useState<RouteItem[]>([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [quickFilter, setQuickFilter] = useState<'all' | 'hot' | 'premium' | 'sub1c'>('all');
+  const [pageSize, setPageSize] = useState<number>(25);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const { routeSlug } = useParams<{ routeSlug?: string }>();
@@ -88,6 +97,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
           const meta = getCountryMeta(r.country);
           return {
             id: r.id || `r_${i}`,
+            country: r.country || 'International',
             destination: `${r.country} ${r.route_type}`,
             code: meta.code,
             flag: meta.flag,
@@ -126,18 +136,19 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
     return () => window.removeEventListener('wapp:account-changed', handleAccountChange);
   }, [loadRoutes]);
 
-  // Deep-linking: auto-open modal if URL has a routeSlug matching an item
-  useEffect(() => {
-    if (routeSlug && routes.length > 0 && lastOpenedSlugRef.current !== routeSlug) {
-      const found = routes.find((r) => matchesRouteSlug(r, routeSlug));
-      if (found) {
-        lastOpenedSlugRef.current = routeSlug;
-        onSelectRoute?.(found);
+  const availableCountries = useMemo(() => {
+    const map = new Map<string, { name: string; flag: string; count: number }>();
+    routes.forEach((r) => {
+      const name = r.country || r.destination.split(' ')[0] || 'International';
+      const existing = map.get(name);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(name, { name, flag: r.flag || '🌐', count: 1 });
       }
-    } else if (!routeSlug) {
-      lastOpenedSlugRef.current = null;
-    }
-  }, [routeSlug, routes, onSelectRoute]);
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [routes]);
 
   const [sortField, setSortField] = useState<'destination' | 'type' | 'quality' | 'rate' | 'vendor'>('rate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -151,9 +162,36 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
     }
   };
 
+  // Reset page when any filter criteria change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, typeFilter, countryFilter, quickFilter, pageSize]);
+
+  const resetFilters = () => {
+    setSearch('');
+    setTypeFilter('all');
+    setCountryFilter('all');
+    setQuickFilter('all');
+  };
+
   const filtered = useMemo(() => {
     return routes.filter((r) => {
       if (typeFilter !== 'all' && !r.type.toLowerCase().includes(typeFilter.toLowerCase())) {
+        return false;
+      }
+      if (countryFilter !== 'all') {
+        const cName = (r.country || r.destination).toLowerCase();
+        if (!cName.includes(countryFilter.toLowerCase())) {
+          return false;
+        }
+      }
+      if (quickFilter === 'hot' && !r.isHot) {
+        return false;
+      }
+      if (quickFilter === 'premium' && (r.asr < 45 || r.acd < 3.5)) {
+        return false;
+      }
+      if (quickFilter === 'sub1c' && r.rate >= 0.01) {
         return false;
       }
       if (!search.trim()) return true;
@@ -162,10 +200,11 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
         r.destination.toLowerCase().includes(q) ||
         r.code.includes(q) ||
         r.vendor.toLowerCase().includes(q) ||
-        r.vendorPhone.includes(q)
+        r.vendorPhone.includes(q) ||
+        (r.country && r.country.toLowerCase().includes(q))
       );
     });
-  }, [routes, search, typeFilter]);
+  }, [routes, search, typeFilter, countryFilter, quickFilter]);
 
   const sortedRoutes = useMemo(() => {
     const list = [...filtered];
@@ -187,6 +226,34 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
     return list;
   }, [filtered, sortField, sortDirection]);
 
+  // Pagination calculations
+  const totalPages = pageSize === -1 ? 1 : Math.ceil(sortedRoutes.length / pageSize);
+  const paginatedRoutes = useMemo(() => {
+    if (pageSize === -1) return sortedRoutes;
+    const start = (currentPage - 1) * pageSize;
+    return sortedRoutes.slice(start, start + pageSize);
+  }, [sortedRoutes, currentPage, pageSize]);
+
+  // Deep-linking: auto-open modal if URL has a routeSlug matching an item
+  useEffect(() => {
+    if (routeSlug && routes.length > 0 && lastOpenedSlugRef.current !== routeSlug) {
+      const found = routes.find((r) => matchesRouteSlug(r, routeSlug));
+      if (found) {
+        lastOpenedSlugRef.current = routeSlug;
+        if (pageSize !== -1) {
+          const idx = sortedRoutes.findIndex((r) => r.id === found.id);
+          if (idx !== -1) {
+            const pageForIdx = Math.floor(idx / pageSize) + 1;
+            setCurrentPage(pageForIdx);
+          }
+        }
+        onSelectRoute?.(found);
+      }
+    } else if (!routeSlug) {
+      lastOpenedSlugRef.current = null;
+    }
+  }, [routeSlug, routes, sortedRoutes, pageSize, onSelectRoute]);
+
   const uniquePrices = useMemo(() => {
     return Array.from(new Set(filtered.map((r) => r.rate)))
       .sort((a, b) => a - b)
@@ -198,6 +265,33 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 1500);
     });
+  };
+
+  const handleExportCsv = () => {
+    if (sortedRoutes.length === 0) return;
+    const headers = ['Destination', 'Country', 'Dial Code', 'Route Type', 'Rate ($/min)', 'ASR (%)', 'ACD (min)', 'Ports', 'Vendor Name', 'Vendor Phone'];
+    const rows = sortedRoutes.map((r) => [
+      `"${r.destination.replace(/"/g, '""')}"`,
+      `"${r.country.replace(/"/g, '""')}"`,
+      `"${r.code}"`,
+      `"${r.type.replace(/"/g, '""')}"`,
+      r.rate.toFixed(4),
+      r.asr,
+      r.acd,
+      r.ports,
+      `"${r.vendor.replace(/"/g, '""')}"`,
+      `"${r.vendorPhone}"`
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `wapp_routes_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const topYieldRoute = useMemo(() => {
@@ -302,23 +396,49 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
 
       {/* 2. Action Filter Bar */}
       <div className="glass-card rounded-2xl p-3 sm:p-4 border border-slate-200 dark:border-dark-700/80 shadow-md space-y-3 bg-white/80 dark:bg-dark-950/40">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Search Bar with clear button */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search destination, country code, carrier name..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xs p-1"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Country Filter */}
+            <select
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              className="bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer font-medium"
+              title="Filter by Destination Country"
+            >
+              <option value="all">All Countries ({routes.length})</option>
+              {availableCountries.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.flag} {c.name} ({c.count})
+                </option>
+              ))}
+            </select>
+
+            {/* Route Type Filter */}
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500"
+              className="bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer font-medium"
             >
               <option value="all">All Route Types</option>
               <option value="cli">Direct CLI</option>
@@ -326,19 +446,90 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
               <option value="ncli">Non-CLI</option>
             </select>
 
-            <button className="btn btn-secondary btn-sm flex items-center gap-1.5">
+            {/* CSV Export Button */}
+            <button
+              onClick={handleExportCsv}
+              disabled={sortedRoutes.length === 0}
+              className="btn btn-secondary btn-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold"
+              title="Export filtered routes to CSV"
+            >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">Export CSV</span>
             </button>
 
             <button
               onClick={onOpenPostRoute}
-              className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-md"
+              className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-md cursor-pointer text-xs font-semibold"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Route</span>
             </button>
           </div>
+        </div>
+
+        {/* Quick Filter Trading Pills */}
+        <div className="flex items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-dark-800/60 overflow-x-auto pb-1 text-xs">
+          <span className="text-[11px] text-slate-400 font-medium whitespace-nowrap">Presets:</span>
+          
+          <button
+            onClick={() => setQuickFilter('all')}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors whitespace-nowrap cursor-pointer ${
+              quickFilter === 'all'
+                ? 'bg-slate-900 text-white dark:bg-emerald-500 dark:text-dark-950 shadow-xs'
+                : 'bg-slate-100 dark:bg-dark-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-dark-800'
+            }`}
+          >
+            All Corridors
+          </button>
+
+          <button
+            onClick={() => setQuickFilter(quickFilter === 'hot' ? 'all' : 'hot')}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
+              quickFilter === 'hot'
+                ? 'bg-amber-500 text-white shadow-xs'
+                : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/20'
+            }`}
+            title="Show only verified best-price floor routes"
+          >
+            <Flame className="w-3 h-3" />
+            <span>Hot & Floor Deals</span>
+          </button>
+
+          <button
+            onClick={() => setQuickFilter(quickFilter === 'premium' ? 'all' : 'premium')}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
+              quickFilter === 'premium'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/20 hover:bg-purple-500/20'
+            }`}
+            title="Filter routes with ASR >= 45% and ACD >= 3.5m"
+          >
+            <Zap className="w-3 h-3" />
+            <span>High Quality (ASR ≥ 45%)</span>
+          </button>
+
+          <button
+            onClick={() => setQuickFilter(quickFilter === 'sub1c' ? 'all' : 'sub1c')}
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-colors whitespace-nowrap cursor-pointer ${
+              quickFilter === 'sub1c'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
+            }`}
+            title="Filter routes priced under $0.01/min"
+          >
+            <span>Sub-Cent (&lt; $0.01)</span>
+          </button>
+
+          {(search || typeFilter !== 'all' || countryFilter !== 'all' || quickFilter !== 'all') && (
+            <button
+              onClick={resetFilters}
+              className="ml-auto text-[11px] font-medium text-slate-500 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 flex items-center gap-1 cursor-pointer"
+              title="Reset all search and filter criteria"
+            >
+              <X className="w-3 h-3" />
+              <span>Reset Filters</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -422,14 +613,28 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-dark-800/60 text-xs">
-              {sortedRoutes.length === 0 ? (
+              {paginatedRoutes.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
-                    No routes captured yet. Wholesale rates will appear here as incoming messages are parsed.
+                    {routes.length === 0 ? (
+                      'No routes captured yet. Wholesale rates will appear here as incoming messages are parsed.'
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-2.5">
+                        <p className="font-semibold text-slate-700 dark:text-slate-300">
+                          No routes match your current filters or search query.
+                        </p>
+                        <button
+                          onClick={resetFilters}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+                        >
+                          Reset Filters & Search
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
-                sortedRoutes.map((r) => {
+                paginatedRoutes.map((r) => {
                 const rawP = cleanPhone(r.vendorPhone);
                 const knockUrl = rawP ? `https://wa.me/${rawP}` : null;
                 const rankIndex = uniquePrices.indexOf(r.rate);
@@ -582,6 +787,61 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
             )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* 4. Route Matrix Pagination Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 px-1 text-xs text-slate-500 select-none">
+        <div className="flex items-center gap-2">
+          <span>
+            Showing <strong className="text-slate-900 dark:text-white font-mono">{sortedRoutes.length === 0 ? 0 : (currentPage - 1) * (pageSize === -1 ? sortedRoutes.length : pageSize) + 1}</strong> to <strong className="text-slate-900 dark:text-white font-mono">{pageSize === -1 ? sortedRoutes.length : Math.min(currentPage * pageSize, sortedRoutes.length)}</strong> of <strong className="text-slate-900 dark:text-white font-mono">{sortedRoutes.length}</strong> routes
+          </span>
+          {filtered.length !== routes.length && (
+            <span className="text-[11px] text-slate-400 font-mono">
+              ({routes.length} total)
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400 text-[11px]">Rows:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer font-medium"
+            >
+              <option value={15}>15 / page</option>
+              <option value={25}>25 / page</option>
+              <option value={50}>50 / page</option>
+              <option value={100}>100 / page</option>
+              <option value={-1}>All</option>
+            </select>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4 pointer-events-none" />
+              </button>
+              <span className="px-2 font-mono font-semibold text-slate-700 dark:text-slate-300">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                title="Next page"
+              >
+                <ChevronRight className="w-4 h-4 pointer-events-none" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

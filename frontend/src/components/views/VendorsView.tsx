@@ -21,6 +21,7 @@ import {
   Trash2,
   ChevronDown,
   Edit3,
+  X,
 } from 'lucide-react';
 import { cleanPhone } from '../../utils/formatters';
 import { ProfileAvatar } from '../common/ProfileAvatar';
@@ -30,10 +31,49 @@ import { AddVendorModal } from '../modals/AddVendorModal';
 import { DeleteVendorModal } from '../modals/DeleteVendorModal';
 import { EditVendorModal } from '../modals/EditVendorModal';
 
+const getDisplayName = (v: BackendVendorItem): { title: string; isFallback: boolean } => {
+  if (v.name && v.name.trim()) return { title: v.name.trim(), isFallback: false };
+  if (v.company && v.company.trim()) return { title: v.company.trim(), isFallback: true };
+  if (v.phone) return { title: cleanPhone(v.phone) || v.phone, isFallback: true };
+  return { title: 'Unnamed Carrier', isFallback: true };
+};
+
+const formatActivityTime = (isoString?: string | null): string => {
+  if (!isoString) return 'No activity';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return isoString;
+
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+};
+
+const cleanCountryName = (country?: string): string => {
+  if (!country) return 'Global';
+  return country.replace(/[\uD83C][\uDDE6-\uDDFF]{2}/g, '').trim() || 'Global';
+};
+
 export const VendorsView: React.FC = () => {
   const [vendors, setVendors] = useState<BackendVendorItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [scaleFilter, setScaleFilter] = useState('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [pageSize, setPageSize] = useState<number>(25);
@@ -98,17 +138,49 @@ export const VendorsView: React.FC = () => {
     return () => window.removeEventListener('wapp:account-changed', handleAccountChange);
   }, [loadVendors]);
 
+  const availableCountries = useMemo(() => {
+    const map = new Map<string, { name: string; count: number }>();
+    vendors.forEach((v) => {
+      const c = cleanCountryName(v.country) || 'Global';
+      const existing = map.get(c);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(c, { name: c, count: 1 });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [vendors]);
+
+  const resetFilters = () => {
+    setSearch('');
+    setCountryFilter('all');
+    setScaleFilter('all');
+    setCurrentPage(1);
+  };
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return vendors;
-    const q = search.toLowerCase();
-    return vendors.filter(
-      (v) =>
+    return vendors.filter((v) => {
+      if (countryFilter !== 'all') {
+        const c = cleanCountryName(v.country);
+        if (c.toLowerCase() !== countryFilter.toLowerCase()) return false;
+      }
+      if (scaleFilter === 'verified' && !v.verified) {
+        return false;
+      }
+      if (scaleFilter === 'high_volume' && v.offersCount < 5) {
+        return false;
+      }
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
         v.name.toLowerCase().includes(q) ||
         v.company.toLowerCase().includes(q) ||
         v.phone.includes(q) ||
         v.country.toLowerCase().includes(q)
-    );
-  }, [vendors, search]);
+      );
+    });
+  }, [vendors, search, countryFilter, scaleFilter]);
 
   // Deep-linking: auto-focus and scroll to vendor matching vendorSlug
   useEffect(() => {
@@ -188,11 +260,11 @@ export const VendorsView: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                 Carriers & Account Managers Directory
               </h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 font-mono">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-mono">
                 {filtered.length} Contacts
               </span>
             </div>
@@ -209,7 +281,7 @@ export const VendorsView: React.FC = () => {
                 onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                   viewMode === 'table'
-                    ? 'bg-white dark:bg-dark-800 text-purple-600 dark:text-purple-400 shadow-xs'
+                    ? 'bg-white dark:bg-dark-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                 }`}
                 title="Switch to Table view"
@@ -222,7 +294,7 @@ export const VendorsView: React.FC = () => {
                 onClick={() => setViewMode('cards')}
                 className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                   viewMode === 'cards'
-                    ? 'bg-white dark:bg-dark-800 text-purple-600 dark:text-purple-400 shadow-xs'
+                    ? 'bg-white dark:bg-dark-800 text-emerald-600 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                 }`}
                 title="Switch to Card Grid view"
@@ -243,31 +315,32 @@ export const VendorsView: React.FC = () => {
             </button>
 
             <button
-              type="button"
-              onClick={() => setIsDeleteAllOpen(true)}
-              disabled={loading || vendors.length === 0}
-              className="px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Delete all carriers and reset directory"
-            >
-              <Trash2 className="w-3.5 h-3.5 pointer-events-none" />
-              <span className="hidden sm:inline">Delete All</span>
-            </button>
-
-            <button
               onClick={loadVendors}
               disabled={loading}
               className="btn btn-secondary btn-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               title="Refresh carriers list"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-purple-600 dark:text-purple-400 pointer-events-none ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 pointer-events-none ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
             </button>
+
+            {vendors.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsDeleteAllOpen(true)}
+                disabled={loading}
+                className="p-1.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:border-rose-300 dark:hover:border-rose-900/60 bg-transparent hover:bg-rose-50/50 dark:hover:bg-rose-950/20 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 text-xs transition-colors cursor-pointer disabled:opacity-40"
+                title="Delete all carriers and reset directory"
+              >
+                <Trash2 className="w-3.5 h-3.5 pointer-events-none" />
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center flex-wrap">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={search}
@@ -276,31 +349,91 @@ export const VendorsView: React.FC = () => {
                 setCurrentPage(1);
               }}
               placeholder="Search carrier name, contact, phone (+44...), country, or company..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
             />
-          </div>
-
-          {/* Page Size Selector */}
-          <div className="flex items-center gap-1.5 self-end sm:self-auto text-xs text-slate-500">
-            <span className="text-[11px] font-medium hidden sm:inline">Show:</span>
-            {[15, 25, 50, 100, -1].map((size) => (
+            {search && (
               <button
-                key={size}
                 type="button"
                 onClick={() => {
-                  setPageSize(size);
+                  setSearch('');
                   setCurrentPage(1);
                 }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors cursor-pointer ${
-                  pageSize === size
-                    ? 'bg-purple-600 text-white font-bold shadow-xs'
-                    : 'bg-slate-100 dark:bg-dark-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-dark-800'
-                }`}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xs p-1 cursor-pointer"
+                title="Clear search"
               >
-                {size === -1 ? 'All' : size}
+                <X className="w-3.5 h-3.5" />
               </button>
-            ))}
+            )}
           </div>
+
+          {/* Country Filter */}
+          <select
+            value={countryFilter}
+            onChange={(e) => {
+              setCountryFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer font-medium"
+            title="Filter by Carrier Country"
+          >
+            <option value="all">All Countries ({vendors.length})</option>
+            {availableCountries.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name} ({c.count})
+              </option>
+            ))}
+          </select>
+
+          {/* Scale / Verified Tier Filter */}
+          <select
+            value={scaleFilter}
+            onChange={(e) => {
+              setScaleFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer font-medium"
+          >
+            <option value="all">All Carriers</option>
+            <option value="verified">Verified Only</option>
+            <option value="high_volume">High Volume (5+ offers)</option>
+          </select>
+
+          {/* Reset Filters Button if any filter active */}
+          {(search || countryFilter !== 'all' || scaleFilter !== 'all') && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-dark-800 text-xs text-slate-500 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 flex items-center gap-1 cursor-pointer transition-colors"
+              title="Reset all search and filters"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          )}
+
+          {/* Page Size Selector: Only visible when total items exceed 15 */}
+          {filtered.length > 15 && (
+            <div className="flex items-center gap-1.5 self-end sm:self-auto text-xs text-slate-500">
+              <span className="text-[11px] font-medium hidden sm:inline">Show:</span>
+              {[15, 25, 50, 100, -1].map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors cursor-pointer ${
+                    pageSize === size
+                      ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                      : 'bg-slate-100 dark:bg-dark-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-dark-800'
+                  }`}
+                >
+                  {size === -1 ? 'All' : size}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -314,8 +447,8 @@ export const VendorsView: React.FC = () => {
 
       {/* 1. TABLE FORMAT (Default) */}
       {viewMode === 'table' ? (
-        <div className="glass-card rounded-2xl border border-slate-200 dark:border-dark-700/80 shadow-md overflow-hidden bg-white/80 dark:bg-dark-950/40 transition-colors">
-          <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
+        <div className="glass-card rounded-2xl border border-slate-200 dark:border-dark-700/80 shadow-md bg-white/80 dark:bg-dark-950/40 transition-colors">
+          <div className="overflow-x-auto min-h-[340px] max-h-[640px] overflow-y-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead className="sticky top-0 z-10 bg-slate-50/95 dark:bg-dark-900/95 backdrop-blur-md border-b border-slate-200 dark:border-dark-800 text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider select-none">
                 <tr>
@@ -397,7 +530,22 @@ export const VendorsView: React.FC = () => {
                 {paginatedVendors.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
-                      No matching contacts or carriers found.
+                      {vendors.length === 0 ? (
+                        'No matching contacts or carriers found.'
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-2.5">
+                          <p className="font-semibold text-slate-700 dark:text-slate-300">
+                            No carriers match your current filter or search criteria.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={resetFilters}
+                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+                          >
+                            Reset Search & Filters
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ) : (
@@ -405,21 +553,27 @@ export const VendorsView: React.FC = () => {
                     const rawP = cleanPhone(vendor.phone);
                     const knockUrl = rawP ? `https://wa.me/${rawP}` : null;
                     const isSlugMatch = Boolean(vendorSlug && matchesVendorSlug(vendor, vendorSlug));
+                    const { title: displayName, isFallback } = getDisplayName(vendor);
                     return (
                       <tr
                         key={vendor.id}
                         id={`vendor-row-${vendor.id}`}
                         className={`hover:bg-slate-50 dark:hover:bg-dark-900/60 transition-colors ${
-                          isSlugMatch ? 'bg-purple-500/10 dark:bg-purple-500/15 ring-1 ring-purple-500/40' : ''
+                          isSlugMatch ? 'bg-emerald-500/10 dark:bg-emerald-500/15 ring-1 ring-emerald-500/40' : ''
                         }`}
                       >
                         {/* Carrier Name & Avatar */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <ProfileAvatar name={vendor.name} phone={vendor.phone} size="sm" />
+                            <ProfileAvatar name={displayName} phone={vendor.phone} size="sm" />
                             <div className="min-w-0">
                               <div className="font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5">
-                                <span>{vendor.name}</span>
+                                <span className={isFallback ? 'text-slate-800 dark:text-slate-200' : ''}>
+                                  {displayName}
+                                </span>
+                                {isFallback && !vendor.name && (
+                                  <span className="text-[10px] font-normal text-slate-400 font-sans">(Company)</span>
+                                )}
                                 {vendor.verified && (
                                   <span title="Verified Active Carrier">
                                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0 pointer-events-none" />
@@ -441,33 +595,70 @@ export const VendorsView: React.FC = () => {
 
                         {/* Company / Desk */}
                         <td className="py-3 px-4">
-                          <span className="text-slate-700 dark:text-slate-300 font-medium block truncate max-w-[200px]">
-                            {vendor.company || '—'}
-                          </span>
+                          {vendor.company ? (
+                            <span className="text-slate-700 dark:text-slate-300 font-medium block truncate max-w-[200px]">
+                              {vendor.company}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 italic text-[11px] block">
+                              Independent Trader
+                            </span>
+                          )}
                         </td>
 
                         {/* Country */}
                         <td className="py-3 px-4">
                           <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-800 text-[11px] font-medium whitespace-nowrap">
-                            {vendor.country}
+                            {cleanCountryName(vendor.country)}
                           </span>
                         </td>
 
-                        {/* Phone */}
-                        <td className="py-3 px-4 font-mono text-[11px] text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                          {vendor.phone}
+                        {/* Phone with 1-Click Action Micro-Buttons */}
+                        <td className="py-3 px-4 font-mono text-[11px] whitespace-nowrap">
+                          <div className="flex items-center gap-2 group/phone">
+                            <span className="text-slate-800 dark:text-slate-200 font-semibold">
+                              {vendor.phone}
+                            </span>
+                            <div className="flex items-center gap-0.5 opacity-60 group-hover/phone:opacity-100 transition-opacity">
+                              {knockUrl && (
+                                <a
+                                  href={knockUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded-md text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors"
+                                  title="Open WhatsApp chat directly"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleCopyPhone(vendor.id, vendor.phone)}
+                                className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                                title="Copy phone to clipboard"
+                              >
+                                {copiedId === vendor.id ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
                         </td>
 
                         {/* Offers Count */}
                         <td className="py-3 px-4 text-center">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 font-mono">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-mono">
                             {vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}
                           </span>
                         </td>
 
-                        {/* Last Activity */}
+                        {/* Last Activity Formatted */}
                         <td className="py-3 px-4 text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
-                          {vendor.lastSeen}
+                          <span title={vendor.lastSeen ? new Date(vendor.lastSeen).toLocaleString() : 'No recorded activity'}>
+                            {formatActivityTime(vendor.lastSeen)}
+                          </span>
                         </td>
 
                         {/* Actions Options Dropdown Button */}
@@ -478,13 +669,13 @@ export const VendorsView: React.FC = () => {
                               onClick={() =>
                                 setActiveDropdownVendorId(activeDropdownVendorId === vendor.id ? null : vendor.id)
                               }
-                              className="btn btn-secondary btn-sm inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold cursor-pointer shadow-xs hover:border-purple-500/50 transition-all"
+                              className="btn btn-secondary btn-sm inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold cursor-pointer shadow-xs hover:border-emerald-500/50 transition-all"
                               title="Carrier actions (Knock, Edit, Copy, Share, Delete)"
                             >
                               <span>Actions</span>
                               <ChevronDown
                                 className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-150 ${
-                                  activeDropdownVendorId === vendor.id ? 'rotate-180 text-purple-500' : ''
+                                  activeDropdownVendorId === vendor.id ? 'rotate-180 text-emerald-500' : ''
                                 }`}
                               />
                             </button>
@@ -492,7 +683,7 @@ export const VendorsView: React.FC = () => {
                             {activeDropdownVendorId === vendor.id && (
                               <div
                                 className={`absolute right-0 w-48 rounded-xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-700 shadow-xl py-1.5 z-40 text-xs text-left animate-in fade-in slide-in-from-top-1 ${
-                                  idx >= paginatedVendors.length - 2 && paginatedVendors.length > 2
+                                  paginatedVendors.length > 2 && idx >= paginatedVendors.length - 2
                                     ? 'bottom-full mb-1.5'
                                     : 'top-full mt-1.5'
                                 }`}
@@ -518,7 +709,7 @@ export const VendorsView: React.FC = () => {
                                   }}
                                   className="w-full px-3 py-2 flex items-center gap-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-dark-800 transition-colors font-medium cursor-pointer"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                  <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                                   <span>Edit Carrier</span>
                                 </button>
 
@@ -533,7 +724,7 @@ export const VendorsView: React.FC = () => {
                                   {copiedId === vendor.id ? (
                                     <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                   ) : (
-                                    <Copy className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                    <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                                   )}
                                   <span>{copiedId === vendor.id ? 'Phone Copied!' : 'Copy Phone'}</span>
                                 </button>
@@ -552,7 +743,7 @@ export const VendorsView: React.FC = () => {
                                   {copiedId === `link_${vendor.id}` ? (
                                     <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                   ) : (
-                                    <Share2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                                    <Share2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
                                   )}
                                   <span>{copiedId === `link_${vendor.id}` ? 'Link Copied!' : 'Share Link'}</span>
                                 </button>
@@ -584,7 +775,22 @@ export const VendorsView: React.FC = () => {
         </div>
       ) : paginatedVendors.length === 0 ? (
         <div className="glass-card rounded-2xl p-12 text-center text-slate-400 text-xs border border-slate-200 dark:border-dark-700/80">
-          No matching contacts or carriers found.
+          {vendors.length === 0 ? (
+            'No matching contacts or carriers found.'
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2.5">
+              <p className="font-semibold text-slate-700 dark:text-slate-300">
+                No carriers match your current filter or search criteria.
+              </p>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+              >
+                Reset Search & Filters
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         /* 2. CARDS FORMAT */
@@ -593,41 +799,51 @@ export const VendorsView: React.FC = () => {
             const rawP = cleanPhone(vendor.phone);
             const knockUrl = rawP ? `https://wa.me/${rawP}` : null;
             const isSlugMatch = Boolean(vendorSlug && matchesVendorSlug(vendor, vendorSlug));
+            const { title: displayName, isFallback } = getDisplayName(vendor);
             return (
               <div
                 key={vendor.id}
                 id={`vendor-card-${vendor.id}`}
-                className={`glass-card rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-dark-700/80 bg-white/80 dark:bg-dark-950/40 space-y-3 hover:border-purple-500/40 transition-colors shadow-sm ${
-                  isSlugMatch ? 'ring-2 ring-purple-500/60 shadow-lg' : ''
+                className={`glass-card rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-dark-700/80 bg-white/80 dark:bg-dark-950/40 space-y-3 hover:border-emerald-500/40 transition-colors shadow-sm ${
+                  isSlugMatch ? 'ring-2 ring-emerald-500/60 shadow-lg' : ''
                 }`}
               >
                 <div className="flex items-start justify-between gap-2.5">
                   <div className="flex items-start gap-3 min-w-0">
-                    <ProfileAvatar name={vendor.name} phone={vendor.phone} size="md" />
+                    <ProfileAvatar name={displayName} phone={vendor.phone} size="md" />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">{vendor.name}</h4>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                          <span className={isFallback ? 'text-slate-800 dark:text-slate-200' : ''}>
+                            {displayName}
+                          </span>
+                        </h4>
+                        {isFallback && !vendor.name && (
+                          <span className="text-[10px] font-normal text-slate-400 font-sans">(Company)</span>
+                        )}
                         {vendor.verified && (
                           <span title="Verified Active Carrier">
                             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0 pointer-events-none" />
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-slate-600 dark:text-slate-400 block mt-0.5 truncate">{vendor.company || '—'}</span>
+                      <span className="text-xs text-slate-600 dark:text-slate-400 block mt-0.5 truncate">
+                        {vendor.company || 'Independent Trader'}
+                      </span>
                       <span className="text-[10px] text-slate-500 font-mono block mt-0.5">
-                        {vendor.country}
+                        {cleanCountryName(vendor.country)}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 font-mono">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-mono">
                       {vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}
                     </span>
                     <button
                       type="button"
                       onClick={() => setVendorToEdit(vendor)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors cursor-pointer"
-                      title={`Edit carrier ${vendor.name}`}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                      title={`Edit carrier ${displayName}`}
                     >
                       <Edit3 className="w-3.5 h-3.5 pointer-events-none" />
                     </button>
@@ -635,7 +851,7 @@ export const VendorsView: React.FC = () => {
                       type="button"
                       onClick={() => setVendorToDelete(vendor)}
                       className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                      title={`Delete carrier ${vendor.name}`}
+                      title={`Delete carrier ${displayName}`}
                     >
                       <Trash2 className="w-3.5 h-3.5 pointer-events-none" />
                     </button>
@@ -646,7 +862,7 @@ export const VendorsView: React.FC = () => {
                   <div className="flex flex-wrap gap-1 pt-1">
                     {vendor.routes.slice(0, 3).map((r, i) => (
                       <span key={i} className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-50 dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-700 dark:text-slate-300">
-                        {r.country} {r.route_type} {r.rate_per_min ? `$${r.rate_per_min}` : ''}
+                        {cleanCountryName(r.country)} {r.route_type} {r.rate_per_min ? `$${r.rate_per_min}` : ''}
                       </span>
                     ))}
                   </div>
@@ -654,7 +870,12 @@ export const VendorsView: React.FC = () => {
 
                 <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs font-mono">
                   <span className="text-slate-700 dark:text-slate-400 text-[11px] truncate max-w-[65%]">{vendor.phone}</span>
-                  <span className="text-slate-500 text-[10px] shrink-0">Seen {vendor.lastSeen}</span>
+                  <span
+                    className="text-slate-500 text-[10px] shrink-0"
+                    title={vendor.lastSeen ? new Date(vendor.lastSeen).toLocaleString() : 'No recorded activity'}
+                  >
+                    Seen {formatActivityTime(vendor.lastSeen)}
+                  </span>
                 </div>
 
                 {/* 1-Word Action Buttons */}

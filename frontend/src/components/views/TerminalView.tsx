@@ -161,6 +161,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         <StreamTable
           messages={pageMessages}
           searchQuery={searchQuery}
+          filterType={filterType}
           autoScroll={autoScroll}
           sortField={sortField}
           sortDirection={sortDirection}

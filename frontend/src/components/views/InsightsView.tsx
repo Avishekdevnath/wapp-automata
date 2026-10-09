@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Scale,
   Sparkles,
@@ -9,6 +9,10 @@ import {
   MessageCircle,
   RefreshCw,
   SlidersHorizontal,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from 'lucide-react';
 import {
   fetchArbitrage,
@@ -41,6 +45,59 @@ export const InsightsView: React.FC = () => {
   const [pitches, setPitches] = useState<TradePitchItem[]>([]);
   const [generating, setGenerating] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // Arbitrage Filter & Sort State
+  const [arbSearch, setArbSearch] = useState('');
+  const [arbRouteType, setArbRouteType] = useState('all');
+  const [arbProfitableOnly, setArbProfitableOnly] = useState(false);
+  const [arbSort, setArbSort] = useState<'spread_desc' | 'margin_desc' | 'country_asc'>('spread_desc');
+  const [arbPage, setArbPage] = useState(1);
+  const ARB_PAGE_SIZE = 6;
+
+  const filteredOpportunities = useMemo(() => {
+    let list = opportunities.filter((opp) => {
+      if (arbProfitableOnly && opp.spread <= 0) return false;
+      if (arbRouteType !== 'all' && !(opp.route_type || '').toLowerCase().includes(arbRouteType.toLowerCase())) {
+        return false;
+      }
+      if (!arbSearch.trim()) return true;
+      const q = arbSearch.toLowerCase();
+      return (
+        opp.country.toLowerCase().includes(q) ||
+        opp.buyer_name.toLowerCase().includes(q) ||
+        opp.seller_name.toLowerCase().includes(q) ||
+        (opp.buyer_company && opp.buyer_company.toLowerCase().includes(q)) ||
+        (opp.seller_company && opp.seller_company.toLowerCase().includes(q))
+      );
+    });
+
+    list.sort((a, b) => {
+      if (arbSort === 'spread_desc') {
+        return b.spread - a.spread;
+      } else if (arbSort === 'margin_desc') {
+        return b.marginPercent - a.marginPercent;
+      } else if (arbSort === 'country_asc') {
+        return a.country.localeCompare(b.country);
+      }
+      return 0;
+    });
+
+    return list;
+  }, [opportunities, arbSearch, arbRouteType, arbProfitableOnly, arbSort]);
+
+  const totalArbPages = Math.max(1, Math.ceil(filteredOpportunities.length / ARB_PAGE_SIZE));
+  const paginatedOpportunities = useMemo(() => {
+    const start = (arbPage - 1) * ARB_PAGE_SIZE;
+    return filteredOpportunities.slice(start, start + ARB_PAGE_SIZE);
+  }, [filteredOpportunities, arbPage]);
+
+  const resetArbFilters = () => {
+    setArbSearch('');
+    setArbRouteType('all');
+    setArbProfitableOnly(false);
+    setArbSort('spread_desc');
+    setArbPage(1);
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -194,7 +251,7 @@ export const InsightsView: React.FC = () => {
 
       {/* Arbitrage Matchmaker Card */}
       <div className="glass-card rounded-2xl p-6 border border-slate-200 dark:border-dark-700/80 bg-white/80 dark:bg-dark-900/40 space-y-4 shadow-sm dark:shadow-xl backdrop-blur-md">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Scale className="w-4 h-4 text-amber-500 dark:text-amber-400" />
@@ -204,15 +261,120 @@ export const InsightsView: React.FC = () => {
               Matches buyers seeking routes (WTB) with vendors supplying capacity (WTS) for immediate spread
             </p>
           </div>
+          <span className="text-[11px] font-mono text-slate-500 font-semibold self-start sm:self-auto">
+            {filteredOpportunities.length} of {opportunities.length} Matched
+          </span>
+        </div>
+
+        {/* Arbitrage Controls Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between pt-2 border-t border-slate-200/60 dark:border-dark-800/60 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={arbSearch}
+              onChange={(e) => {
+                setArbSearch(e.target.value);
+                setArbPage(1);
+              }}
+              placeholder="Search country, buyer, or vendor..."
+              className="w-full pl-8 pr-8 py-1.5 bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 rounded-xl text-xs text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+            />
+            {arbSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  setArbSearch('');
+                  setArbPage(1);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xs p-1 cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Route Type */}
+            <select
+              value={arbRouteType}
+              onChange={(e) => {
+                setArbRouteType(e.target.value);
+                setArbPage(1);
+              }}
+              className="bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer font-medium"
+            >
+              <option value="all">All Profiles</option>
+              <option value="cli">CLI Only</option>
+              <option value="cc">CC Only</option>
+            </select>
+
+            {/* Sort Dropdown */}
+            <select
+              value={arbSort}
+              onChange={(e) => setArbSort(e.target.value as any)}
+              className="bg-slate-50 dark:bg-dark-950 border border-slate-200 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer font-medium"
+            >
+              <option value="spread_desc">Highest Spread ($)</option>
+              <option value="margin_desc">Highest Margin (%)</option>
+              <option value="country_asc">Country (A-Z)</option>
+            </select>
+
+            {/* Profitable Only Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                setArbProfitableOnly(!arbProfitableOnly);
+                setArbPage(1);
+              }}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                arbProfitableOnly
+                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-400'
+                  : 'bg-slate-100 dark:bg-dark-900 border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-dark-800'
+              }`}
+              title="Show only positive spread arbitrage"
+            >
+              + Spread Only
+            </button>
+
+            {/* Reset Filters */}
+            {(arbSearch || arbRouteType !== 'all' || arbProfitableOnly || arbSort !== 'spread_desc') && (
+              <button
+                type="button"
+                onClick={resetArbFilters}
+                className="text-xs text-slate-500 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 flex items-center gap-1 cursor-pointer transition-colors"
+                title="Reset filters"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">
-          {opportunities.length === 0 ? (
+          {paginatedOpportunities.length === 0 ? (
             <div className="p-8 text-center rounded-xl bg-slate-50/50 dark:bg-dark-950/40 border border-dashed border-slate-300 dark:border-dark-800 text-slate-400 text-xs">
-              No arbitrage opportunities detected yet. Live buy/sell spreads will appear here as wholesale routes are ingested.
+              {opportunities.length === 0 ? (
+                'No arbitrage opportunities detected yet. Live buy/sell spreads will appear here as wholesale routes are ingested.'
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">
+                    No arbitrage opportunities match your active search and filter criteria.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={resetArbFilters}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
-            opportunities.map((opp, idx) => {
+            paginatedOpportunities.map((opp, idx) => {
             const spreadPositive = opp.spread > 0;
             const waPhone = opp.seller_phone ? opp.seller_phone.replace(/\D/g, '') : '';
             return (
@@ -253,7 +415,7 @@ export const InsightsView: React.FC = () => {
                   <button
                     onClick={() => handleApplyOpportunity(opp)}
                     title="Load into AI Pitch Generator"
-                    className="btn btn-secondary btn-sm flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-200"
+                    className="btn btn-secondary btn-sm flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-200 cursor-pointer"
                   >
                     <SlidersHorizontal className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                     <span>Use In Pitch</span>
@@ -276,6 +438,38 @@ export const InsightsView: React.FC = () => {
           })
         )}
         </div>
+
+        {/* Pagination Bar */}
+        {totalArbPages > 1 && (
+          <div className="flex items-center justify-between pt-2 px-1 text-xs text-slate-500 select-none">
+            <span>
+              Showing page <strong className="text-slate-900 dark:text-white font-mono">{arbPage}</strong> of <strong className="text-slate-900 dark:text-white font-mono">{totalArbPages}</strong> ({filteredOpportunities.length} opportunities)
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setArbPage((p) => Math.max(1, p - 1))}
+                disabled={arbPage <= 1}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4 pointer-events-none" />
+              </button>
+              <span className="px-2 font-mono font-semibold text-slate-700 dark:text-slate-300">
+                {arbPage} / {totalArbPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setArbPage((p) => Math.min(totalArbPages, p + 1))}
+                disabled={arbPage >= totalArbPages}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-dark-700 bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                title="Next page"
+              >
+                <ChevronRight className="w-4 h-4 pointer-events-none" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 1-Click AI Trade Negotiation Pitch Generator */}
