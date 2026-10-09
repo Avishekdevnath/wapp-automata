@@ -21,8 +21,8 @@ export const WhatsAppConnectionCard: React.FC<WhatsAppConnectionCardProps> = ({
 
   const handleUnlinkWhatsApp = async () => {
     const ok = window.confirm(
-      'Are you sure you want to UNLINK your current WhatsApp account?\n\n' +
-      'This will clear active session tokens and restart the collector so you can scan a fresh QR code or enter an 8-digit pair code.\n' +
+      'Log out and unlink current WhatsApp account?\n\n' +
+      'To log in or connect another WhatsApp account, you must log out of this active session first.\n' +
       'All saved routes, AI tasks, and incoming chat logs will remain completely safe.'
     );
     if (!ok) return;
@@ -109,7 +109,7 @@ export const WhatsAppConnectionCard: React.FC<WhatsAppConnectionCardProps> = ({
           className="btn btn-danger btn-sm text-xs font-semibold flex items-center gap-1.5"
         >
           <LogOut className="w-3.5 h-3.5" />
-          <span>Switch Account / Unlink Device</span>
+          <span>Log Out Current Account & Link Another</span>
         </button>
         <button
           onClick={handleRestartSocket}

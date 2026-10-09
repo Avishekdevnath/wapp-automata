@@ -227,6 +227,12 @@ app.post(['/api/session/restart', '/api/session/refresh', '/api/connect'], async
 });
 
 app.post(['/api/session/pair-code', '/api/pair-code'], async (req, res) => {
+  const status = getStatus();
+  if (status.connected || status.status === 'authenticated') {
+    return res.status(400).json({
+      error: 'A WhatsApp account is currently connected. You must log out of the active account before linking another account.'
+    });
+  }
   const { phone } = req.body || {};
   if (!phone) {
     return res.status(400).json({ error: 'Phone number is required' });
@@ -277,9 +283,16 @@ app.post(['/api/accounts/create', '/api/admin/desks'], (req, res) => {
 });
 
 app.post('/api/accounts/switch', async (req, res) => {
-  const { accountId } = req.body || {};
+  const { accountId, force } = req.body || {};
   if (!accountId) {
     return res.status(400).json({ error: 'accountId is required' });
+  }
+
+  const status = getStatus();
+  if ((status.connected || status.status === 'authenticated') && !force) {
+    return res.status(400).json({
+      error: 'A WhatsApp session is currently connected. You must log out of the active WhatsApp account before switching desks.'
+    });
   }
 
   try {

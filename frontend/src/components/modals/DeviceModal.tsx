@@ -9,7 +9,8 @@ import {
   RefreshCw,
   Copy,
   Check,
-  Info
+  Info,
+  AlertTriangle
 } from 'lucide-react';
 import type { DeviceStatus } from '../../types/status';
 
@@ -76,7 +77,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
   };
 
   const handleResetSession = async () => {
-    if (!confirm('Are you sure you want to unlink and reset the WhatsApp session?')) return;
+    if (!confirm('Log out and unlink current WhatsApp account?\n\nTo log in or connect another WhatsApp account, you must log out of this active session first.\n\nYour message history and settings remain safe.')) return;
     setIsResetting(true);
     try {
       await fetch('/api/session/reset', { method: 'POST' });
@@ -142,8 +143,8 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">WhatsApp Account Active</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Your phone is linked 24/7 to the collector daemon.</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active WhatsApp Connected</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Single active terminal desk connected 24/7 to collector daemon.</p>
             </div>
 
             <div className="bg-slate-50 dark:bg-dark-900 rounded-2xl p-4 border border-slate-200 dark:border-dark-800 text-left space-y-2">
@@ -163,15 +164,26 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
               </div>
             </div>
 
-            <div className="pt-2">
+            {/* Single Desk Rule Warning */}
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-left text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <span>Single Active Desk Rule</span>
+              </div>
+              <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                Only one WhatsApp account can be connected at a time. To link or log in to a different WhatsApp account, you must log out of this account first.
+              </p>
+            </div>
+
+            <div className="pt-1">
               <button
                 onClick={handleResetSession}
                 disabled={isResetting}
-                className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-300 dark:bg-dark-800 dark:hover:bg-rose-900/30 dark:text-rose-300 dark:border-dark-700 dark:hover:border-rose-500/40 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
-                title="Switch or log out active WhatsApp account"
+                className="w-full py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 hover:border-rose-300 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-300 dark:border-rose-800 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs whitespace-nowrap"
+                title="Log out from current WhatsApp to allow linking another account"
               >
                 {isResetting ? <Loader2 className="w-4 h-4 animate-spin pointer-events-none" /> : <LogOut className="w-4 h-4 pointer-events-none" />}
-                <span>Log Out</span>
+                <span>Log Out Current Account & Link Another</span>
               </button>
             </div>
           </div>
