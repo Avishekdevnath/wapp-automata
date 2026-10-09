@@ -74,6 +74,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       'pipeline',
       'dev',
       'settings',
+      'help',
     ];
     if (validViews.includes(segment as ViewType)) return segment as ViewType;
     return 'routes';
