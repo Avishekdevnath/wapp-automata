@@ -9,6 +9,7 @@ import {
   getAccountConfig,
   getActiveAccountId,
   setActiveAccountId,
+  ensureAccountDirs,
   listAccounts
 } from './storage/account.js';
 import { getDb, closeDb } from './storage/db.js';
