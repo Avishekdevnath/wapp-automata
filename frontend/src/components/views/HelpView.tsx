@@ -345,7 +345,7 @@ export const HelpView: React.FC<HelpViewProps> = ({
           { id: 'pairing', label: 'WhatsApp Pairing' },
           { id: 'stream', label: 'Live Stream' },
           { id: 'desks', label: 'Multi-Desk' },
-          { id: 'security', label: 'Security & OTP' },
+          { id: 'security', label: 'Login & Security' },
           { id: 'wholesale', label: 'Rates & Routes' },
           { id: 'troubleshooting', label: 'Troubleshooting' },
         ].map((cat) => (

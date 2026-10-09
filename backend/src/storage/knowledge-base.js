@@ -2,6 +2,100 @@
  * Default Seed Knowledge Base Articles for Telcia WAPP Automata
  */
 export const SEED_KNOWLEDGE_BASE = [
+  // 0. LOGIN, ACCESS & AUTHENTICATION
+  {
+    id: 'terminal-login-access',
+    category: 'security',
+    category_label: 'Login & Access Control',
+    question: 'How do I log in or unlock the Telcia terminal?',
+    short_answer: 'Enter your master terminal password on the central lock screen and click "Unlock Terminal".',
+    detailed_steps: JSON.stringify([
+      'Open https://telcia.bijoytel.network in your web browser.',
+      'On the lock screen dialog, type your terminal password.',
+      'Click "Unlock Terminal" or press Enter to access your active desk.',
+      'If this is your first time logging in and no password was configured, contact your server operator or set an initial password.',
+      'If you have forgotten the password, click "Forgot Password?" below the input to receive a 6-digit verification code directly on your linked WhatsApp.'
+    ]),
+    wait_time: 'Instant (1s)',
+    tags: JSON.stringify(['login', 'log in', 'signin', 'sign in', 'unlock', 'lock screen', 'access', 'terminal password', 'authentication', 'password']),
+    action_label: 'Security Settings',
+    action_type: 'settings',
+    sort_order: 1
+  },
+  {
+    id: 'forgot-login-password',
+    category: 'security',
+    category_label: 'Login & Access Control',
+    question: 'I forgot my login password. How do I recover it via WhatsApp OTP?',
+    short_answer: 'Click "Forgot Password?" on the lock screen to receive a 6-digit verification code directly on your linked WhatsApp phone.',
+    detailed_steps: JSON.stringify([
+      'On the terminal lock screen, click the "Forgot Password?" button.',
+      'The system will show your currently linked WhatsApp phone (e.g. +88018 •••• 713).',
+      'Click "Send Code to WhatsApp".',
+      'Within 5 to 15 seconds, a security notification containing your 6-digit PIN arrives in your WhatsApp self-chat.',
+      'Enter the 6-digit code, type your new password, confirm it, and click "Reset Password & Unlock".',
+      'The terminal updates your credentials in SQLite and logs you in immediately.'
+    ]),
+    wait_time: '5 – 15 Seconds Delivery',
+    tags: JSON.stringify(['login', 'forgot password', 'login recovery', 'reset login', 'otp', 'pin', 'lock screen', 'signin', 'unlock password']),
+    action_label: 'Security Settings',
+    action_type: 'settings',
+    sort_order: 2
+  },
+  {
+    id: 'logout-and-switch-account',
+    category: 'security',
+    category_label: 'Login & Access Control',
+    question: 'How do I log out or log in with another WhatsApp account?',
+    short_answer: 'Click the Lock icon in the header to log out, or switch Desks to access another isolated WhatsApp account.',
+    detailed_steps: JSON.stringify([
+      'To Log Out: Click the Lock icon in the top right header to lock the terminal immediately.',
+      'To Log In with Another WhatsApp Account: Click your active Desk in the top header and select a different desk or "+ Create New Desk...".',
+      'Each desk maintains its own isolated WhatsApp companion login. You can link Phone A to Desk 1 and Phone B to Desk 2 with zero cross-talk.',
+      'To unlink a WhatsApp account from an existing desk: Go to Settings → WhatsApp Gateway card → Click "Unlink & Reset".'
+    ]),
+    wait_time: 'Instant Switching',
+    tags: JSON.stringify(['login', 'logout', 'log out', 'sign out', 'switch account', 'change user', 'multiple logins', 'another account', 'lock']),
+    action_label: 'Manage Desks',
+    action_type: 'settings',
+    sort_order: 3
+  },
+  {
+    id: 'login-invalid-attempts',
+    category: 'security',
+    category_label: 'Login & Access Control',
+    question: 'What happens if someone enters an incorrect login password or wrong OTP?',
+    short_answer: 'Incorrect passwords are rejected with security logs; OTP resets lock after 5 bad attempts for brute-force protection.',
+    detailed_steps: JSON.stringify([
+      'Incorrect login password attempts are rejected immediately with HTTP 401.',
+      'During WhatsApp OTP password reset, the 6-digit PIN is strictly valid for 5 minutes.',
+      'If 5 incorrect OTP codes are entered, the security PIN is destroyed immediately to prevent brute-force attacks.',
+      'A 60-second cooldown is enforced before a new verification code can be dispatched to your phone.'
+    ]),
+    wait_time: '60s Cooldown / 5m Expiry',
+    tags: JSON.stringify(['login', 'failed login', 'wrong password', 'brute force', 'security lock', 'otp attempts', 'lockout', 'invalid password']),
+    action_label: 'Security Settings',
+    action_type: 'settings',
+    sort_order: 4
+  },
+  {
+    id: 'keep-login-session',
+    category: 'security',
+    category_label: 'Login & Access Control',
+    question: 'How long does my terminal login session last?',
+    short_answer: 'Your authenticated session is stored securely in your browser and persists until you explicitly log out.',
+    detailed_steps: JSON.stringify([
+      'Once unlocked, a secure authentication token is stored in your browser local storage.',
+      'Refreshing the page, switching tabs, or reopening your browser will keep you logged in on that device.',
+      'To protect sensitive wholesale carrier data on shared workstations, always click the Lock icon in the header before leaving your desk.'
+    ]),
+    wait_time: 'Persistent Session',
+    tags: JSON.stringify(['login', 'session duration', 'stay logged in', 'remember me', 'browser session', 'token', 'auth persistence']),
+    action_label: 'Security Settings',
+    action_type: 'settings',
+    sort_order: 5
+  },
+
   // 1. WHATSAPP PAIRING
   {
     id: 'pairing-wait-time',
@@ -17,10 +111,10 @@ export const SEED_KNOWLEDGE_BASE = [
       'Once the green "Connected" badge appears, live incoming traffic will begin streaming automatically.'
     ]),
     wait_time: '3 – 5 Minutes',
-    tags: JSON.stringify(['pairing', 'wait time', 'linking', 'sync', 'initial setup', 'duration']),
+    tags: JSON.stringify(['pairing', 'wait time', 'linking', 'sync', 'initial setup', 'duration', 'login', 'whatsapp login']),
     action_label: 'Open Pairing Modal',
     action_type: 'device-modal',
-    sort_order: 1
+    sort_order: 6
   },
   {
     id: 'pairing-methods',
@@ -35,10 +129,10 @@ export const SEED_KNOWLEDGE_BASE = [
       'Leave your phone screen active for 3–5 minutes until initial synchronization completes.'
     ]),
     wait_time: '30s to Pair + 3–5m Sync',
-    tags: JSON.stringify(['qr code', 'pairing code', 'link device', 'companion', 'how to link']),
+    tags: JSON.stringify(['qr code', 'pairing code', 'link device', 'companion', 'how to link', 'whatsapp signin', 'login']),
     action_label: 'Link Account Now',
     action_type: 'device-modal',
-    sort_order: 2
+    sort_order: 7
   },
   {
     id: 'phone-background-sleep',
@@ -53,10 +147,10 @@ export const SEED_KNOWLEDGE_BASE = [
       'WhatsApp Multi-Device will maintain the companion socket connection 24/7 on your VPS.'
     ]),
     wait_time: '1 Minute Setup',
-    tags: JSON.stringify(['battery saver', 'sleep', 'disconnect', 'keep alive', 'background']),
+    tags: JSON.stringify(['battery saver', 'sleep', 'disconnect', 'keep alive', 'background', 'offline']),
     action_label: 'Check Connection',
     action_type: 'device-modal',
-    sort_order: 3
+    sort_order: 8
   },
   {
     id: 'reconnect-on-reboot',
@@ -71,10 +165,10 @@ export const SEED_KNOWLEDGE_BASE = [
       'The live stream will automatically resume as new broadcasts arrive.'
     ]),
     wait_time: '30 – 60 Seconds',
-    tags: JSON.stringify(['restart', 'reboot', 'reconnect', 'offline catchup', 'automatic']),
+    tags: JSON.stringify(['restart', 'reboot', 'reconnect', 'offline catchup', 'automatic', 're-login']),
     action_label: 'View Stream',
     action_type: 'stream',
-    sort_order: 4
+    sort_order: 9
   },
   {
     id: 'session-logged-out',
@@ -82,17 +176,17 @@ export const SEED_KNOWLEDGE_BASE = [
     category_label: 'WhatsApp Pairing',
     question: 'What should I do if the terminal says "Session Logged Out"?',
     short_answer: 'If a session was unlinked from the phone, simply generate a fresh QR code or 8-digit pairing code.',
-    detailed_steps: [
+    detailed_steps: JSON.stringify([
       'Open the WhatsApp Pairing modal from the header.',
       'Click "Reset Session & Re-link" to clear old session tokens.',
       'Scan the new QR code or request an 8-digit code with your phone number.',
       'Existing messages in your database are 100% safe and will NOT be erased when re-linking.'
-    ],
+    ]),
     wait_time: '3 – 5 Minutes',
-    tags: JSON.stringify(['logged out', 'session expired', 'relink', 're-auth', 'disconnected']),
+    tags: JSON.stringify(['logged out', 'session expired', 'relink', 're-auth', 'disconnected', 'login again']),
     action_label: 'Reset & Re-link',
     action_type: 'device-modal',
-    sort_order: 5
+    sort_order: 10
   },
 
   // 2. LIVE MESSAGE STREAM & INGESTION
@@ -112,7 +206,7 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['search', 'filter', 'rates', 'destinations', 'find messages', 'country code']),
     action_label: 'Go to Live Stream',
     action_type: 'stream',
-    sort_order: 6
+    sort_order: 11
   },
   {
     id: 'formatted-vs-raw',
@@ -130,7 +224,7 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['formatting', 'markdown', 'raw', 'bold', 'verbatim', 'copy message']),
     action_label: 'View Stream',
     action_type: 'stream',
-    sort_order: 7
+    sort_order: 12
   },
   {
     id: 'export-csv-excel',
@@ -148,7 +242,7 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['export', 'csv', 'excel', 'download', 'backup', 'reports']),
     action_label: 'Export Data',
     action_type: 'stream',
-    sort_order: 8
+    sort_order: 13
   },
 
   // 3. MULTI-DESK WORKSPACES
@@ -165,10 +259,10 @@ export const SEED_KNOWLEDGE_BASE = [
       'You can switch desks seamlessly from the top navigation bar without logging out.'
     ]),
     wait_time: 'Instant Switching (1s)',
-    tags: JSON.stringify(['multi-desk', 'desk', 'workspace', 'data isolation', 'separation', 'accounts']),
+    tags: JSON.stringify(['multi-desk', 'desk', 'workspace', 'data isolation', 'separation', 'accounts', 'login']),
     action_label: 'Terminal Settings',
     action_type: 'settings',
-    sort_order: 9
+    sort_order: 14
   },
   {
     id: 'create-new-desk',
@@ -184,50 +278,10 @@ export const SEED_KNOWLEDGE_BASE = [
       'Open the device modal to link a separate WhatsApp number to this new desk.'
     ]),
     wait_time: '2 – 3 Seconds',
-    tags: JSON.stringify(['new desk', 'add desk', 'create desk', 'multiple accounts', 'setup']),
+    tags: JSON.stringify(['new desk', 'add desk', 'create desk', 'multiple accounts', 'setup', 'new login']),
     action_label: 'View Desks',
     action_type: 'settings',
-    sort_order: 10
-  },
-
-  // 4. SECURITY & PASSWORD OTP
-  {
-    id: 'forgot-password-otp',
-    category: 'security',
-    category_label: 'Security & Password OTP',
-    question: 'What do I do if I forget the terminal master password?',
-    short_answer: 'Click "Forgot Password?" on the lock screen to receive a 6-digit verification code directly on WhatsApp.',
-    detailed_steps: JSON.stringify([
-      'On the lock screen, click the "Forgot Password?" link below the password input.',
-      'The terminal detects your active linked WhatsApp companion number.',
-      'Click "Send Code to WhatsApp".',
-      'Within 5 to 15 seconds, a security alert message containing your 6-digit PIN arrives in your WhatsApp self-chat.',
-      'Enter the 6-digit code, type your new password, confirm it, and click "Reset Password & Unlock".',
-      'You are immediately logged in with your new password.'
-    ]),
-    wait_time: '5 – 15 Seconds Delivery',
-    tags: JSON.stringify(['forgot password', 'otp', 'reset password', 'recovery', 'pin', 'lock screen']),
-    action_label: 'Security Settings',
-    action_type: 'settings',
-    sort_order: 11
-  },
-  {
-    id: 'otp-cooldown-expiry',
-    category: 'security',
-    category_label: 'Security & Password OTP',
-    question: 'What are the rules and timers for Password Reset OTP?',
-    short_answer: 'OTPs arrive in 5-15s, expire in 5 minutes, enforce a 60s resend cooldown, and lock after 5 bad attempts.',
-    detailed_steps: JSON.stringify([
-      'Delivery Time: 5 to 15 seconds directly to your linked WhatsApp device.',
-      'Code Validity: 5 minutes. After 5 minutes, the PIN self-destructs and you must request a new code.',
-      'Resend Cooldown: 60 seconds. A live timer prevents rapid resend button clicks.',
-      'Brute-Force Protection: Entering 5 incorrect codes will automatically invalidate the session for safety.'
-    ]),
-    wait_time: '60s Cooldown / 5m Expiry',
-    tags: JSON.stringify(['otp timers', 'cooldown', 'expiry', 'security rules', 'rate limit']),
-    action_label: 'Security Settings',
-    action_type: 'settings',
-    sort_order: 12
+    sort_order: 15
   },
 
   // 5. WHOLESALE RATES & MARKET INTELLIGENCE
@@ -247,7 +301,7 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['routes', 'buying', 'selling', 'rates', 'cli', 'non-cli', 'wholesale']),
     action_label: 'View Routes',
     action_type: 'routes',
-    sort_order: 13
+    sort_order: 16
   },
   {
     id: 'vendor-profiles',
@@ -265,7 +319,7 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['carriers', 'vendors', 'directory', 'traders', 'contact', 'telecom']),
     action_label: 'Carriers Directory',
     action_type: 'routes',
-    sort_order: 14
+    sort_order: 17
   },
 
   // 6. TROUBLESHOOTING & SYSTEM HEALTH
@@ -285,7 +339,7 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['ban', 'suspension', 'safety', 'companion mode', 'account risk']),
     action_label: 'System Pipeline',
     action_type: 'settings',
-    sort_order: 15
+    sort_order: 18
   },
   {
     id: 'storage-cleanup-retention',
@@ -304,7 +358,7 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['disk space', 'prune', 'retention', 'storage', 'cleanup', 'vacuum']),
     action_label: 'Storage Settings',
     action_type: 'settings',
-    sort_order: 16
+    sort_order: 19
   },
   {
     id: 'ai-rag-how-to-enable',
@@ -323,7 +377,7 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['ai', 'rag', 'deepseek', 'openai', 'grok', 'api key', 'ai assistant']),
     action_label: 'Configure AI Key',
     action_type: 'ai-settings',
-    sort_order: 17
+    sort_order: 20
   },
   {
     id: 'messages-not-appearing',
@@ -341,12 +395,12 @@ export const SEED_KNOWLEDGE_BASE = [
     tags: JSON.stringify(['missing messages', 'no messages', 'sync delay', 'filter', 'troubleshoot']),
     action_label: 'Check Settings',
     action_type: 'settings',
-    sort_order: 18
+    sort_order: 21
   }
 ];
 
 /**
- * Ensures knowledge_base table exists and seeds initial records if empty
+ * Ensures knowledge_base table exists and syncs seed records
  */
 export function ensureKnowledgeBase(db) {
   db.exec(`
@@ -368,34 +422,31 @@ export function ensureKnowledgeBase(db) {
     CREATE INDEX IF NOT EXISTS idx_kb_order ON knowledge_base (sort_order ASC);
   `);
 
-  const countRow = db.prepare('SELECT COUNT(*) as count FROM knowledge_base').get();
-  if (countRow.count === 0) {
-    console.log('🌱 [Database] Seeding initial Knowledge Base articles into SQLite...');
-    const insertStmt = db.prepare(`
-      INSERT OR REPLACE INTO knowledge_base 
-      (id, category, category_label, question, short_answer, detailed_steps, wait_time, tags, action_label, action_type, sort_order, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+  console.log('🌱 [Database] Syncing Knowledge Base articles into SQLite...');
+  const insertStmt = db.prepare(`
+    INSERT OR REPLACE INTO knowledge_base 
+    (id, category, category_label, question, short_answer, detailed_steps, wait_time, tags, action_label, action_type, sort_order, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
 
-    const now = Date.now();
-    for (const item of SEED_KNOWLEDGE_BASE) {
-      const stepsStr = typeof item.detailed_steps === 'string' ? item.detailed_steps : JSON.stringify(item.detailed_steps);
-      const tagsStr = typeof item.tags === 'string' ? item.tags : JSON.stringify(item.tags);
-      insertStmt.run(
-        item.id,
-        item.category,
-        item.category_label,
-        item.question,
-        item.short_answer,
-        stepsStr,
-        item.wait_time || null,
-        tagsStr,
-        item.action_label || null,
-        item.action_type || null,
-        item.sort_order || 0,
-        now
-      );
-    }
-    console.log(`✅ [Database] Seeded ${SEED_KNOWLEDGE_BASE.length} Knowledge Base articles.`);
+  const now = Date.now();
+  for (const item of SEED_KNOWLEDGE_BASE) {
+    const stepsStr = typeof item.detailed_steps === 'string' ? item.detailed_steps : JSON.stringify(item.detailed_steps);
+    const tagsStr = typeof item.tags === 'string' ? item.tags : JSON.stringify(item.tags);
+    insertStmt.run(
+      item.id,
+      item.category,
+      item.category_label,
+      item.question,
+      item.short_answer,
+      stepsStr,
+      item.wait_time || null,
+      tagsStr,
+      item.action_label || null,
+      item.action_type || null,
+      item.sort_order || 0,
+      now
+    );
   }
+  console.log(`✅ [Database] Seeded & updated ${SEED_KNOWLEDGE_BASE.length} Knowledge Base articles.`);
 }
