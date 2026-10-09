@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { getAccountPaths, getActiveAccountId, setActiveAccountId } from './account.js';
+import { ensureKnowledgeBase } from './knowledge-base.js';
 
 let activeDbInstance = null;
 let currentDbAccountId = null;
@@ -137,6 +138,13 @@ function initializeSchemas(db) {
     try {
       db.prepare(`ALTER TABLE caught_messages ADD COLUMN ${col} ${colType}`).run();
     } catch (_) {}
+  }
+
+  // Initialize and seed Knowledge Base if empty
+  try {
+    ensureKnowledgeBase(db);
+  } catch (err) {
+    console.error('Failed to ensure Knowledge Base schema:', err.message);
   }
 }
 

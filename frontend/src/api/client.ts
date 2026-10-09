@@ -69,6 +69,74 @@ export async function verifyPasswordResetOtp(code: string, newPassword: string):
   }
 }
 
+export interface HelpArticleItem {
+  id: string;
+  category: string;
+  categoryLabel: string;
+  question: string;
+  shortAnswer: string;
+  detailedSteps: string[];
+  waitTime?: string;
+  tags: string[];
+  actionLink?: {
+    label: string;
+    action: string;
+  } | null;
+  sortOrder?: number;
+}
+
+export async function fetchHelpArticles(category = 'all', query = ''): Promise<HelpArticleItem[]> {
+  try {
+    const params = new URLSearchParams();
+    if (category && category !== 'all') params.set('category', category);
+    if (query && query.trim()) params.set('q', query.trim());
+
+    const res = await authenticatedFetch(`${API_BASE}/help/articles?${params.toString()}`);
+    if (!res.ok) throw new Error('Failed to load help articles');
+    const data = await res.json();
+    return data.articles || [];
+  } catch (err) {
+    console.error('Failed to fetch help articles:', err);
+    return [];
+  }
+}
+
+export async function askHelpConcierge(question: string): Promise<{
+  mode: 'ai' | 'local';
+  answer?: string;
+  provider?: string;
+  matchedArticleIds?: string[];
+  fallbackReason?: string;
+  message?: string;
+}> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/help/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { mode: 'local', fallbackReason: err?.message || 'Network error' };
+  }
+}
+
+export async function fetchAiSettings(): Promise<{
+  provider: string;
+  deepseekKey: string;
+  openaiKey: string;
+  grokKey: string;
+  hasConfiguredKey: boolean;
+}> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/ai/settings`);
+    if (!res.ok) throw new Error('Failed to fetch AI settings');
+    return await res.json();
+  } catch {
+    return { provider: 'deepseek', deepseekKey: '', openaiKey: '', grokKey: '', hasConfiguredKey: false };
+  }
+}
+
 async function authenticatedFetch(url: string, init?: RequestInit): Promise<Response> {
   const token = localStorage.getItem('wapp_token');
   const activeAccount = localStorage.getItem('wapp_active_account');

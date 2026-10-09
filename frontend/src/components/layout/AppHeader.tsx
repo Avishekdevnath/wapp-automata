@@ -68,6 +68,10 @@ const VIEW_METADATA: Record<ViewType, { title: string; sub: string }> = {
     title: 'Terminal Settings & Gateway',
     sub: 'WhatsApp Multi-Device authentication, storage, and retention',
   },
+  help: {
+    title: 'Client Knowledge Base & Help Concierge',
+    sub: 'Step-by-step guides, pairing wait times, multi-desk setup, and AI RAG assistance',
+  },
 };
 
 export const AppHeader: React.FC<AppHeaderProps> = ({

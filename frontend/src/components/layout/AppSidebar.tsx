@@ -13,6 +13,7 @@ import {
   QrCode,
   HardDrive,
   MessageSquare,
+  HelpCircle,
   X
 } from 'lucide-react';
 import type { StreamStats } from '../../types/message';
@@ -29,7 +30,8 @@ export type ViewType =
   | 'terminal'
   | 'pipeline'
   | 'dev'
-  | 'settings';
+  | 'settings'
+  | 'help';
 
 interface AppSidebarProps {
   activeView: ViewType;
@@ -205,6 +207,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       iconColor: 'text-emerald-400',
       badge: 'Admin',
       badgeClass: 'text-[10px] text-slate-500',
+    },
+    {
+      id: 'help' as ViewType,
+      path: '/help',
+      label: 'Help & Knowledge',
+      icon: HelpCircle,
+      iconColor: 'text-amber-400',
+      badge: 'Guide',
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300',
     },
   ];
 

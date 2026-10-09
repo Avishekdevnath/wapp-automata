@@ -13,6 +13,7 @@ const VendorsView = lazy(() => import('./VendorsView').then((m) => ({ default: m
 const PipelineView = lazy(() => import('./PipelineView').then((m) => ({ default: m.PipelineView })));
 const DevView = lazy(() => import('./DevView').then((m) => ({ default: m.DevView })));
 const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default: m.SettingsView })));
+const HelpView = lazy(() => import('./HelpView').then((m) => ({ default: m.HelpView })));
 
 import type { WhatsAppMessage, StreamStats } from '../../types/message';
 import type { DeviceStatus } from '../../types/status';
@@ -220,6 +221,20 @@ export const ViewDispatcher: React.FC<ViewDispatcherProps> = ({
               onRefreshStatus={onRefreshStatus}
               onOpenDeviceModal={() => openModal('device')}
               onOpenDeleteStreamModal={() => openModal('delete')}
+            />
+          </Suspense>
+        }
+      />
+
+      {/* 9.5. Help Center & Knowledge Base */}
+      <Route
+        path="/help"
+        element={
+          <Suspense fallback={<ViewFallback />}>
+            <HelpView
+              onOpenDeviceModal={() => openModal('device')}
+              onOpenAiSettingsModal={() => openModal('ai-settings')}
+              onSwitchView={(v) => navigate(v === 'terminal' ? '/stream' : `/${v}`)}
             />
           </Suspense>
         }
