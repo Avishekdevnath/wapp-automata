@@ -339,18 +339,17 @@ export async function connectWhatsApp() {
     sock = makeWASocket({
       version,
       auth: state,
-      printQRInTerminal: true,
-      browser: ['Ubuntu', 'Chrome', '124.0.0.0'],
-      syncFullHistory: false,
+      printQRInTerminal: false,
+      browser: ['Telcia BD', 'Chrome', '124.0.0.0'],
+      syncFullHistory: true,
       markOnlineOnConnect: false,
       generateHighQualityLinkPreview: false,
+      defaultQueryTimeoutMs: 60000,
       getMessage: async (key) => {
         if (!key || !key.id) return undefined;
         return getRawMessage(key.id);
       },
-      shouldSyncHistoryMessage: (historyMsg) => {
-        return Boolean(historyMsg && !historyMsg.isFullHistory);
-      }
+      shouldSyncHistoryMessage: () => true
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -618,11 +617,12 @@ export async function catchupRecentChats(count = 50) {
     const { getDb } = await import('../storage/db.js');
     const db = getDb();
     const activeChats = db.prepare(`
-      SELECT remote_jid, MAX(id) as last_id, MAX(timestamp) as last_ts, MAX(is_from_me) as is_from_me
+      SELECT remote_jid, MIN(id) as oldest_id, MIN(timestamp) as oldest_ts, is_from_me
       FROM caught_messages
+      WHERE remote_jid != 'status@broadcast'
       GROUP BY remote_jid
-      ORDER BY last_ts DESC
-      LIMIT 15
+      ORDER BY MAX(timestamp) DESC
+      LIMIT 30
     `).all();
 
     let requestedCount = 0;
@@ -631,10 +631,10 @@ export async function catchupRecentChats(count = 50) {
         const key = {
           remoteJid: chat.remote_jid,
           fromMe: Boolean(chat.is_from_me),
-          id: chat.last_id
+          id: chat.oldest_id
         };
         if (typeof sock.fetchMessageHistory === 'function') {
-          await sock.fetchMessageHistory(count, key, chat.last_ts);
+          await sock.fetchMessageHistory(count, key, chat.oldest_ts);
           requestedCount++;
           await new Promise(r => setTimeout(r, 600));
         }
@@ -643,6 +643,38 @@ export async function catchupRecentChats(count = 50) {
     return { status: 'ok', requested: requestedCount };
   } catch (err) {
     console.warn('[WhatsApp] Catch-up error:', err.message);
+    return { status: 'error', error: err.message, requested: 0 };
+  }
+}
+
+export async function fetchChatHistory(remoteJid, count = 50) {
+  if (!sock || connectionState.status !== 'connected' || !remoteJid) {
+    return { status: 'not_connected', requested: 0 };
+  }
+  try {
+    const { getDb } = await import('../storage/db.js');
+    const db = getDb();
+    const oldest = db.prepare(`
+      SELECT id, timestamp, is_from_me
+      FROM caught_messages
+      WHERE remote_jid = ?
+      ORDER BY timestamp ASC
+      LIMIT 1
+    `).get(remoteJid);
+
+    if (typeof sock.fetchMessageHistory === 'function') {
+      const key = {
+        remoteJid,
+        fromMe: oldest ? Boolean(oldest.is_from_me) : false,
+        id: oldest ? oldest.id : `msg_${Date.now()}`
+      };
+      const ts = oldest ? oldest.timestamp : Date.now();
+      await sock.fetchMessageHistory(count, key, ts);
+      return { status: 'ok', requested: count, fromId: key.id };
+    }
+    return { status: 'unsupported', requested: 0 };
+  } catch (err) {
+    console.warn(`[WhatsApp] fetchChatHistory error for ${remoteJid}:`, err.message);
     return { status: 'error', error: err.message, requested: 0 };
   }
 }

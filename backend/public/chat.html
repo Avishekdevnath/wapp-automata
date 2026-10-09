@@ -1478,7 +1478,7 @@
         const data = await res.json();
         currentChatMessages = data.messages || [];
 
-        const totalInDb = (typeof data.totalInDb === 'number') ? data.totalInDb : currentChatMessages.length;
+        const totalInDb = (typeof data.totalInDb === 'number') ? data.totalInDb : ((typeof data.total === 'number') ? data.total : currentChatMessages.length);
         const loadedCount = (typeof data.loadedCount === 'number') ? data.loadedCount : currentChatMessages.length;
 
         // Sync with activeChatMeta & sidebar badge
@@ -1493,12 +1493,21 @@
 
         // Header status display
         const countEl = document.getElementById('active-chat-count');
-        if (loadedCount >= totalInDb) {
-          countEl.innerHTML = `<span style="color: #4ade80; font-weight: 700;">✓ ${totalInDb.toLocaleString()} messages (All Loaded)</span>`;
+        if (totalInDb === 0) {
+          countEl.innerHTML = `
+            <span style="color: #94a3b8; font-weight: 500;">0 messages in local database</span>
+            <button class="btn btn-secondary" style="padding: 2px 9px; font-size: 11px; margin-left: 8px; border-radius: 6px; cursor: pointer;" onclick="requestPhoneCatchup(this)" title="Request historical messages backwards from your WhatsApp phone">📥 Fetch from Phone</button>
+          `;
+        } else if (loadedCount >= totalInDb) {
+          countEl.innerHTML = `
+            <span style="color: #4ade80; font-weight: 700;">✓ ${totalInDb.toLocaleString()} messages (All Loaded)</span>
+            <button class="btn btn-secondary" style="padding: 2px 9px; font-size: 11px; margin-left: 8px; border-radius: 6px; cursor: pointer;" onclick="requestPhoneCatchup(this)" title="Request older history packets directly from your WhatsApp phone">📥 Fetch Older from Phone</button>
+          `;
         } else {
           countEl.innerHTML = `
             <span style="color: #fbbf24; font-weight: 600;">Showing ${loadedCount.toLocaleString()} of ${totalInDb.toLocaleString()} messages</span>
-            <button class="btn btn-accent" style="padding: 1px 7px; font-size: 10px; margin-left: 6px; cursor: pointer;" onclick="loadAllChatMessages()">Load All</button>
+            <button class="btn btn-accent" style="padding: 2px 8px; font-size: 11px; margin-left: 6px; border-radius: 6px; cursor: pointer;" onclick="loadAllChatMessages()">Load All</button>
+            <button class="btn btn-secondary" style="padding: 2px 9px; font-size: 11px; margin-left: 6px; border-radius: 6px; cursor: pointer;" onclick="requestPhoneCatchup(this)" title="Request older history packets directly from your WhatsApp phone">📥 Fetch Older from Phone</button>
           `;
         }
 
@@ -1533,9 +1542,11 @@
       if (currentChatMessages.length === 0) {
         if (dateRangeEl) dateRangeEl.innerText = '📅 —';
         wrap.innerHTML = `
-          <div class="empty-placeholder">
-            <div class="empty-icon">📭</div>
-            <p>No messages found in this chat.</p>
+          <div class="empty-placeholder" style="max-width: 440px; margin: 40px auto; text-align: center;">
+            <div class="empty-icon" style="font-size: 40px; margin-bottom: 12px;">📭</div>
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">No messages saved locally yet</h3>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">This chat exists in your WhatsApp account. Click below to request message history backwards directly from your linked phone.</p>
+            <button class="btn btn-accent" style="padding: 8px 18px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer;" onclick="requestPhoneCatchup(this)">📥 Fetch Messages from Phone</button>
           </div>
         `;
         return;
@@ -1913,6 +1924,35 @@
         if (activeChatJid) selectChat(activeChatJid);
       } catch (err) {
         alert('Failed to sync group names: ' + err.message);
+      }
+    }
+
+    async function requestPhoneCatchup(btn) {
+      if (!activeChatJid) return;
+      const originalText = btn ? btn.innerText : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳ Requesting...';
+      }
+      try {
+        const res = await fetch(`/api/chats/${encodeURIComponent(activeChatJid)}/catchup`, {
+          method: 'POST'
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          alert('📡 History request sent to your linked WhatsApp phone! When your phone responds, older messages will automatically stream into this chat in a few moments.');
+        } else if (data.status === 'not_connected') {
+          alert('⚠️ WhatsApp is currently disconnected. Please verify connection in Session & Actions.');
+        } else {
+          alert(`Sync response: ${data.status || 'unknown'}`);
+        }
+      } catch (err) {
+        alert('Failed to request history: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = originalText;
+        }
       }
     }
 

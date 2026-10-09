@@ -31,6 +31,7 @@ import {
   getStatus,
   syncGroupNames,
   catchupRecentChats,
+  fetchChatHistory,
   addEventListener as addWhatsAppListener
 } from './collector/whatsapp.js';
 import {
@@ -236,7 +237,27 @@ app.get('/api/chats/:jid/messages', (req, res) => {
   const search = req.query.search || '';
   const messages = getChatMessages(jid, { limit, search });
   const total = getChatTotal(jid);
-  res.json({ jid, total, count: messages.length, messages });
+  res.json({
+    jid,
+    total,
+    totalInDb: total,
+    count: messages.length,
+    loadedCount: messages.length,
+    messages
+  });
+});
+
+app.post(['/api/chats/:jid/catchup', '/api/chats/:jid/fetch-history'], async (req, res) => {
+  const { jid } = req.params;
+  const count = Math.min(Math.max(Number(req.query.count || req.body?.count) || 50, 1), 200);
+  const result = await fetchChatHistory(jid, count);
+  res.json(result);
+});
+
+app.post('/api/chats/catchup-all', async (req, res) => {
+  const count = Math.min(Math.max(Number(req.query.count || req.body?.count) || 50, 1), 100);
+  const result = await catchupRecentChats(count);
+  res.json({ status: 'ok', ...result });
 });
 
 app.delete('/api/chats/:jid', (req, res) => {

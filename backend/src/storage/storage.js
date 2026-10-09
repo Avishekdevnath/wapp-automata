@@ -368,7 +368,7 @@ export function getChatsList(options = {}) {
         g.subject as chat_name,
         'group' as chat_type,
         0 as count,
-        g.updated_at as last_ts,
+        0 as last_ts,
         'Group joined (' || g.participants_count || ' members)' as last_text,
         'System' as last_sender
       FROM whatsapp_groups g
@@ -395,7 +395,7 @@ export function getChatsList(options = {}) {
     sql += " AND chat_type = 'direct'";
   }
 
-  sql += ' ORDER BY last_ts DESC';
+  sql += ' ORDER BY (count > 0) DESC, last_ts DESC';
   return db.prepare(sql).all(...params);
 }
 
