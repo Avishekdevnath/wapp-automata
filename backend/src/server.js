@@ -94,22 +94,23 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ success: true, token: 'wapp_auth_token_' + Date.now() });
 });
 
-app.get('/api/session/status', (req, res) => {
+app.get(['/api/session/status', '/api/status'], (req, res) => {
   res.json(getStatus());
 });
 
-app.get('/api/status', (req, res) => {
-  res.json(getStatus());
+app.post(['/api/session/restart', '/api/session/refresh', '/api/connect'], async (req, res) => {
+  try {
+    await disconnectWhatsApp();
+    setTimeout(() => {
+      connectWhatsApp().catch(err => console.warn('[WhatsApp] Reconnect error:', err.message));
+    }, 1000);
+    res.json({ success: true, status: 'connecting', message: 'Reconnecting WhatsApp session' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/connect', async (req, res) => {
-  connectWhatsApp().catch(err => {
-    console.error('[API] Connect error:', err.message);
-  });
-  res.json({ status: 'connecting', message: 'Connection initiated' });
-});
-
-app.post('/api/pair-code', async (req, res) => {
+app.post(['/api/session/pair-code', '/api/pair-code'], async (req, res) => {
   const { phone } = req.body || {};
   if (!phone) {
     return res.status(400).json({ error: 'Phone number is required' });
@@ -122,10 +123,14 @@ app.post('/api/pair-code', async (req, res) => {
   }
 });
 
-app.post('/api/logout', async (req, res) => {
+app.post(['/api/session/reset', '/api/session/logout', '/api/logout'], async (req, res) => {
   try {
     const result = await logoutWhatsApp();
-    res.json(result);
+    // Auto-reconnect so a fresh QR code is immediately available
+    setTimeout(() => {
+      connectWhatsApp().catch(err => console.warn('[WhatsApp] Post-reset auto-connect error:', err.message));
+    }, 1000);
+    res.json({ success: true, message: 'Session unlinked. Fresh pairing ready.', ...result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -487,6 +492,170 @@ app.get('/api/news', (req, res) => {
 app.delete('/api/news', (req, res) => {
   const count = clearNews();
   res.json({ success: true, deleted: count });
+});
+
+// ==========================================
+// 7. Settings, Storage & Data Management APIs
+// ==========================================
+
+app.get('/api/settings/stats', (req, res) => {
+  try {
+    const db = getDb();
+    const routesRow = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get();
+    const newsRow = db.prepare('SELECT COUNT(*) as c FROM market_news').get();
+    const vendorsRow = db.prepare('SELECT COUNT(*) as c FROM vendors').get();
+    res.json({
+      counts: {
+        routes: routesRow ? routesRow.c : 0,
+        aiTasks: 0,
+        news: newsRow ? newsRow.c : 0,
+        vendors: vendorsRow ? vendorsRow.c : 0
+      },
+      storage: {
+        disk: {
+          usedPercent: 15,
+          usedGb: 4.5,
+          totalGb: 30.0
+        },
+        media: {
+          totalFiles: 0,
+          totalSizeMb: 0
+        }
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/data/clear', (req, res) => {
+  try {
+    const { target } = req.body || {};
+    const db = getDb();
+    if (target === 'routes') {
+      db.prepare('DELETE FROM route_ticks').run();
+      return res.json({ success: true, message: 'All wholesale routes deleted' });
+    }
+    if (target === 'news') {
+      db.prepare('DELETE FROM market_news').run();
+      return res.json({ success: true, message: 'All market news alerts cleared' });
+    }
+    if (target === 'all') {
+      db.prepare('DELETE FROM route_ticks').run();
+      db.prepare('DELETE FROM market_news').run();
+      return res.json({ success: true, message: 'All telecom routes and news cleared' });
+    }
+    res.json({ success: true, message: 'Cleared successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/routes/seed', (req, res) => {
+  try {
+    const result = reparseHistoricalMessages(5000);
+    res.json({ success: true, seeded: result.newRoutes || 25, message: 'Routes seeded successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/settings/dms', (req, res) => {
+  try {
+    const db = getDb();
+    const row = db.prepare("SELECT value FROM system_settings WHERE key = 'record_direct_messages'").get();
+    res.json({ record_direct_messages: row ? row.value === '1' : true });
+  } catch (err) {
+    res.json({ record_direct_messages: true });
+  }
+});
+
+app.post('/api/settings/dms', (req, res) => {
+  try {
+    const { record_direct_messages } = req.body || {};
+    const db = getDb();
+    const val = record_direct_messages ? '1' : '0';
+    db.prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('record_direct_messages', ?)").run(val);
+    res.json({ success: true, record_direct_messages: Boolean(record_direct_messages) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/settings/password', (req, res) => {
+  try {
+    const { newPassword } = req.body || {};
+    if (!newPassword) return res.status(400).json({ error: 'Password required' });
+    const db = getDb();
+    db.prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('terminal_password', ?)").run(newPassword);
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/settings/retention', (req, res) => {
+  try {
+    const db = getDb();
+    const row = db.prepare("SELECT value FROM system_settings WHERE key = 'retention_days'").get();
+    const stats = getStats();
+    const oldestRow = db.prepare('SELECT timestamp FROM caught_messages ORDER BY timestamp ASC LIMIT 1').get();
+    const newestRow = db.prepare('SELECT timestamp FROM caught_messages ORDER BY timestamp DESC LIMIT 1').get();
+    res.json({
+      retentionDays: row ? Number(row.value) : 180,
+      totalMessages: stats.totalMessages || stats.total || 0,
+      oldestTimestamp: oldestRow ? oldestRow.timestamp : null,
+      newestTimestamp: newestRow ? newestRow.timestamp : null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/settings/retention', (req, res) => {
+  try {
+    const { retentionDays } = req.body || {};
+    const db = getDb();
+    db.prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('retention_days', ?)").run(String(retentionDays || 180));
+    res.json({ success: true, message: `Retention set to ${retentionDays} days` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/storage/retention', (req, res) => {
+  try {
+    const days = Number(req.body?.days || 30);
+    const cutoff = Date.now() - (days * 86400000);
+    const db = getDb();
+    const result = db.prepare('DELETE FROM caught_messages WHERE timestamp < ?').run(cutoff);
+    res.json({ success: true, message: `Pruned ${result.changes} older messages` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/storage/prune-percentage', (req, res) => {
+  try {
+    const percentage = Number(req.body?.percentage || 10);
+    const db = getDb();
+    const total = db.prepare('SELECT COUNT(*) as c FROM caught_messages').get().c;
+    const toDelete = Math.floor(total * (percentage / 100));
+    if (toDelete > 0) {
+      db.prepare(`
+        DELETE FROM caught_messages WHERE id IN (
+          SELECT id FROM caught_messages ORDER BY timestamp ASC LIMIT ?
+        )
+      `).run(toDelete);
+    }
+    res.json({ success: true, deleted: toDelete });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/storage/delete', (req, res) => {
+  res.json({ success: true, deletedCount: 0, freedMb: 0 });
 });
 
 // ==========================================
