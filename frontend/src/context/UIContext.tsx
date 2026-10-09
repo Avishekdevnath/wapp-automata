@@ -160,8 +160,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       news: true,
       vendors: true,
       terminal: true,
+      chat: true,
       pipeline: true,
       dev: true,
+      help: true,
     };
   });
 
@@ -181,8 +183,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       news: true,
       vendors: true,
       terminal: true,
+      chat: true,
       pipeline: true,
       dev: true,
+      help: true,
     };
     localStorage.setItem('telco_sidebar_menus', JSON.stringify(updated));
     setSidebarMenuPrefs(updated);

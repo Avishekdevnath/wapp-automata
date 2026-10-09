@@ -1,6 +1,7 @@
 import React from 'react';
 import { Palette, Moon, Sun, Volume2, VolumeX } from 'lucide-react';
 import { useUI } from '../../../context/UIContext';
+import { ToggleSwitch } from './ToggleSwitch';
 
 export const AppearanceSoundCard: React.FC = () => {
   const {
@@ -61,7 +62,7 @@ export const AppearanceSoundCard: React.FC = () => {
               onClick={() => setThemeMode('light')}
               className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
                 !isDarkMode
-                  ? 'border-amber-500 bg-amber-500/10 shadow-sm'
+                  ? 'border-emerald-500 bg-emerald-500/10 shadow-sm'
                   : 'border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-950/60 opacity-70 hover:opacity-100'
               }`}
             >
@@ -106,18 +107,21 @@ export const AppearanceSoundCard: React.FC = () => {
               Play audio chime on live route capture
             </span>
           </div>
-          <button
-            type="button"
-            onClick={toggleSound}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
-              isSoundOn
-                ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30'
-                : 'bg-slate-200 dark:bg-dark-800 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-dark-700'
-            }`}
-          >
-            {isSoundOn ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-            <span>{isSoundOn ? 'Enabled' : 'Muted'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-[11px] font-bold flex items-center gap-1 ${
+                isSoundOn ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {isSoundOn ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              <span>{isSoundOn ? 'ON' : 'MUTED'}</span>
+            </span>
+            <ToggleSwitch
+              checked={isSoundOn}
+              onChange={toggleSound}
+              size="md"
+            />
+          </div>
         </div>
       </div>
     </div>

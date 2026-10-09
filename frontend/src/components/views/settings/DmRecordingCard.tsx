@@ -52,7 +52,7 @@ export const DmRecordingCard: React.FC = () => {
             className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
               recordDms
                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
-                : 'bg-slate-500/15 text-slate-700 dark:text-slate-400 border-slate-500/30'
+                : 'bg-slate-200 dark:bg-dark-800 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-dark-700'
             }`}
           >
             {recordDms ? 'DMs Recorded (Zero-Seen)' : 'DMs Ignored'}
@@ -88,18 +88,18 @@ export const DmRecordingCard: React.FC = () => {
           </div>
 
           {dmFeedback && (
-            <div className="text-[11px] p-2 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium">
+            <div className="text-[11px] p-2 rounded-lg bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-semibold border border-emerald-500/30">
               {dmFeedback}
             </div>
           )}
 
           {/* Zero-Seen Guarantee Callout */}
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-slate-800 dark:text-emerald-300 space-y-1">
-            <div className="flex items-center gap-1.5 font-bold text-[11px]">
+          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 space-y-1">
+            <div className="flex items-center gap-1.5 font-bold text-[11px] text-emerald-800 dark:text-emerald-300">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>Zero-Seen Guarantee Active</span>
             </div>
-            <p className="text-[10px] text-slate-600 dark:text-emerald-400/80 leading-relaxed">
+            <p className="text-[10px] text-emerald-900/80 dark:text-emerald-400/80 leading-relaxed font-normal">
               WhatsApp read receipts are strictly disabled for 1-on-1 chats. Messages remain unread on the
               sender's device even when recorded. Groups (@g.us) are marked as seen automatically to clear
               notification badges.
