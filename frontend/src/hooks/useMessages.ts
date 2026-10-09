@@ -5,6 +5,7 @@ import { logDecryptedMessage, logStreamListeningBanner } from '../utils/consoleL
 
 export function useMessages() {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
+  const [serverStats, setServerStats] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,8 +16,16 @@ export function useMessages() {
   const loadMessages = useCallback(async () => {
     try {
       const data = await fetchMessages();
-      // Keep only valid messages with text or media
-      const valid = data.filter(m => (m.text && m.text.trim()) || m.has_media);
+      if ((data as any).serverStats) {
+        setServerStats((data as any).serverStats);
+      }
+
+      // Keep only valid messages with text, media, or valid identity
+      const valid = data.filter(m => {
+        const content = (m.text || m.message_text || '').trim();
+        const hasMedia = Boolean(m.has_media);
+        return Boolean(content || hasMedia);
+      });
 
       if (typeof window !== 'undefined') {
         (window as any).__wapp_recent_messages = valid;
@@ -78,12 +87,12 @@ export function useMessages() {
       messages.map(m => m.sender_phone || m.sender_name).filter(Boolean)
     );
     return {
-      total: messages.length,
-      groups: groups.size,
+      total: serverStats?.total ?? serverStats?.totalMessages ?? messages.length,
+      groups: serverStats?.groups ?? serverStats?.uniqueGroups ?? groups.size,
       archived: archived.size,
-      senders: senders.size,
+      senders: serverStats?.dms ?? serverStats?.uniqueDms ?? senders.size,
     };
-  }, [messages]);
+  }, [messages, serverStats]);
 
   const deleteMessages = useCallback(async (percentage: number = 100) => {
     if (percentage >= 100) {

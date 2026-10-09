@@ -197,7 +197,29 @@ app.post('/api/accounts/reset', async (req, res) => {
 
 // ==========================================
 // 3. Messages & Chats APIs
-// ==========================================
+// Helper to normalize message fields for both React Dashboard & Web UI
+function normalizeMessage(m) {
+  if (!m) return m;
+  return {
+    ...m,
+    text: m.message_text || '',
+    chat_jid: m.remote_jid,
+    occurred_at: m.timestamp ? new Date(m.timestamp).toISOString() : new Date().toISOString(),
+    is_from_me: Boolean(m.is_from_me),
+    has_media: Boolean(m.has_media),
+    is_archived: false,
+    reply_to: m.quoted_message_id ? {
+      messageId: m.quoted_message_id,
+      senderId: m.quoted_sender_jid,
+      senderName: m.quoted_sender_name,
+      quotedText: m.quoted_text
+    } : null,
+    media: m.has_media ? {
+      type: m.media_type || 'image',
+      caption: m.message_text || ''
+    } : null
+  };
+}
 
 app.get('/api/messages', (req, res) => {
   const search = req.query.search || '';
@@ -205,7 +227,8 @@ app.get('/api/messages', (req, res) => {
   const limit = req.query.limit || '200';
   const remoteJid = req.query.remoteJid || null;
 
-  const messages = getMessages({ search, filter, limit, remoteJid });
+  const rawMessages = getMessages({ search, filter, limit, remoteJid });
+  const messages = rawMessages.map(normalizeMessage);
   res.json({
     count: messages.length,
     stats: getStats(),

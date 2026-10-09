@@ -12,6 +12,7 @@ import {
   Settings,
   QrCode,
   HardDrive,
+  MessageSquare,
   X
 } from 'lucide-react';
 import type { StreamStats } from '../../types/message';
@@ -169,6 +170,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       badgeClass: 'sidebar-badge',
     },
     {
+      id: 'chat' as any,
+      path: '/chat',
+      label: 'WhatsApp Web UI',
+      icon: MessageSquare,
+      iconColor: 'text-emerald-400',
+      badge: stats.total > 0 ? (stats.total > 999 ? `${Math.floor(stats.total / 1000)}k` : String(stats.total)) : '132k',
+      badgeClass: 'px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+      isExternal: true,
+    },
+    {
       id: 'pipeline' as ViewType,
       path: '/pipeline',
       label: 'System Pipeline',
@@ -257,6 +268,22 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               .filter((item) => item.id === 'settings' || sidebarMenuPrefs[item.id] !== false)
               .map((item) => {
               const Icon = item.icon;
+              if ((item as any).isExternal) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.path}
+                    className="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all hover:bg-slate-100 dark:hover:bg-dark-800"
+                    title="Open Authentic WhatsApp Web Interface"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon className={`w-4 h-4 shrink-0 ${item.iconColor}`} />
+                      <span className="whitespace-nowrap">{item.label}</span>
+                    </div>
+                    <span className={`${item.badgeClass} shrink-0`}>{item.badge}</span>
+                  </a>
+                );
+              }
               return (
                 <NavLink
                   key={item.id}

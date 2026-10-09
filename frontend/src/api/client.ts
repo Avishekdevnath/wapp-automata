@@ -25,12 +25,12 @@ export async function loginWithPassword(password: string): Promise<boolean> {
 
 async function authenticatedFetch(url: string, init?: RequestInit): Promise<Response> {
   const token = localStorage.getItem('wapp_token');
-  const activeAccount = localStorage.getItem('wapp_active_account') || 'default';
+  const activeAccount = localStorage.getItem('wapp_active_account');
   const headers = new Headers(init?.headers || {});
   if (token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  if (!headers.has('X-Account-ID')) {
+  if (!headers.has('X-Account-ID') && activeAccount && activeAccount !== 'default') {
     headers.set('X-Account-ID', activeAccount);
   }
   const res = await fetch(url, { ...init, headers });
@@ -45,12 +45,40 @@ async function authenticatedFetch(url: string, init?: RequestInit): Promise<Resp
   return res;
 }
 
+export function normalizeClientMessage(m: any): WhatsAppMessage {
+  const text = m.text || m.message_text || '';
+  const chatJid = m.chat_jid || m.remote_jid || '';
+  const timestamp = m.timestamp;
+  let occurredAt = m.occurred_at;
+  if (!occurredAt && timestamp) {
+    occurredAt = typeof timestamp === 'number' ? new Date(timestamp).toISOString() : String(timestamp);
+  }
+  return {
+    ...m,
+    id: String(m.id || ''),
+    text,
+    message_text: text,
+    chat_jid: chatJid,
+    remote_jid: chatJid,
+    occurred_at: occurredAt,
+    is_from_me: Boolean(m.is_from_me),
+    has_media: Boolean(m.has_media),
+    chat_name: m.chat_name || (chatJid.includes('@g.us') ? 'Group' : chatJid.split('@')[0]),
+    chat_type: m.chat_type || (chatJid.includes('@g.us') ? 'group' : 'direct'),
+  };
+}
+
 export async function fetchMessages(): Promise<WhatsAppMessage[]> {
   try {
     const res = await authenticatedFetch(`${API_BASE}/messages`);
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch messages`);
     const data = await res.json();
-    return Array.isArray(data) ? data : (data.messages || []);
+    const rawList = Array.isArray(data) ? data : (data.messages || []);
+    const list = rawList.map(normalizeClientMessage);
+    if (data.stats) {
+      (list as any).serverStats = data.stats;
+    }
+    return list;
   } catch (err) {
     console.error('Failed to fetch messages:', err);
     return [];

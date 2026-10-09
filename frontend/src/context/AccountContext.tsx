@@ -18,12 +18,12 @@ const AccountContext = createContext<AccountContextValue | null>(null);
 const STORAGE_KEY = 'wapp_active_account';
 
 export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeAccountId] = useState<string>(() => {
+  const [activeAccountId, setActiveAccountId] = useState<string>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === 'default' || !saved ? 'default' : saved;
+    return saved && saved !== 'default' ? saved : 'telcia-prod';
   });
   const [accounts, setAccounts] = useState<AccountItem[]>([
-    { id: 'default', label: 'Desk 1 (Primary)', isDefault: true }
+    { id: 'telcia-prod', label: 'Telcia Production', isDefault: true }
   ]);
   const [fleet, setFleet] = useState<FleetAccountStatus[]>([]);
   const isSwitching = false;
@@ -34,14 +34,19 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         fetchAccounts(),
         fetchFleetStatus().catch(() => [])
       ]);
-      // Strict single-desk silo: only retain and display the session's active account
-      const isolatedAccs = accs.filter(a => a.id === activeAccountId);
+      const currentActive = accs.find(a => (a as any).isActive)?.id || (accs.length > 0 ? accs[0].id : activeAccountId);
+      if (currentActive && currentActive !== activeAccountId && (!localStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) === 'default')) {
+        setActiveAccountId(currentActive);
+        localStorage.setItem(STORAGE_KEY, currentActive);
+      }
+      const effectiveId = currentActive || activeAccountId;
+      const isolatedAccs = accs.filter(a => a.id === effectiveId);
       setAccounts(
         isolatedAccs.length > 0
           ? isolatedAccs
-          : [{ id: activeAccountId, label: activeAccountId === 'default' ? 'Desk 1 (Primary)' : `Desk ${activeAccountId.toUpperCase()}`, isDefault: activeAccountId === 'default' }]
+          : [{ id: effectiveId, label: effectiveId === 'default' ? 'Desk 1 (Primary)' : `Desk ${effectiveId.toUpperCase()}`, isDefault: true }]
       );
-      setFleet(flt.filter(f => f.accountId === activeAccountId));
+      setFleet(flt.filter(f => f.accountId === effectiveId));
     } catch (err) {
       console.warn('Failed to refresh accounts:', err);
     }

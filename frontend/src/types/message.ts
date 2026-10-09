@@ -30,7 +30,7 @@ export interface LocationData {
 
 export interface WhatsAppMessage {
   id: string;
-  timestamp?: string;
+  timestamp?: string | number;
   occurred_at?: string;
   sender_name?: string | null;
   sender_phone?: string | null;
@@ -38,11 +38,13 @@ export interface WhatsAppMessage {
   avatar_url?: string | null;
   is_from_me?: boolean;
   chat_jid?: string;
+  remote_jid?: string;
   chat_name?: string | null;
   chat_type?: 'group' | 'direct' | 'individual' | 'status';
   is_archived?: boolean;
   text?: string | null;
-  has_media?: boolean;
+  message_text?: string | null;
+  has_media?: boolean | number;
   media?: MediaAttachment | null;
   media_id?: string | null;
   reply_to?: ReplyContext | null;
@@ -64,3 +66,4 @@ export interface StreamStats {
   archived: number;
   senders: number;
 }
+
