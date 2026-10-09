@@ -404,11 +404,14 @@ app.get('/api/stream', (req, res) => {
 const CHAT_UI_PATH = path.join(ROOT_DIR, 'backend', 'public', 'chat.html');
 
 // Dedicated Authentic WhatsApp Web UI route
-app.get(['/chat', '/chat/*', '/wp', '/wp/*'], (req, res) => {
-  if (fs.existsSync(CHAT_UI_PATH)) {
-    return res.sendFile(CHAT_UI_PATH);
+app.use((req, res, next) => {
+  if (req.method === 'GET' && (req.path === '/chat' || req.path.startsWith('/chat/') || req.path === '/wp' || req.path.startsWith('/wp/'))) {
+    if (fs.existsSync(CHAT_UI_PATH)) {
+      return res.sendFile(CHAT_UI_PATH);
+    }
+    return res.status(404).send('WhatsApp Web UI not found at backend/public/chat.html');
   }
-  res.status(404).send('WhatsApp Web UI not found at backend/public/chat.html');
+  next();
 });
 
 if (fs.existsSync(FRONTEND_DIST)) {
