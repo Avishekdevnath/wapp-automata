@@ -68,9 +68,25 @@ export function normalizeClientMessage(m: any): WhatsAppMessage {
   };
 }
 
-export async function fetchMessages(): Promise<WhatsAppMessage[]> {
+export interface FetchMessagesOptions {
+  limit?: string | number;
+  days?: string | number;
+  before?: number | null;
+  search?: string;
+  filter?: string;
+}
+
+export async function fetchMessages(options: FetchMessagesOptions = {}): Promise<WhatsAppMessage[]> {
   try {
-    const res = await authenticatedFetch(`${API_BASE}/messages`);
+    const params = new URLSearchParams();
+    if (options.limit !== undefined) params.set('limit', String(options.limit));
+    if (options.days !== undefined) params.set('days', String(options.days));
+    if (options.before !== undefined && options.before !== null) params.set('before', String(options.before));
+    if (options.search) params.set('search', options.search);
+    if (options.filter && options.filter !== 'all') params.set('filter', options.filter);
+
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+    const res = await authenticatedFetch(`${API_BASE}/messages${queryStr}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch messages`);
     const data = await res.json();
     const rawList = Array.isArray(data) ? data : (data.messages || []);
@@ -78,6 +94,9 @@ export async function fetchMessages(): Promise<WhatsAppMessage[]> {
     if (data.stats) {
       (list as any).serverStats = data.stats;
     }
+    (list as any).hasMore = Boolean(data.hasMore);
+    (list as any).totalInDb = data.totalInDb || (data.stats ? data.stats.total : list.length);
+    (list as any).oldestTimestamp = data.oldestTimestamp || (rawList.length > 0 ? rawList[rawList.length - 1].timestamp : null);
     return list;
   } catch (err) {
     console.error('Failed to fetch messages:', err);

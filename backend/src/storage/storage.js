@@ -289,15 +289,22 @@ export function markMessageDeleted(id) {
 
 export function getMessages(options = {}) {
   const db = getDb();
-  let limit;
-  if (options.limit === 'all') {
-    limit = 50000;
-  } else {
-    limit = Math.min(Math.max(Number(options.limit) || 200, 1), 50000);
-  }
   const search = options.search ? `%${options.search.trim()}%` : null;
   const filter = options.filter || 'all';
   const remoteJid = options.remoteJid || null;
+  const before = options.before ? Number(options.before) : null;
+  const days = options.days ? Number(options.days) : null;
+
+  let limit;
+  if (options.limit === 'all') {
+    limit = 50000;
+  } else if (options.limit) {
+    limit = Math.min(Math.max(Number(options.limit) || 2000, 1), 50000);
+  } else if (days) {
+    limit = 25000;
+  } else {
+    limit = 2000;
+  }
 
   let sql = 'SELECT * FROM caught_messages WHERE 1=1';
   const params = [];
@@ -307,23 +314,64 @@ export function getMessages(options = {}) {
     params.push(remoteJid);
   }
 
+  if (before) {
+    sql += ' AND timestamp < ?';
+    params.push(before);
+  }
+
+  if (days && !search) {
+    let refTs = before;
+    if (!refTs) {
+      const latestRow = db.prepare('SELECT timestamp FROM caught_messages ORDER BY timestamp DESC LIMIT 1').get();
+      refTs = latestRow ? latestRow.timestamp : null;
+    }
+    if (refTs) {
+      const minTs = refTs - (days * 86400000);
+      sql += ' AND timestamp >= ?';
+      params.push(minTs);
+    }
+  }
+
   if (search) {
     sql += ' AND (message_text LIKE ? OR sender_name LIKE ? OR sender_phone LIKE ? OR chat_name LIKE ?)';
     params.push(search, search, search, search);
   }
 
-  if (filter === 'groups') {
+  if (filter === 'groups' || filter === 'group') {
     sql += " AND chat_type = 'group'";
-  } else if (filter === 'dms') {
+  } else if (filter === 'dms' || filter === 'direct') {
     sql += " AND chat_type = 'direct'";
   } else if (filter === 'media') {
     sql += ' AND has_media = 1';
+  } else if (filter === 'sent') {
+    sql += ' AND is_from_me = 1';
   }
 
   sql += ' ORDER BY timestamp DESC LIMIT ?';
   params.push(limit);
 
-  return db.prepare(sql).all(...params);
+  let rows = db.prepare(sql).all(...params);
+
+  if (!before && !search && days && rows.length < 50) {
+    const fallbackSql = 'SELECT * FROM caught_messages ORDER BY timestamp DESC LIMIT 50';
+    const fallbackRows = db.prepare(fallbackSql).all();
+    if (fallbackRows.length > rows.length) {
+      rows = fallbackRows;
+    }
+  }
+
+  return rows;
+}
+
+export function hasOlderMessages(oldestTimestamp) {
+  try {
+    if (!oldestTimestamp) return false;
+    const db = getDb();
+    const row = db.prepare('SELECT 1 FROM caught_messages WHERE timestamp < ? LIMIT 1').get(oldestTimestamp);
+    return Boolean(row);
+  } catch (_) {
+    return false;
+  }
 }
 
 export function getChatsList(options = {}) {

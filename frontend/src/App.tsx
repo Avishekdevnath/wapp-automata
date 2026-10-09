@@ -18,7 +18,17 @@ function AppInner() {
   useShortcuts();
 
   // 2. Data & Stream State
-  const { messages, stats, refresh, deleteMessages } = useMessages();
+  const {
+    messages,
+    stats,
+    refresh,
+    deleteMessages,
+    timeRange,
+    setTimeRange,
+    hasMoreOlder,
+    isLoadingOlder,
+    loadOlderMessages,
+  } = useMessages();
   const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>({
     connected: false,
     status: 'disconnected',
@@ -81,6 +91,11 @@ function AppInner() {
           deviceStatus={deviceStatus}
           onRefreshMessages={refresh}
           onRefreshStatus={loadDeviceStatus}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+          hasMoreOlder={hasMoreOlder}
+          isLoadingOlder={isLoadingOlder}
+          onLoadOlder={loadOlderMessages}
         />
       </RootLayout>
 

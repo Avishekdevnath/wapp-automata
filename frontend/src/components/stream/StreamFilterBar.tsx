@@ -8,6 +8,8 @@ interface StreamFilterBarProps {
   onSearchChange: (q: string) => void;
   filterType: FilterType;
   onFilterChange: (f: FilterType) => void;
+  timeRange?: string;
+  onTimeRangeChange?: (range: string) => void;
   autoScroll: boolean;
   onToggleAutoScroll: () => void;
   onExportJson: () => void;
@@ -22,6 +24,8 @@ export const StreamFilterBar: React.FC<StreamFilterBarProps> = ({
   onSearchChange,
   filterType,
   onFilterChange,
+  timeRange = '30d',
+  onTimeRangeChange,
   autoScroll,
   onToggleAutoScroll,
   onExportJson,
@@ -68,12 +72,29 @@ export const StreamFilterBar: React.FC<StreamFilterBarProps> = ({
           )}
         </div>
 
-        {/* Filter Type Dropdown */}
-        <div className="flex items-center gap-2">
+        {/* Filter Type & Time Range Dropdowns */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {onTimeRangeChange && (
+            <select
+              value={timeRange}
+              onChange={(e) => onTimeRangeChange(e.target.value)}
+              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer font-medium"
+              title="Time window of loaded messages"
+            >
+              <option value="30d">Recent 30 Days (Fastest)</option>
+              <option value="500">Recent 500 Messages</option>
+              <option value="1000">Recent 1,000 Messages</option>
+              <option value="5000">Recent 5,000 Messages</option>
+              <option value="60d">Recent 60 Days</option>
+              <option value="90d">Recent 90 Days</option>
+              <option value="all">All Messages (Complete DB)</option>
+            </select>
+          )}
+
           <select
             value={filterType}
             onChange={(e) => onFilterChange(e.target.value as FilterType)}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer"
+            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 cursor-pointer font-medium"
           >
             <option value="all">All Messages (Groups + DMs)</option>
             <option value="group">Active Groups Only</option>

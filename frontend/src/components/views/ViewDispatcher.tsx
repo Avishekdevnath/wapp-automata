@@ -23,6 +23,11 @@ interface ViewDispatcherProps {
   deviceStatus: DeviceStatus;
   onRefreshMessages: () => void;
   onRefreshStatus: () => void;
+  timeRange?: string;
+  onTimeRangeChange?: (range: string) => void;
+  hasMoreOlder?: boolean;
+  isLoadingOlder?: boolean;
+  onLoadOlder?: () => void;
 }
 
 const ViewFallback: React.FC = () => (
@@ -40,6 +45,11 @@ export const ViewDispatcher: React.FC<ViewDispatcherProps> = ({
   deviceStatus,
   onRefreshMessages,
   onRefreshStatus,
+  timeRange = '30d',
+  onTimeRangeChange,
+  hasMoreOlder = false,
+  isLoadingOlder = false,
+  onLoadOlder,
 }) => {
   const { openModal } = useUI();
   const navigate = useNavigate();
@@ -138,6 +148,11 @@ export const ViewDispatcher: React.FC<ViewDispatcherProps> = ({
             messages={messages}
             stats={stats}
             deviceStatus={deviceStatus}
+            timeRange={timeRange}
+            onTimeRangeChange={onTimeRangeChange}
+            hasMoreOlder={hasMoreOlder}
+            isLoadingOlder={isLoadingOlder}
+            onLoadOlder={onLoadOlder}
             onOpenDeviceModal={() => openModal('device')}
             onRefresh={onRefreshMessages}
             onOpenDeleteModal={() => openModal('delete')}
@@ -155,6 +170,11 @@ export const ViewDispatcher: React.FC<ViewDispatcherProps> = ({
             messages={messages}
             stats={stats}
             deviceStatus={deviceStatus}
+            timeRange={timeRange}
+            onTimeRangeChange={onTimeRangeChange}
+            hasMoreOlder={hasMoreOlder}
+            isLoadingOlder={isLoadingOlder}
+            onLoadOlder={onLoadOlder}
             onOpenDeviceModal={() => openModal('device')}
             onRefresh={onRefreshMessages}
             onOpenDeleteModal={() => openModal('delete')}

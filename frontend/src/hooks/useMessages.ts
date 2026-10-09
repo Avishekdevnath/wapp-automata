@@ -9,15 +9,34 @@ export function useMessages() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Time Range Window & Pagination
+  const [timeRange, setTimeRange] = useState<string>('30d');
+  const [hasMoreOlder, setHasMoreOlder] = useState<boolean>(false);
+  const [oldestTimestamp, setOldestTimestamp] = useState<number | null>(null);
+  const [isLoadingOlder, setIsLoadingOlder] = useState<boolean>(false);
+
   // Tracking state to detect fresh incoming messages in real-time
   const seenIdsRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef<boolean>(true);
 
+  const getFetchParams = useCallback((range: string) => {
+    if (range === '30d') return { days: 30, limit: 25000 };
+    if (range === '60d') return { days: 60, limit: 35000 };
+    if (range === '90d') return { days: 90, limit: 50000 };
+    if (range === 'all') return { limit: 'all' };
+    return { limit: Number(range) || 2000 };
+  }, []);
+
   const loadMessages = useCallback(async () => {
     try {
-      const data = await fetchMessages();
+      const fetchParams = getFetchParams(timeRange);
+      const data = await fetchMessages(fetchParams);
       if ((data as any).serverStats) {
         setServerStats((data as any).serverStats);
+      }
+      setHasMoreOlder(Boolean((data as any).hasMore));
+      if ((data as any).oldestTimestamp) {
+        setOldestTimestamp((data as any).oldestTimestamp);
       }
 
       // Keep only valid messages with text, media, or valid identity
@@ -55,13 +74,37 @@ export function useMessages() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [timeRange, getFetchParams]);
 
   useEffect(() => {
     loadMessages();
-    const interval = setInterval(loadMessages, 2500);
+    const interval = setInterval(loadMessages, 5000);
     return () => clearInterval(interval);
   }, [loadMessages]);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!oldestTimestamp || isLoadingOlder) return;
+    setIsLoadingOlder(true);
+    try {
+      const older = await fetchMessages({ days: 30, before: oldestTimestamp, limit: 25000 });
+      if (older.length > 0) {
+        setMessages(prev => {
+          const existingIds = new Set(prev.map(m => m.id));
+          const newUnique = older.filter(m => !existingIds.has(m.id));
+          return [...prev, ...newUnique];
+        });
+        const nextOldest = (older as any).oldestTimestamp || older[older.length - 1].timestamp;
+        setOldestTimestamp(nextOldest ? Number(nextOldest) : null);
+        setHasMoreOlder(Boolean((older as any).hasMore));
+      } else {
+        setHasMoreOlder(false);
+      }
+    } catch (e) {
+      console.warn('Failed to load older messages:', e);
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [oldestTimestamp, isLoadingOlder]);
 
   // Zero-Ghost State Flush on account switch
   useEffect(() => {
@@ -116,6 +159,11 @@ export function useMessages() {
     loading,
     error,
     stats,
+    timeRange,
+    setTimeRange,
+    hasMoreOlder,
+    isLoadingOlder,
+    loadOlderMessages,
     refresh: loadMessages,
     deleteMessages,
   };

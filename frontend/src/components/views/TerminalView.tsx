@@ -16,15 +16,26 @@ interface TerminalViewProps {
   onRefresh: () => void;
   onOpenDeleteModal: () => void;
   onViewDetail: (message: WhatsAppMessage) => void;
+  timeRange?: string;
+  onTimeRangeChange?: (range: string) => void;
+  hasMoreOlder?: boolean;
+  isLoadingOlder?: boolean;
+  onLoadOlder?: () => void;
 }
 
 export const TerminalView: React.FC<TerminalViewProps> = ({
   messages,
+  stats,
   deviceStatus,
   onOpenDeviceModal,
   onRefresh,
   onOpenDeleteModal,
   onViewDetail,
+  timeRange = '30d',
+  onTimeRangeChange,
+  hasMoreOlder = false,
+  isLoadingOlder = false,
+  onLoadOlder,
 }) => {
   const { messageId } = useParams<{ messageId?: string }>();
   const lastOpenedMsgRef = useRef<string | null>(null);
@@ -84,6 +95,8 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         onSearchChange={onSearchChange}
         filterType={filterType}
         onFilterChange={onFilterChange}
+        timeRange={timeRange}
+        onTimeRangeChange={onTimeRangeChange}
         autoScroll={autoScroll}
         onToggleAutoScroll={toggleAutoScroll}
         onExportJson={exportJson}
@@ -92,6 +105,37 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
       />
+
+      {/* 1.1. Older Window Banner (Load previous 30 days) */}
+      {hasMoreOlder && (
+        <div className="flex items-center justify-between px-3.5 py-2 bg-emerald-500/10 border border-emerald-500/25 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 shrink-0 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="font-mono text-[11px] sm:text-xs">
+              Loaded {messages.length.toLocaleString()} messages ({stats.total.toLocaleString()} total in database)
+            </span>
+          </div>
+          {onLoadOlder && (
+            <button
+              onClick={onLoadOlder}
+              disabled={isLoadingOlder}
+              className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-xs shrink-0"
+              title="Fetch older messages from earlier 30 days"
+            >
+              {isLoadingOlder ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <>
+                  <span>⬆️ Load previous 30 days</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 2. Scrollable Native Table / Privacy Lock when Unlinked */}
       {!deviceStatus?.connected && deviceStatus?.status !== 'authenticated' ? (

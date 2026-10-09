@@ -22,7 +22,8 @@ import {
   getStats,
   getAllMessagesForExport,
   repairExistingChatNames,
-  hasOlderChatMessages
+  hasOlderChatMessages,
+  hasOlderMessages
 } from './storage/storage.js';
 import {
   connectWhatsApp,
@@ -224,14 +225,43 @@ function normalizeMessage(m) {
 app.get('/api/messages', (req, res) => {
   const search = req.query.search || '';
   const filter = req.query.filter || 'all';
-  const limit = req.query.limit || '200';
   const remoteJid = req.query.remoteJid || null;
+  const before = req.query.before ? Number(req.query.before) : null;
+  const limitParam = req.query.limit;
 
-  const rawMessages = getMessages({ search, filter, limit, remoteJid });
+  let days = null;
+  let limit = '2000';
+
+  if (limitParam === '30d' || req.query.days === '30' || (!limitParam && !req.query.days && !before)) {
+    days = 30;
+    limit = req.query.limit && !isNaN(req.query.limit) ? req.query.limit : '25000';
+  } else if (limitParam === '60d' || req.query.days === '60') {
+    days = 60;
+    limit = '35000';
+  } else if (limitParam === '90d' || req.query.days === '90') {
+    days = 90;
+    limit = '50000';
+  } else if (limitParam === 'all' || req.query.days === 'all') {
+    limit = 'all';
+    days = null;
+  } else if (limitParam) {
+    limit = limitParam;
+    days = req.query.days ? Number(req.query.days) : null;
+  }
+
+  const rawMessages = getMessages({ search, filter, limit, remoteJid, before, days });
   const messages = rawMessages.map(normalizeMessage);
+  const stats = getStats();
+  const oldestTimestamp = messages.length > 0 ? messages[messages.length - 1].timestamp : null;
+  const hasMore = hasOlderMessages(oldestTimestamp);
+
   res.json({
     count: messages.length,
-    stats: getStats(),
+    loadedCount: messages.length,
+    totalInDb: stats.totalMessages || stats.total,
+    hasMore,
+    oldestTimestamp,
+    stats,
     messages
   });
 });
