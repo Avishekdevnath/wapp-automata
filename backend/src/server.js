@@ -201,8 +201,9 @@ app.post('/api/accounts/reset', async (req, res) => {
 // Helper to normalize message fields for both React Dashboard & Web UI
 function normalizeMessage(m) {
   if (!m) return m;
+  const { raw_json, ...rest } = m;
   return {
-    ...m,
+    ...rest,
     text: m.message_text || '',
     chat_jid: m.remote_jid,
     occurred_at: m.timestamp ? new Date(m.timestamp).toISOString() : new Date().toISOString(),

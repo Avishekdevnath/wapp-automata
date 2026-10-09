@@ -18,6 +18,7 @@ export function useMessages() {
   // Tracking state to detect fresh incoming messages in real-time
   const seenIdsRef = useRef<Set<string>>(new Set());
   const isInitialLoadRef = useRef<boolean>(true);
+  const isLoadingRef = useRef<boolean>(false);
 
   const getFetchParams = useCallback((range: string) => {
     if (range === '30d') return { days: 30, limit: 25000 };
@@ -27,8 +28,11 @@ export function useMessages() {
     return { limit: Number(range) || 2000 };
   }, []);
 
+  // Full Window Loader (Initial mount, explicit manual refresh, or timeRange switch)
   const loadMessages = useCallback(async () => {
     try {
+      setLoading(true);
+      isLoadingRef.current = true;
       const fetchParams = getFetchParams(timeRange);
       const data = await fetchMessages(fetchParams);
       if ((data as any).serverStats) {
@@ -50,21 +54,13 @@ export function useMessages() {
         (window as any).__wapp_recent_messages = valid;
       }
 
+      // Register seen IDs
+      seenIdsRef.current.clear();
+      valid.forEach(m => seenIdsRef.current.add(m.id));
+
       if (isInitialLoadRef.current) {
-        // Register historical buffer on initial page load
-        valid.forEach(m => seenIdsRef.current.add(m.id));
         logStreamListeningBanner(valid.length);
         isInitialLoadRef.current = false;
-      } else {
-        // Detect newly arrived messages that weren't present in previous fetch
-        const newlyArrived = valid
-          .filter(m => !seenIdsRef.current.has(m.id))
-          .reverse(); // Log in chronological order
-
-        for (const newMsg of newlyArrived) {
-          seenIdsRef.current.add(newMsg.id);
-          logDecryptedMessage(newMsg);
-        }
       }
 
       setMessages(valid);
@@ -73,14 +69,54 @@ export function useMessages() {
       setError((err as Error).message);
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
   }, [timeRange, getFetchParams]);
 
+  // Lightweight incremental poll for fresh incoming messages every 5s
+  const pollRecent = useCallback(async () => {
+    if (isLoadingRef.current) return;
+    try {
+      const recent = await fetchMessages({ limit: 50 });
+      if ((recent as any).serverStats) {
+        setServerStats((recent as any).serverStats);
+      }
+
+      const valid = recent.filter(m => {
+        const content = (m.text || m.message_text || '').trim();
+        const hasMedia = Boolean(m.has_media);
+        return Boolean(content || hasMedia);
+      });
+
+      const incoming = valid.filter(m => !seenIdsRef.current.has(m.id));
+      if (incoming.length > 0) {
+        // Log in chronological order
+        const chronological = [...incoming].reverse();
+        for (const newMsg of chronological) {
+          seenIdsRef.current.add(newMsg.id);
+          logDecryptedMessage(newMsg);
+        }
+
+        // Prepend fresh messages to the live table
+        setMessages(prev => {
+          const prevIds = new Set(prev.map(m => m.id));
+          const toAdd = incoming.filter(m => !prevIds.has(m.id));
+          return toAdd.length > 0 ? [...toAdd, ...prev] : prev;
+        });
+      }
+    } catch (e) {
+      // Background poll failure is non-fatal
+    }
+  }, []);
+
   useEffect(() => {
     loadMessages();
-    const interval = setInterval(loadMessages, 5000);
-    return () => clearInterval(interval);
   }, [loadMessages]);
+
+  useEffect(() => {
+    const interval = setInterval(pollRecent, 5000);
+    return () => clearInterval(interval);
+  }, [pollRecent]);
 
   const loadOlderMessages = useCallback(async () => {
     if (!oldestTimestamp || isLoadingOlder) return;
