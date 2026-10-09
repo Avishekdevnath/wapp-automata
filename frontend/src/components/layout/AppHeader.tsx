@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Menu,
   ChevronDown,
@@ -9,11 +9,15 @@ import {
   Moon,
   Settings,
   Keyboard,
-  Lock
+  Lock,
+  Building2,
+  Plus,
+  Check
 } from 'lucide-react';
 import type { ViewType } from './AppSidebar';
 import type { DeviceStatus } from '../../types/status';
 import { useUI } from '../../context/UIContext';
+import { useAccount } from '../../context/AccountContext';
 import { cleanPhone } from '../../utils/formatters';
 
 interface AppHeaderProps {
@@ -77,6 +81,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onLogout,
 }) => {
   const { isDarkMode, toggleTheme, isSoundOn, toggleSound } = useUI();
+  const { accounts, activeAccountId, activeAccount, switchAccount, createDesk, isSwitching } = useAccount();
+  const [isDeskDropdownOpen, setIsDeskDropdownOpen] = useState(false);
+  const deskDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (deskDropdownRef.current && !deskDropdownRef.current.contains(e.target as Node)) {
+        setIsDeskDropdownOpen(false);
+      }
+    };
+    if (isDeskDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isDeskDropdownOpen]);
 
   const meta = VIEW_METADATA[activeView] || VIEW_METADATA.routes;
   const isLinked = deviceStatus.connected || deviceStatus.status === 'authenticated';
@@ -106,6 +125,69 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         {/* Right: Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Multi-Account Desk Selector */}
+          <div className="relative" ref={deskDropdownRef}>
+            <button
+              onClick={() => setIsDeskDropdownOpen(!isDeskDropdownOpen)}
+              disabled={isSwitching}
+              className="btn btn-secondary btn-sm"
+              title="Switch Workspace Desk"
+            >
+              <Building2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] truncate max-w-[110px] hidden sm:inline">
+                {activeAccount?.label || activeAccountId}
+              </span>
+              <ChevronDown className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
+            </button>
+
+            {isDeskDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-700 shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-1">
+                <div className="px-3 py-1.5 border-b border-slate-100 dark:border-dark-800 text-[10px] font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+                  Isolated Workspace Desks ({accounts.length})
+                </div>
+                <div className="max-h-48 overflow-y-auto py-1">
+                  {accounts.map((acc) => {
+                    const isCurrent = acc.id === activeAccountId;
+                    return (
+                      <button
+                        key={acc.id}
+                        onClick={() => {
+                          switchAccount(acc.id);
+                          setIsDeskDropdownOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-dark-800 transition-colors cursor-pointer ${
+                          isCurrent ? 'text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/5' : 'text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${isCurrent ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                          <span className="truncate">{acc.label || acc.id}</span>
+                        </div>
+                        {isCurrent && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="border-t border-slate-100 dark:border-dark-800 p-1">
+                  <button
+                    onClick={() => {
+                      const name = window.prompt('Enter new desk name (e.g. Sales Desk, Support, Account 2):');
+                      if (name && name.trim()) {
+                        const cleanId = name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+                        createDesk(cleanId, name.trim());
+                      }
+                      setIsDeskDropdownOpen(false);
+                    }}
+                    className="w-full px-2.5 py-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 shrink-0" />
+                    <span>Create New Desk...</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* WhatsApp Device Manager Trigger Pill */}
           <button
             onClick={onOpenDeviceModal}

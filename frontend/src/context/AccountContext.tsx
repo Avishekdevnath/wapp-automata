@@ -9,7 +9,7 @@ interface AccountContextValue {
   isSwitching: boolean;
   switchAccount: (id: string) => void;
   refreshAccounts: () => Promise<void>;
-  createDesk: (id: string) => Promise<boolean>;
+  createDesk: (id: string, name?: string) => Promise<boolean>;
   restartDesk: (id: string) => Promise<boolean>;
 }
 
@@ -26,7 +26,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { id: 'telcia-prod', label: 'Telcia Production', isDefault: true }
   ]);
   const [fleet, setFleet] = useState<FleetAccountStatus[]>([]);
-  const isSwitching = false;
+  const [isSwitching, setIsSwitching] = useState<boolean>(false);
 
   const refreshAccounts = useCallback(async () => {
     try {
@@ -39,14 +39,8 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setActiveAccountId(currentActive);
         localStorage.setItem(STORAGE_KEY, currentActive);
       }
-      const effectiveId = currentActive || activeAccountId;
-      const isolatedAccs = accs.filter(a => a.id === effectiveId);
-      setAccounts(
-        isolatedAccs.length > 0
-          ? isolatedAccs
-          : [{ id: effectiveId, label: effectiveId === 'default' ? 'Desk 1 (Primary)' : `Desk ${effectiveId.toUpperCase()}`, isDefault: true }]
-      );
-      setFleet(flt.filter(f => f.accountId === effectiveId));
+      setAccounts(accs.length > 0 ? accs : [{ id: 'telcia-prod', label: 'Telcia Production', isDefault: true }]);
+      setFleet(flt);
     } catch (err) {
       console.warn('Failed to refresh accounts:', err);
     }
@@ -58,17 +52,55 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => clearInterval(interval);
   }, [refreshAccounts]);
 
-  // Cross-desk switching is strictly locked in isolated operator sessions
-  const switchAccount = useCallback((id: string) => {
-    if (id !== activeAccountId) {
-      console.warn('[Security] Cross-desk switching disabled for isolated operator sessions.');
-    }
-  }, [activeAccountId]);
+  const switchAccount = useCallback(async (id: string) => {
+    if (!id || id === activeAccountId) return;
+    setIsSwitching(true);
+    try {
+      const token = localStorage.getItem('wapp_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const createDesk = useCallback(async (_id: string) => {
-    console.warn('[Security] Cross-desk provisioning disabled for isolated operator sessions.');
-    return false;
-  }, []);
+      const res = await fetch('/api/accounts/switch', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ accountId: id })
+      });
+
+      if (res.ok) {
+        localStorage.setItem(STORAGE_KEY, id);
+        setActiveAccountId(id);
+        window.dispatchEvent(new CustomEvent('wapp:account-changed', { detail: { accountId: id } }));
+        await refreshAccounts();
+      }
+    } catch (err) {
+      console.error('Failed to switch desk:', err);
+    } finally {
+      setIsSwitching(false);
+    }
+  }, [activeAccountId, refreshAccounts]);
+
+  const createDesk = useCallback(async (id: string, name?: string) => {
+    try {
+      const token = localStorage.getItem('wapp_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('/api/accounts/create', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ accountId: id, name: name || id })
+      });
+
+      if (res.ok) {
+        await refreshAccounts();
+        await switchAccount(id);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, [refreshAccounts, switchAccount]);
 
   const restartDeskSocket = useCallback(async (id: string) => {
     if (id !== activeAccountId) return false;
@@ -82,7 +114,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const activeAccount = useMemo(() => {
     return accounts.find(a => a.id === activeAccountId) || {
       id: activeAccountId,
-      label: activeAccountId === 'default' ? 'Desk 1 (Primary)' : `Desk ${activeAccountId.toUpperCase()}`,
+      label: activeAccountId === 'telcia-prod' ? 'Telcia Production' : `Desk ${activeAccountId.toUpperCase()}`,
       isDefault: activeAccountId === 'default'
     };
   }, [accounts, activeAccountId]);

@@ -144,6 +144,22 @@ app.get('/api/accounts', (req, res) => {
   res.json({ accounts: listAccounts(), activeAccountId: getActiveAccountId() });
 });
 
+app.post(['/api/accounts/create', '/api/admin/desks'], (req, res) => {
+  const { accountId, name } = req.body || {};
+  if (!accountId) {
+    return res.status(400).json({ error: 'accountId is required' });
+  }
+  const cleanId = accountId.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  const paths = ensureAccountDirs(cleanId);
+  fs.writeFileSync(paths.accountJsonPath, JSON.stringify({
+    id: cleanId,
+    name: name || `Desk ${cleanId.toUpperCase()}`,
+    createdAt: Date.now()
+  }, null, 2));
+  getDb(cleanId); // Initializes schema and sqlite file for the new desk
+  res.json({ success: true, account: { id: cleanId, name: name || cleanId, isDefault: false } });
+});
+
 app.post('/api/accounts/switch', async (req, res) => {
   const { accountId } = req.body || {};
   if (!accountId) {
