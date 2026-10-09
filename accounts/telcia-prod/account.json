@@ -1,0 +1,6 @@
+{
+  "id": "telcia-prod",
+  "name": "Telcia Production",
+  "role": "client",
+  "description": "Production client workspace for VPS deployment"
+}

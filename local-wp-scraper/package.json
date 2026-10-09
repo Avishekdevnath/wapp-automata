@@ -4,7 +4,8 @@
   "description": "Isolated local WhatsApp scraper, login/logout, and real-time message catcher with plain HTML",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "watchdog": "node watchdog-runner.js"
   },
   "keywords": ["whatsapp", "baileys", "scraper", "isolated"],
   "author": "",

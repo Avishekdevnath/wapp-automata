@@ -14,6 +14,7 @@ dist/
 data/
 *.db
 *.sqlite
+*.sqlite*
 *.sqlite3
 
 # WhatsApp/session data
@@ -22,6 +23,15 @@ data/
 .sessions/
 local-wp-scraper/session/
 local-wp-scraper/data/
+# Private local dev accounts (Strictly local to this device, never in git or VPS)
+accounts/dev-test/
+accounts/dev-*/
+accounts/personal/
+
+accounts/**/data/*.sqlite*
+accounts/**/session/*
+!accounts/**/session/.gitkeep
+archive/
 
 # Logs
 logs/

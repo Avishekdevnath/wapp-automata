@@ -7,8 +7,26 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 
-const { connectWhatsApp, requestPairingCode, logoutWhatsApp, getStatus, addEventListener } = require('./whatsapp');
-const { getMessages, getAllMessagesForExport, clearMessages, getStats } = require('./storage');
+const {
+  connectWhatsApp,
+  requestPairingCode,
+  logoutWhatsApp,
+  getStatus,
+  addEventListener,
+  syncGroupNames,
+  catchupRecentChats,
+  triggerWatchdogReconnect
+} = require('./whatsapp');
+const {
+  getMessages,
+  getAllMessagesForExport,
+  clearMessages,
+  getStats,
+  getChatsList,
+  getChatMessages,
+  getChatTotal,
+  deleteChatMessages
+} = require('./storage');
 
 const PORT = process.env.PORT || 5050;
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -180,6 +198,86 @@ const server = http.createServer(async (req, res) => {
       return sendJson(200, { status: 'ok', importedCount: imported });
     }
 
+    // 11. Get Distinct Chats & Groups List
+    if (req.method === 'GET' && pathname === '/api/chats') {
+      const search = parsedUrl.searchParams.get('search') || '';
+      const filter = parsedUrl.searchParams.get('filter') || 'all';
+      const chats = getChatsList({ search, filter });
+      return sendJson(200, {
+        count: chats.length,
+        chats
+      });
+    }
+
+    // 12. Sync Group Titles/Subjects & Participant LIDs from Baileys
+    if (req.method === 'POST' && pathname === '/api/chats/sync-names') {
+      const result = await syncGroupNames();
+      return sendJson(200, {
+        status: 'ok',
+        updatedCount: typeof result === 'object' ? result.groups : result,
+        groups: result?.groups || 0,
+        participants: result?.participants || 0
+      });
+    }
+
+    // 12b. Proactive History Catchup for Active Chats
+    if (req.method === 'POST' && pathname === '/api/sync-history') {
+      const result = await catchupRecentChats(50);
+      return sendJson(200, {
+        status: 'ok',
+        message: 'Catch-up sync initiated with mobile phone',
+        ...result
+      });
+    }
+
+    // 12c. Manual Watchdog Reconnection Trigger
+    if (req.method === 'POST' && pathname === '/api/reconnect') {
+      triggerWatchdogReconnect().catch(err => console.error('Reconnect error:', err));
+      return sendJson(200, { status: 'ok', message: 'Watchdog reconnection initiated' });
+    }
+
+    // 13. Single Chat Messages API: GET /api/chats/<encoded_jid>/messages
+    const chatMsgsMatch = pathname.match(/^\/api\/chats\/(.+)\/messages$/);
+    if (req.method === 'GET' && chatMsgsMatch) {
+      const remoteJid = decodeURIComponent(chatMsgsMatch[1]);
+      const search = parsedUrl.searchParams.get('search') || '';
+      const limit = parsedUrl.searchParams.get('limit') || 'all';
+      const messages = getChatMessages(remoteJid, { search, limit });
+      const totalInDb = getChatTotal(remoteJid);
+      return sendJson(200, {
+        remoteJid,
+        totalInDb,
+        loadedCount: messages.length,
+        count: messages.length,
+        messages
+      });
+    }
+
+    // 14. Export Single Chat Messages: GET /api/chats/<encoded_jid>/export
+    const chatExportMatch = pathname.match(/^\/api\/chats\/(.+)\/export$/);
+    if (req.method === 'GET' && chatExportMatch) {
+      const remoteJid = decodeURIComponent(chatExportMatch[1]);
+      const messages = getChatMessages(remoteJid, { limit: 10000 });
+      const safeName = remoteJid.replace(/[^a-zA-Z0-9_-]/g, '_');
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Content-Disposition': `attachment; filename="chat_${safeName}_${Date.now()}.json"`
+      });
+      return res.end(JSON.stringify({ remoteJid, count: messages.length, messages }, null, 2));
+    }
+
+    // 15. Delete Single Chat Messages: DELETE /api/chats/<encoded_jid>
+    const chatDeleteMatch = pathname.match(/^\/api\/chats\/(.+)$/);
+    if (req.method === 'DELETE' && chatDeleteMatch && !pathname.endsWith('/messages') && !pathname.endsWith('/export')) {
+      const remoteJid = decodeURIComponent(chatDeleteMatch[1]);
+      const deleted = deleteChatMessages(remoteJid);
+      const payload = `data: ${JSON.stringify({ type: 'chat_cleared', data: { remoteJid } })}\n\n`;
+      for (const client of sseClients) {
+        try { client.write(payload); } catch (_) {}
+      }
+      return sendJson(200, { status: 'ok', remoteJid, deleted });
+    }
+
     sendJson(404, { error: 'Not Found' });
   } catch (err) {
     console.error('Request error:', err);
@@ -193,4 +291,26 @@ server.listen(PORT, () => {
   console.log(`📡 URL:       http://localhost:${PORT}/`);
   console.log(`🔒 Isolation: 100% Isolated Session & SQLite Storage`);
   console.log(`======================================================\n`);
+
+  // Auto-connect if session credentials already exist
+  const credsPath = path.join(__dirname, 'session', 'creds.json');
+  if (fs.existsSync(credsPath)) {
+    console.log('🔑 [Local Scraper] Saved credentials detected. Auto-connecting...');
+    connectWhatsApp().catch(err => console.warn('Auto-connect warning:', err.message));
+  }
 });
+
+// Graceful shutdown
+function gracefulShutdown(signal) {
+  console.log(`\n🛑 [Server] Received ${signal}. Shutting down cleanly...`);
+  server.close(() => {
+    console.log('✅ [Server] HTTP server closed.');
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(0), 3000);
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+

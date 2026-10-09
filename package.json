@@ -2,23 +2,18 @@
   "name": "wapp-automata",
   "version": "0.1.0",
   "description": "Native WhatsApp message collector and webhook dispatcher with local SQLite durable queue",
-  "main": "backend/dist/index.js",
+  "type": "module",
+  "main": "backend/src/server.js",
   "workspaces": [
     "backend",
     "frontend"
   ],
   "scripts": {
-    "build": "npm run build --prefix backend && npm run build --prefix frontend",
-    "build:backend": "npm run build --prefix backend",
-    "build:frontend": "npm run build --prefix frontend",
-    "start": "node backend/dist/index.js",
-    "server": "node backend/src/server/index.js",
-    "dev:collector": "npm run dev --prefix backend",
-    "dev:frontend": "npm run dev --prefix frontend",
-    "dev:server": "npm run server:dev --prefix backend",
-    "dashboard": "node backend/src/server/index.js",
-    "deploy": "node scripts/deploy.js",
-    "test": "tsx --test tests/**/*.test.ts"
+    "start": "node backend/src/server.js",
+    "start:dev": "node backend/src/server.js --account=dev-test",
+    "start:prod": "node backend/src/server.js --account=telcia-prod",
+    "build": "npm run build --prefix frontend",
+    "dev:frontend": "npm run dev --prefix frontend"
   },
   "keywords": [
     "whatsapp",
@@ -40,6 +35,8 @@
     "@types/qrcode": "^1.5.6",
     "@whiskeysockets/baileys": "^6.7.24",
     "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0"
   }

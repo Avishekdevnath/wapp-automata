@@ -1,0 +1,5 @@
+{
+  "port": 4000,
+  "webhookUrl": "https://api.telcia.com/webhook",
+  "webhookSecret": "telcia_secret_key_change_me"
+}
