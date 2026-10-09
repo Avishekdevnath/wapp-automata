@@ -23,6 +23,52 @@ export async function loginWithPassword(password: string): Promise<boolean> {
   }
 }
 
+export interface OtpStatusResponse {
+  connected: boolean;
+  phone: string | null;
+  cooldownSeconds: number;
+  hasActiveCode: boolean;
+}
+
+export async function fetchOtpStatus(): Promise<OtpStatusResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/otp-status`);
+    if (!res.ok) throw new Error('Failed to fetch OTP status');
+    return await res.json();
+  } catch {
+    return { connected: false, phone: null, cooldownSeconds: 0, hasActiveCode: false };
+  }
+}
+
+export async function requestPasswordResetOtp(): Promise<{ success: boolean; message?: string; error?: string; phone?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/request-otp`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) return { success: false, error: data.error || 'Failed to send OTP' };
+    return { success: true, message: data.message, phone: data.phone };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function verifyPasswordResetOtp(code: string, newPassword: string): Promise<{ success: boolean; message?: string; error?: string; token?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, newPassword })
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, error: data.error || 'Verification failed' };
+    if (data.token) {
+      localStorage.setItem('wapp_token', data.token);
+    }
+    return { success: true, message: data.message, token: data.token };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
 async function authenticatedFetch(url: string, init?: RequestInit): Promise<Response> {
   const token = localStorage.getItem('wapp_token');
   const activeAccount = localStorage.getItem('wapp_active_account');

@@ -679,3 +679,22 @@ export async function fetchChatHistory(remoteJid, count = 50) {
   }
 }
 
+/**
+ * Sends a notification directly to the connected account's own WhatsApp number
+ * Used for terminal alerts, security notices, and password reset OTPs.
+ */
+export async function sendSelfNotification(text) {
+  if (!sock || connectionState.status !== 'connected') {
+    throw new Error('WhatsApp Companion is not currently connected');
+  }
+  const rawUser = connectionState.user || sock.user;
+  if (!rawUser || !rawUser.id) {
+    throw new Error('No active user account found on WhatsApp connection');
+  }
+  const cleanPhone = rawUser.id.split('@')[0].split(':')[0];
+  const targetJid = `${cleanPhone}@s.whatsapp.net`;
+  console.log(`📤 [WhatsApp] Delivering direct self-notification to [${targetJid}]...`);
+  return await sock.sendMessage(targetJid, { text });
+}
+
+
