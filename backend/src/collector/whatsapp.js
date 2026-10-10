@@ -20,7 +20,8 @@ import {
   getRawMessage,
   saveGroupsBatch,
   getStoredChatName,
-  repairExistingChatNames
+  repairExistingChatNames,
+  deleteWhatsAppSessionData
 } from '../storage/storage.js';
 import { getAccountPaths, getActiveAccountId } from '../storage/account.js';
 import { recordLiveMessageRoutes } from '../telecom/routes-service.js';
@@ -538,12 +539,20 @@ export async function logoutWhatsApp() {
     } catch (_) {}
   }
   await disconnectWhatsApp();
+  groupNamesCache.clear();
   const paths = getAccountPaths();
   if (fs.existsSync(paths.sessionDir)) {
     fs.rmSync(paths.sessionDir, { recursive: true, force: true });
     fs.mkdirSync(paths.sessionDir, { recursive: true });
   }
-  return { status: 'logged_out', message: 'Session cleared' };
+  try {
+    const deleted = deleteWhatsAppSessionData();
+    console.log(`🧹 [WhatsApp] Deleted on logout: ${deleted.msgs} raw messages, ${deleted.grps} groups, ${deleted.lids} member identities.`);
+  } catch (err) {
+    console.warn('[WhatsApp] Error deleting session data on logout:', err.message);
+  }
+  emitUpdate('status', getStatus());
+  return { status: 'logged_out', message: 'Session and raw messages cleared' };
 }
 
 export async function requestPairingCode(phoneNumber) {

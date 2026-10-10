@@ -972,30 +972,30 @@
           <div class="empty-icon" style="font-size: 40px; margin-bottom: 8px;">🟢</div>
           <h3 style="color: #fff; margin-bottom: 6px; font-size: 19px;">Live WhatsApp Catcher Active</h3>
           <p style="color: #4ade80; font-size: 13px; font-weight: 600; margin-bottom: 16px;">
-            Authenticated as <span id="dash-account">+8801874819713 (DNA)</span> • Listening Live
+            Authenticated as <span id="dash-account">Connecting...</span> • Listening Live
           </p>
 
           <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 10px; padding: 14px 18px; text-align: left; width: 100%; margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12.5px;">
               <span style="color: var(--text-muted);">Database Messages:</span>
-              <strong id="dash-total" style="color: #fff;">131,641 messages</strong>
+              <strong id="dash-total" style="color: #fff;">0 messages</strong>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12.5px;">
               <span style="color: var(--text-muted);">Total Chats Tracked:</span>
-              <strong id="dash-chats" style="color: #fff;">274 chats & groups</strong>
+              <strong id="dash-chats" style="color: #fff;">0 chats & groups</strong>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12.5px;">
               <span style="color: var(--text-muted);">Resolved Group Members:</span>
-              <strong id="dash-members" style="color: #6ee7b7;">12,288 member identities</strong>
+              <strong id="dash-members" style="color: #6ee7b7;">0 member identities</strong>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 12.5px;">
               <span style="color: var(--text-muted);">Last Message Caught:</span>
-              <span id="dash-last" style="color: #fbbf24; font-family: monospace;">8:26 PM (Online batch 14)</span>
+              <span id="dash-last" style="color: #fbbf24; font-family: monospace;">—</span>
             </div>
           </div>
 
           <div style="background: rgba(0, 168, 132, 0.08); border: 1px solid rgba(0, 168, 132, 0.25); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #cbd5e1; line-height: 1.5; text-align: left;">
-            ⚡ <strong>Listening for incoming messages:</strong> WhatsApp has been quiet with no new messages since 8:26 PM. You can send any message from your phone right now (or message yourself in WhatsApp) to see it captured live here in milliseconds!
+            ⚡ <strong>Listening for incoming messages:</strong> TELCIA WhatsApp collector is listening live. You can send any message to or from this account to see it captured here in milliseconds!
           </div>
         </div>
 
@@ -1307,6 +1307,21 @@
         document.getElementById('count-all').innerText = `(${data.stats.total || 0})`;
         document.getElementById('count-groups').innerText = `(${data.stats.groups || 0})`;
         document.getElementById('count-dms').innerText = `(${data.stats.dms || 0})`;
+
+        const dashTotal = document.getElementById('dash-total');
+        if (dashTotal) {
+          dashTotal.innerText = `${(data.stats.totalMessages || data.stats.total || 0).toLocaleString()} messages`;
+        }
+        const dashMembers = document.getElementById('dash-members');
+        if (dashMembers) {
+          dashMembers.innerText = `${(data.stats.resolvedMembers || 0).toLocaleString()} member identities`;
+        }
+        if (data.stats.lastMessageTimestamp) {
+          const dashLast = document.getElementById('dash-last');
+          if (dashLast) {
+            dashLast.innerText = new Date(data.stats.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+        }
       }
     }
 
@@ -1316,6 +1331,15 @@
       allStats.total = (allStats.total || 0) + 1;
       if (msg.chat_type === 'group') allStats.groups = (allStats.groups || 0) + 1;
       else allStats.dms = (allStats.dms || 0) + 1;
+
+      const dashTotal = document.getElementById('dash-total');
+      if (dashTotal) {
+        dashTotal.innerText = `${allStats.total.toLocaleString()} messages`;
+      }
+      const dashLast = document.getElementById('dash-last');
+      if (dashLast && msg.timestamp) {
+        dashLast.innerText = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
 
       // 2. If active chat matches incoming message, append bubble!
       if (activeChatJid && activeChatJid === msg.remote_jid) {

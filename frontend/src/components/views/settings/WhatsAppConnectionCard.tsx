@@ -24,8 +24,8 @@ export const WhatsAppConnectionCard: React.FC<WhatsAppConnectionCardProps> = ({
   const handleUnlinkWhatsApp = async () => {
     const ok = window.confirm(
       'Log out and unlink current WhatsApp account?\n\n' +
-      'To log in or connect another WhatsApp account, you must log out of this active session first.\n' +
-      'All saved routes, AI tasks, and incoming chat logs will remain completely safe.'
+      'Logging out will disconnect this WhatsApp session and delete all raw messages from the database.\n' +
+      'Your trading routes and AI configurations will remain intact.'
     );
     if (!ok) return;
 

@@ -294,11 +294,13 @@ app.post(['/api/session/pair-code', '/api/pair-code'], async (req, res) => {
 app.post(['/api/session/reset', '/api/session/logout', '/api/logout'], async (req, res) => {
   try {
     const result = await logoutWhatsApp();
+    broadcastSse('cleared', { count: 0 });
+    broadcastSse('status', getStatus());
     // Auto-reconnect so a fresh QR code is immediately available
     setTimeout(() => {
       connectWhatsApp().catch(err => console.warn('[WhatsApp] Post-reset auto-connect error:', err.message));
     }, 1000);
-    res.json({ success: true, message: 'Session unlinked. Fresh pairing ready.', ...result });
+    res.json({ success: true, message: 'Session unlinked. Raw messages deleted. Fresh pairing ready.', ...result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

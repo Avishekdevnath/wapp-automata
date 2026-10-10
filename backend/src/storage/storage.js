@@ -645,6 +645,26 @@ export function clearMessages() {
   return info.changes;
 }
 
+export function clearGroups() {
+  const db = getDb();
+  const info = db.prepare('DELETE FROM whatsapp_groups').run();
+  return info.changes;
+}
+
+export function clearLidMappings() {
+  const db = getDb();
+  const info = db.prepare('DELETE FROM lid_mappings').run();
+  return info.changes;
+}
+
+export function deleteWhatsAppSessionData() {
+  const db = getDb();
+  const msgs = db.prepare('DELETE FROM caught_messages').run().changes;
+  const grps = db.prepare('DELETE FROM whatsapp_groups').run().changes;
+  const lids = db.prepare('DELETE FROM lid_mappings').run().changes;
+  return { msgs, grps, lids };
+}
+
 export function getRawMessage(id) {
   try {
     if (!id) return undefined;
@@ -672,6 +692,8 @@ export function getStats() {
   const dms = db.prepare("SELECT COUNT(DISTINCT remote_jid) as count FROM caught_messages WHERE chat_type = 'direct'").get().count;
   const media = db.prepare('SELECT COUNT(*) as count FROM caught_messages WHERE has_media = 1').get().count;
   const lastMsg = db.prepare('SELECT timestamp FROM caught_messages ORDER BY timestamp DESC LIMIT 1').get();
+  const membersRow = db.prepare('SELECT COUNT(*) as count FROM lid_mappings').get();
+  const resolvedMembers = membersRow ? membersRow.count : 0;
 
   return {
     totalMessages: total,
@@ -681,6 +703,7 @@ export function getStats() {
     uniqueDms: dms,
     dms,
     mediaMessages: media,
+    resolvedMembers,
     lastMessageTimestamp: lastMsg ? lastMsg.timestamp : null
   };
 }

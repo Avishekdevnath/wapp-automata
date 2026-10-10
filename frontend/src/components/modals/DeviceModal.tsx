@@ -77,7 +77,7 @@ export const DeviceModal: React.FC<DeviceModalProps> = ({
   };
 
   const handleResetSession = async () => {
-    if (!confirm('Log out and unlink current WhatsApp account?\n\nTo log in or connect another WhatsApp account, you must log out of this active session first.\n\nYour message history and settings remain safe.')) return;
+    if (!confirm('Log out and unlink current WhatsApp account?\n\nThis will disconnect WhatsApp and delete all raw messages from the database.\n\nYour system configurations will remain safe.')) return;
     setIsResetting(true);
     try {
       await fetch('/api/session/reset', { method: 'POST' });
