@@ -616,7 +616,9 @@ app.post('/api/telecom/reparse', (req, res) => {
 // ==========================================
 
 app.get('/api/vendors', (req, res) => {
-  const result = getVendors();
+  const status = getStatus();
+  const selfPhone = status?.phone || null;
+  const result = getVendors(selfPhone);
   res.json(result);
 });
 

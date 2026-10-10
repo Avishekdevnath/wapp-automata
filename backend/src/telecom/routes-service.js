@@ -135,9 +135,11 @@ export function clearAllRoutes() {
 export function reparseHistoricalMessages(batchLimit = 5000) {
   const db = getDb();
   const messages = db.prepare(`
-    SELECT id, message_text, sender_phone, sender_name, timestamp 
+    SELECT id, message_text, sender_phone, sender_name, timestamp, is_from_me, chat_type, remote_jid 
     FROM caught_messages 
     WHERE message_text IS NOT NULL AND message_text != ''
+      AND is_from_me = 0
+      AND (chat_type = 'group' OR remote_jid LIKE '%@g.us')
     ORDER BY timestamp DESC
     LIMIT ?
   `).all(batchLimit);
@@ -217,6 +219,18 @@ export function reparseHistoricalMessages(batchLimit = 5000) {
  */
 export function recordLiveMessageRoutes(message) {
   if (!message || !message.message_text) return { newRoutes: 0 };
+
+  // Privacy & Integrity Guard:
+  // 1. Ignore outgoing messages from self (is_from_me)
+  if (message.is_from_me) {
+    return { newRoutes: 0 };
+  }
+  // 2. Only parse route offers from wholesale group chats, never private 1-on-1 DMs
+  const isGroup = message.chat_type === 'group' || (message.remote_jid && message.remote_jid.endsWith('@g.us'));
+  if (!isGroup) {
+    return { newRoutes: 0 };
+  }
+
   const parsed = parseTelecomMessage(
     message.message_text,
     message.sender_phone || '',

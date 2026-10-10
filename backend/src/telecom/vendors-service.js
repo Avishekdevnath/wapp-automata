@@ -21,15 +21,17 @@ function detectCountry(phone = '') {
   return 'International 🌐';
 }
 
-export function getVendors() {
+export function getVendors(excludePhone = null) {
   const db = getDb();
   const vendorsMap = new Map();
+  const excludeDigits = excludePhone ? excludePhone.replace(/\D/g, '') : null;
 
   // 1. Read existing registered vendors
   const dbVendors = db.prepare('SELECT phone, name, company, total_offers, last_seen_at FROM vendors').all();
   for (const v of dbVendors) {
     if (!v.phone) continue;
     const cleanPhone = v.phone.trim();
+    if (excludeDigits && cleanPhone.replace(/\D/g, '') === excludeDigits) continue;
     vendorsMap.set(cleanPhone, {
       id: 'v_' + cleanPhone.replace(/\D/g, ''),
       name: v.name && !v.name.startsWith('LID:') && !v.name.startsWith('+') ? v.name : cleanPhone,
@@ -53,6 +55,7 @@ export function getVendors() {
 
   for (const r of routeRows) {
     const p = r.vendor_phone.trim();
+    if (excludeDigits && p.replace(/\D/g, '') === excludeDigits) continue;
     let v = vendorsMap.get(p);
     if (!v) {
       v = {
@@ -192,11 +195,13 @@ export function getVendorDetail(identifier) {
   const buyOffers = routes.filter(r => (r.intent || '').toUpperCase() === 'WTB').length;
   const uniqueDestinations = Array.from(new Set(routes.map(r => r.country).filter(Boolean)));
 
-  // 4. Query recent raw messages from caught_messages
+  // 4. Query recent raw broadcasts from caught_messages (Group chats only, strictly non-self)
   const recentMessages = db.prepare(`
     SELECT id, message_text, timestamp, chat_name, sender_name
     FROM caught_messages
-    WHERE sender_phone = ? OR sender_phone = ? OR sender_phone LIKE ? OR sender_jid LIKE ?
+    WHERE (sender_phone = ? OR sender_phone = ? OR sender_phone LIKE ? OR sender_jid LIKE ?)
+      AND is_from_me = 0
+      AND (chat_type = 'group' OR remote_jid LIKE '%@g.us')
     ORDER BY timestamp DESC
     LIMIT 15
   `).all(vPhone, '+' + vDigits, `%${vDigits}%`, `%${vDigits}%`);
