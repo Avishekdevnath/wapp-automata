@@ -68,13 +68,13 @@ html:not(.dark) .text-yellow-300 {
   font-weight: 600 !important;
 }
 
-html:not(.dark) .text-emerald-100,
-html:not(.dark) .text-emerald-200,
-html:not(.dark) .text-emerald-300,
-html:not(.dark) [class*="text-emerald-300/"],
-html:not(.dark) .text-green-100,
-html:not(.dark) .text-green-200,
-html:not(.dark) .text-green-300 {
+html:not(.dark) .text-emerald-100:not(button *):not(.btn *),
+html:not(.dark) .text-emerald-200:not(button *):not(.btn *),
+html:not(.dark) .text-emerald-300:not(button *):not(.btn *),
+html:not(.dark) [class*="text-emerald-300/"]:not(button *):not(.btn *),
+html:not(.dark) .text-green-100:not(button *):not(.btn *),
+html:not(.dark) .text-green-200:not(button *):not(.btn *),
+html:not(.dark) .text-green-300:not(button *):not(.btn *) {
   color: #065f46 !important; /* Emerald 800 - deep bottle green */
   font-weight: 600 !important;
 }

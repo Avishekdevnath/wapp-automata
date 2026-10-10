@@ -4,6 +4,13 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
+// Load .env variables natively
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch (_) {}
+}
+
 import { getAccountConfig, getActiveAccountId } from './storage/account.js';
 import { closeDb } from './storage/db.js';
 import {

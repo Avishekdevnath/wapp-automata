@@ -450,10 +450,13 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ onSuccess }) => {
                 ) : (
                   <>
                     <span>Unlock Terminal</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                    <span className="ml-1 px-1.5 py-0.5 rounded bg-black/25 text-[10px] font-mono text-emerald-100">
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    <kbd
+                      className="ml-1.5 px-2 py-0.5 rounded-md bg-black/40 border border-white/30 text-white font-mono font-bold text-[11px] tracking-wider shadow-inner select-none pointer-events-none inline-flex items-center"
+                      style={{ color: '#ffffff' }}
+                    >
                       ↵ Enter
-                    </span>
+                    </kbd>
                   </>
                 )}
               </button>
