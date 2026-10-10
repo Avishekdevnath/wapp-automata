@@ -42,3 +42,7 @@ logs/
 .vscode/
 .idea/
 scratch/
+
+# Client quickstart guides containing credentials (never push to GitHub)
+CLIENT_QUICKSTART_GUIDE*
+**/CLIENT_QUICKSTART_GUIDE*
