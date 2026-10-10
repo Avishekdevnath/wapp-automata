@@ -1,8 +1,27 @@
 /**
- * Default Seed Knowledge Base Articles for Telcia WAPP Automata
+ * Default Seed Knowledge Base Articles for TELCIA (Telecom Cognitive Intelligent Agent)
  */
 export const SEED_KNOWLEDGE_BASE = [
-  // 0. LOGIN, ACCESS & AUTHENTICATION
+  // 0. ABOUT TELCIA
+  {
+    id: 'about-telcia-system',
+    category: 'system',
+    category_label: 'About TELCIA',
+    question: 'What is TELCIA and what does it stand for?',
+    short_answer: 'TELCIA stands for Telecom Cognitive Intelligent Agent—an autonomous real-time intelligence desk for wholesale telecom voice trading.',
+    detailed_steps: JSON.stringify([
+      '**TELCIA Full Form:** Telecom Cognitive Intelligent Agent.',
+      '**Mission:** Collect, parse, verify, and index live wholesale telecom voice trading offers, carrier corridors, and rate matrix broadcasts from WhatsApp groups and trader chats with zero message loss.',
+      '**Core Architecture:** WhatsApp Companion Gateway → Local SQLite Durable Queue → Regex & AI Route Extraction Pipeline → Dedicated Carrier CRM Dossiers → Webhook Dispatcher.',
+      '**Operator Standard:** Strict privacy isolation, automated rate card parsing, real-time market trends, and one-click WhatsApp knock trading.'
+    ]),
+    wait_time: '24/7 Autonomous Operation',
+    tags: JSON.stringify(['telcia', 'about', 'full form', 'telecom cognitive intelligent agent', 'what is telcia', 'meaning', 'architecture', 'overview']),
+    action_label: 'View Dashboard',
+    action_type: 'dashboard',
+    sort_order: 0
+  },
+  // 1. LOGIN, ACCESS & AUTHENTICATION
   {
     id: 'terminal-login-access',
     category: 'security',

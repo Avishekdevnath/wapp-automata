@@ -1,5 +1,6 @@
-# Telcia WAPP Automata 📡
-### Enterprise WhatsApp Companion Ingestion, Multi-Desk Collector & Real-Time Wholesale Intelligence Terminal
+# TELCIA 📡
+### Telecom Cognitive Intelligent Agent
+**Enterprise WhatsApp Companion Ingestion, Multi-Desk Collector & Real-Time Wholesale Intelligence Terminal**
 
 [![Node.js Version](https://img.shields.io/badge/Node.js-v22+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-v5.7+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -13,7 +14,7 @@
 
 ## 📌 Executive Summary
 
-**Telcia WAPP Automata** is an enterprise-grade, high-throughput WhatsApp companion terminal built specifically for wholesale telecom operators, VoIP trading desks, SMS aggregators, and commercial trade desks.
+**TELCIA** (**Tel**ecom **C**ognitive **I**ntelligent **A**gent) is an enterprise-grade, autonomous real-time intelligence desk built specifically for wholesale telecom voice operators, VoIP trading desks, SMS aggregators, and carrier corridors.
 
 It functions as an autonomous companion device connected directly to WhatsApp Multi-Device infrastructure via [Baileys](https://github.com/WhiskeySockets/Baileys). It ingests high-volume group traffic, bilateral trading chats, and carrier broadcast lists in real-time, persists all incoming messages with zero loss into isolated local SQLite databases, renders rich message markdown, and provides instant market intelligence, rate extraction, and multi-desk isolation.
 

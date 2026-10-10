@@ -61,6 +61,29 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '../../');
 const FRONTEND_DIST = path.join(ROOT_DIR, 'frontend', 'dist');
 
+// Native .env file loader for Telcia
+try {
+  const envPath = path.resolve(ROOT_DIR, '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    for (const line of envContent.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        let val = trimmed.slice(eqIdx + 1).trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (process.env[key] === undefined) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+} catch (_) {}
+
 const app = express();
 const config = getAccountConfig();
 const PORT = process.env.PORT || config.port || 5051;
@@ -144,7 +167,7 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ success: false, error: 'Invalid password. Please check your credentials.' });
   }
 
-  res.json({ success: true, token: 'wapp_auth_token_' + Date.now() });
+  res.json({ success: true, token: 'telcia_auth_token_' + Date.now() });
 });
 
 app.get('/api/auth/otp-status', (req, res) => {
@@ -222,7 +245,7 @@ app.post('/api/auth/verify-otp', (req, res) => {
     passwordResetState.code = null;
     passwordResetState.expiresAt = 0;
 
-    const token = 'wapp_auth_token_' + Date.now();
+    const token = 'telcia_auth_token_' + Date.now();
     res.json({
       success: true,
       message: 'Password reset successfully! Logging you in...',

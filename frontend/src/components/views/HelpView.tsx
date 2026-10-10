@@ -149,13 +149,17 @@ export const HelpView: React.FC<HelpViewProps> = ({
               <span className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                 <HelpCircle className="w-5 h-5" />
               </span>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                Client Knowledge Base & Help Concierge
-              </h1>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  TELCIA Knowledge Base & Concierge
+                </h1>
+                <p className="text-[11px] font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
+                  Telecom Cognitive Intelligent Agent
+                </p>
+              </div>
             </div>
             <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-              Step-by-step business guides, operational wait times, multi-desk setup, and instant troubleshooting.
-              Stored and managed directly in your local SQLite database.
+              Step-by-step business guides, operational wait times, multi-desk setup, and instant troubleshooting for your wholesale voice trading intelligence desk.
             </p>
           </div>
 
@@ -501,7 +505,7 @@ export const HelpView: React.FC<HelpViewProps> = ({
           <span>Need technical escalation? Contact Bijoytel Network NOC support</span>
         </div>
         <div className="font-mono text-[11px] text-slate-400 dark:text-slate-500">
-          Telcia WAPP Automata v2.4 • SQLite Durable Engine
+          TELCIA (Telecom Cognitive Intelligent Agent) v2.5 • SQLite Durable Engine
         </div>
       </div>
     </div>

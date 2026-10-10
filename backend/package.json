@@ -1,7 +1,7 @@
 {
-  "name": "wapp-backend",
+  "name": "telcia-backend",
   "version": "1.0.0",
   "type": "module",
-  "description": "Modular Monolith Backend for WhatsApp Collector & Telecom Intelligence",
+  "description": "TELCIA (Telecom Cognitive Intelligent Agent) - Backend & Wholesale Telecom Intelligence",
   "main": "src/server.js"
 }

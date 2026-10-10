@@ -257,7 +257,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                 src="/logo.png"
                 alt="Telcia"
                 className="w-10 h-10 rounded-xl object-cover shadow-md shadow-emerald-950/20 shrink-0 border border-emerald-500/30"
-                title="Telcia • Bangladesh Telecom Intelligence"
+                title="TELCIA • Telecom Cognitive Intelligent Agent"
               />
 
               <div className="sidebar-brand-text">
@@ -265,13 +265,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   <span className="font-black text-base tracking-tight text-slate-950 dark:text-white block">
                     Telcia
                   </span>
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black tracking-wider uppercase bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black tracking-wider uppercase bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30" title="Telecom Cognitive Intelligent Agent">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#f42a41] inline-block animate-pulse" />
-                    BD
+                    AGENT
                   </span>
                 </div>
-                <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-700 dark:text-emerald-400 block mt-0.5">
-                  Telecom Intelligence
+                <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-700 dark:text-emerald-400 block mt-0.5" title="Telecom Cognitive Intelligent Agent">
+                  Cognitive Intelligence
                 </span>
               </div>
             </div>

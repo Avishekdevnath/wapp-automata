@@ -177,7 +177,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ onSuccess }) => {
                   AI
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Telecom Intelligent Agent • Wholesale Carrier Terminal</p>
+              <p className="text-xs text-slate-400">Telecom Cognitive Intelligent Agent (TELCIA)</p>
             </div>
 
             <form onSubmit={handleLoginSubmit} className="space-y-4 text-left">
