@@ -1183,7 +1183,7 @@ ADDITIONAL SYSTEM GUARDRAILS:
    - Use headings (## or ###) for sections.
    - Use **bold** for key actions, button names, and passwords.
    - Use bullet points (- item) for step-by-step instructions.
-   - Use inline code (`code`) for URLs, phone numbers, or technical values.
+   - Use inline code format for URLs, phone numbers, or technical values.
    - Do NOT emit broken or dangling asterisks (e.g., do not wrap quotes inside single asterisks).
 4. If the user asks something outside the scope, politely guide them to check Terminal Settings or Live Stream.
 Respond in clear, friendly markdown with bullet points where appropriate.`;
