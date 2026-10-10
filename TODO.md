@@ -28,10 +28,10 @@ Tracking implementation tasks for frontend visual fidelity, modularity, and tele
   - [x] 4.2 In `frontend/src/components/views/VendorsView.tsx`, link Carrier Name, Avatar, and `Offers Volume` badge to navigate to `/vendors/:slug`.
   - [x] 4.3 In `frontend/src/components/views/VendorsView.tsx`, add `"View Carrier Dossier & Offers"` as the primary action in the table row Actions dropdown menu.
 
-- [ ] **Phase 5: Verification, Quality Gate & Deployment**
+- [x] **Phase 5: Verification, Quality Gate & Deployment**
   - [x] 5.1 Execute local build verification: `npm.cmd run build --prefix frontend`.
-  - [ ] 5.2 Verify deep linking, search, intent filtering, knock action, and back navigation.
-  - [ ] 5.3 Commit changes, push to `origin/main`, deploy to VPS (`201.18.215.195`), and verify live.
+  - [x] 5.2 Verify deep linking, search, intent filtering, knock action, and back navigation.
+  - [x] 5.3 Commit changes, push to `origin/main`, deploy to VPS (`201.18.215.195`), and verify live.
 
 ---
 
