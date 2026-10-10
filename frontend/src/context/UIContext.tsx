@@ -42,9 +42,13 @@ interface UIContextValue {
   routePageSize: number;
   setRoutePageSize: (size: number) => void;
 
-  // Feature Toggles (ADR-015)
+  // Feature Toggles (Trading & AI Controls)
   showPitchGenerator: boolean;
   setShowPitchGenerator: (val: boolean) => void;
+  enableWhatsAppKnock: boolean;
+  setEnableWhatsAppKnock: (val: boolean) => void;
+  showArbitrageSignals: boolean;
+  setShowArbitrageSignals: (val: boolean) => void;
 
   // Modal Manager
   activeModal: ModalType | null;
@@ -211,18 +215,45 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setRoutePageSizeState(size);
   }, []);
 
-  // 6. Feature Toggles (AI Pitch Generator)
+  // 6. Feature Toggles (AI & Trading Controls)
   const [showPitchGenerator, setShowPitchGeneratorState] = useState<boolean>(() => {
     try {
-      const saved = localStorage.getItem('wapp_show_pitch_generator');
+      const saved = localStorage.getItem('telcia_show_pitch_generator') ?? localStorage.getItem('wapp_show_pitch_generator');
       if (saved !== null) return saved === 'true';
     } catch (_) {}
     return true;
   });
 
   const setShowPitchGenerator = useCallback((val: boolean) => {
+    localStorage.setItem('telcia_show_pitch_generator', String(val));
     localStorage.setItem('wapp_show_pitch_generator', String(val));
     setShowPitchGeneratorState(val);
+  }, []);
+
+  const [enableWhatsAppKnock, setEnableWhatsAppKnockState] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('telcia_enable_wa_knock');
+      if (saved !== null) return saved === 'true';
+    } catch (_) {}
+    return true;
+  });
+
+  const setEnableWhatsAppKnock = useCallback((val: boolean) => {
+    localStorage.setItem('telcia_enable_wa_knock', String(val));
+    setEnableWhatsAppKnockState(val);
+  }, []);
+
+  const [showArbitrageSignals, setShowArbitrageSignalsState] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('telcia_show_arbitrage_signals');
+      if (saved !== null) return saved === 'true';
+    } catch (_) {}
+    return true;
+  });
+
+  const setShowArbitrageSignals = useCallback((val: boolean) => {
+    localStorage.setItem('telcia_show_arbitrage_signals', String(val));
+    setShowArbitrageSignalsState(val);
   }, []);
 
   // 7. Modal Window Manager
@@ -296,6 +327,10 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setRoutePageSize,
         showPitchGenerator,
         setShowPitchGenerator,
+        enableWhatsAppKnock,
+        setEnableWhatsAppKnock,
+        showArbitrageSignals,
+        setShowArbitrageSignals,
         activeModal,
         modalPayload,
         openModal,

@@ -9,6 +9,7 @@ import {
   Info
 } from 'lucide-react';
 import { cleanPhone } from '../../utils/formatters';
+import { useUI } from '../../context/UIContext';
 
 export interface RouteDetailItem {
   id: string;
@@ -41,6 +42,7 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
   onClose,
   onPitch,
 }) => {
+  const { showPitchGenerator, enableWhatsAppKnock } = useUI();
   const [copiedTicket, setCopiedTicket] = useState(false);
 
   if (!route) return null;
@@ -160,13 +162,13 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: 3 Focused 1-Word Entities */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-slate-200 dark:border-dark-800 w-full select-none">
+        {/* Action Buttons: Dynamically Balanced 1-Word Entities */}
+        <div className="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-slate-200 dark:border-dark-800 w-full select-none">
           {/* 1. Copy Ticket Entity */}
           <button
             type="button"
             onClick={handleCopyTicket}
-            className="w-full h-10 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-900 dark:hover:bg-dark-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-dark-700 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all whitespace-nowrap shadow-xs"
+            className="flex-1 h-10 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-900 dark:hover:bg-dark-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-dark-700 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all whitespace-nowrap shadow-xs"
             title="Copy wholesale trade ticket specs to clipboard"
           >
             {copiedTicket ? (
@@ -178,14 +180,14 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
           </button>
 
           {/* 2. AI Pitch Entity */}
-          {onPitch ? (
+          {onPitch && showPitchGenerator ? (
             <button
               type="button"
               onClick={() => {
                 onClose();
                 onPitch(route);
               }}
-              className="w-full h-10 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-purple-600/20 cursor-pointer transition-all whitespace-nowrap"
+              className="flex-1 h-10 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-purple-600/20 cursor-pointer transition-all whitespace-nowrap"
               title="Synthesize AI sales pitch via DeepSeek"
             >
               <Sparkles className="w-3.5 h-3.5 shrink-0 pointer-events-none" />
@@ -194,12 +196,12 @@ export const RouteDetailModal: React.FC<RouteDetailModalProps> = ({
           ) : null}
 
           {/* 3. WhatsApp Entity */}
-          {knockUrl ? (
+          {knockUrl && enableWhatsAppKnock ? (
             <a
               href={knockUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 cursor-pointer transition-all whitespace-nowrap"
+              className="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 cursor-pointer transition-all whitespace-nowrap"
               title={`Open direct WhatsApp chat with vendor (${route.vendorPhone})`}
             >
               <MessageCircle className="w-3.5 h-3.5 fill-current shrink-0 pointer-events-none" />

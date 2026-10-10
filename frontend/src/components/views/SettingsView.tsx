@@ -18,6 +18,7 @@ import { PasswordSecurityCard } from './settings/PasswordSecurityCard';
 import { DmRecordingCard } from './settings/DmRecordingCard';
 import { SidebarNavigationCard } from './settings/SidebarNavigationCard';
 import { AppearanceSoundCard } from './settings/AppearanceSoundCard';
+import { AiTradingFeaturesCard } from './settings/AiTradingFeaturesCard';
 import { StreamClearanceCard } from './settings/StreamClearanceCard';
 import { DataDeletionCenter } from './settings/DataDeletionCenter';
 
@@ -204,16 +205,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Card 2: Terminal Password & Security */}
         <PasswordSecurityCard />
 
-        {/* Card 3: Ingestion Filtering & DM Privacy */}
+        {/* Card 3: AI & Trading Features Controls */}
+        <AiTradingFeaturesCard />
+
+        {/* Card 4: Ingestion Filtering & DM Privacy */}
         <DmRecordingCard />
 
-        {/* Card 4: Sidebar Navigation Visibility */}
+        {/* Card 5: Sidebar Navigation Visibility */}
         <SidebarNavigationCard />
 
-        {/* Card 5: Appearance & Display Settings */}
+        {/* Card 6: Appearance & Display Settings */}
         <AppearanceSoundCard />
 
-        {/* Card 6: Live WhatsApp Stream Clearance */}
+        {/* Card 7: Live WhatsApp Stream Clearance */}
         <StreamClearanceCard
           onOpenDeleteStreamModal={onOpenDeleteStreamModal}
         />

@@ -26,7 +26,12 @@ import {
 import { useUI } from '../../context/UIContext';
 
 export const InsightsView: React.FC = () => {
-  const { showPitchGenerator } = useUI();
+  const {
+    showPitchGenerator,
+    enableWhatsAppKnock,
+    showArbitrageSignals,
+    setShowArbitrageSignals,
+  } = useUI();
   const [loading, setLoading] = useState(false);
   const [opportunities, setOpportunities] = useState<ArbitrageOpportunity[]>([]);
   const [summary, setSummary] = useState<InsightsSummary>({
@@ -252,7 +257,8 @@ export const InsightsView: React.FC = () => {
       </div>
 
       {/* Arbitrage Matchmaker Card */}
-      <div className="glass-card rounded-2xl p-6 border border-slate-200 dark:border-dark-700/80 bg-white/80 dark:bg-dark-900/40 space-y-4 shadow-sm dark:shadow-xl backdrop-blur-md">
+      {showArbitrageSignals ? (
+        <div className="glass-card rounded-2xl p-6 border border-slate-200 dark:border-dark-700/80 bg-white/80 dark:bg-dark-900/40 space-y-4 shadow-sm dark:shadow-xl backdrop-blur-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -414,16 +420,18 @@ export const InsightsView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-                  <button
-                    onClick={() => handleApplyOpportunity(opp)}
-                    title="Load into AI Pitch Generator"
-                    className="btn btn-secondary btn-sm flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-200 cursor-pointer"
-                  >
-                    <SlidersHorizontal className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-                    <span>Use In Pitch</span>
-                  </button>
+                  {showPitchGenerator && (
+                    <button
+                      onClick={() => handleApplyOpportunity(opp)}
+                      title="Load into AI Pitch Generator"
+                      className="btn btn-secondary btn-sm flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-200 cursor-pointer"
+                    >
+                      <SlidersHorizontal className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                      <span>Use In Pitch</span>
+                    </button>
+                  )}
 
-                  {waPhone ? (
+                  {waPhone && enableWhatsAppKnock ? (
                     <a
                       href={`https://wa.me/${waPhone}`}
                       target="_blank"
@@ -473,6 +481,21 @@ export const InsightsView: React.FC = () => {
           </div>
         )}
       </div>
+      ) : (
+        <div className="p-4 rounded-2xl border border-dashed border-slate-300 dark:border-dark-700 bg-slate-50/50 dark:bg-dark-950/40 flex items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="flex items-center gap-2.5">
+            <Scale className="w-4 h-4 text-slate-400 shrink-0" />
+            <span>Market Spreads & Arbitrage Signals are toggled <strong>OFF</strong> in Settings.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowArbitrageSignals(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-dark-800 hover:bg-slate-300 dark:hover:bg-dark-700 text-slate-800 dark:text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
+          >
+            Enable Arbitrage
+          </button>
+        </div>
+      )}
 
       {/* 1-Click AI Trade Negotiation Pitch Generator */}
       {showPitchGenerator && (

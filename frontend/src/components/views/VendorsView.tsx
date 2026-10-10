@@ -26,6 +26,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cleanPhone } from '../../utils/formatters';
+import { useUI } from '../../context/UIContext';
 import { ProfileAvatar } from '../common/ProfileAvatar';
 import { fetchVendors, deleteVendor, deleteAllVendors, type BackendVendorItem } from '../../api/client';
 import { matchesVendorSlug, getVendorSlug } from '../../utils/slug';
@@ -71,6 +72,7 @@ const cleanCountryName = (country?: string): string => {
 };
 
 export const VendorsView: React.FC = () => {
+  const { enableWhatsAppKnock } = useUI();
   const [vendors, setVendors] = useState<BackendVendorItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -630,7 +632,7 @@ export const VendorsView: React.FC = () => {
                               {vendor.phone}
                             </span>
                             <div className="flex items-center gap-0.5 opacity-60 group-hover/phone:opacity-100 transition-opacity">
-                              {knockUrl && (
+                              {knockUrl && enableWhatsAppKnock && (
                                 <a
                                   href={knockUrl}
                                   target="_blank"
@@ -712,7 +714,7 @@ export const VendorsView: React.FC = () => {
                                   <span>View Carrier Dossier</span>
                                 </Link>
 
-                                {knockUrl && (
+                                {knockUrl && enableWhatsAppKnock && (
                                   <a
                                     href={knockUrl}
                                     target="_blank"
@@ -950,26 +952,28 @@ export const VendorsView: React.FC = () => {
                     <span>{copiedId === vendor.id ? 'Copied' : 'Copy'}</span>
                   </button>
 
-                  {knockUrl ? (
-                    <a
-                      href={knockUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-primary btn-sm flex-1 h-9 flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer whitespace-nowrap"
-                      title={`Open WhatsApp chat with ${vendor.name}`}
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 pointer-events-none" />
-                      <span>WhatsApp</span>
-                    </a>
-                  ) : (
-                    <button
-                      disabled
-                      className="btn btn-secondary btn-sm flex-1 h-9 flex items-center justify-center gap-1.5 text-xs font-semibold opacity-40 cursor-not-allowed whitespace-nowrap"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 pointer-events-none" />
-                      <span>WhatsApp</span>
-                    </button>
-                  )}
+                  {enableWhatsAppKnock ? (
+                    knockUrl ? (
+                      <a
+                        href={knockUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary btn-sm flex-1 h-9 flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer whitespace-nowrap"
+                        title={`Open WhatsApp chat with ${vendor.name}`}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 pointer-events-none" />
+                        <span>WhatsApp</span>
+                      </a>
+                    ) : (
+                      <button
+                        disabled
+                        className="btn btn-secondary btn-sm flex-1 h-9 flex items-center justify-center gap-1.5 text-xs font-semibold opacity-40 cursor-not-allowed whitespace-nowrap"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 pointer-events-none" />
+                        <span>WhatsApp</span>
+                      </button>
+                    )
+                  ) : null}
                 </div>
               </div>
             );

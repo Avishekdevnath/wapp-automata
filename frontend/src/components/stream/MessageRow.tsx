@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { WhatsAppMessage } from '../../types/message';
 import { formatTime, formatDate, cleanPhone } from '../../utils/formatters';
+import { useUI } from '../../context/UIContext';
 import { ProfileAvatar } from '../common/ProfileAvatar';
 import { WhatsAppMarkdown } from '../common/WhatsAppMarkdown';
 
@@ -26,6 +27,7 @@ interface MessageRowProps {
 }
 
 const MessageRowInner: React.FC<MessageRowProps> = ({ message, onViewDetail }) => {
+  const { enableWhatsAppKnock } = useUI();
   const [copied, setCopied] = useState(false);
 
   const isOutbound = Boolean(message.is_from_me);
@@ -270,7 +272,7 @@ const MessageRowInner: React.FC<MessageRowProps> = ({ message, onViewDetail }) =
             <span>View</span>
           </button>
 
-          {knockUrl && (
+          {knockUrl && enableWhatsAppKnock && (
             <a
               href={knockUrl}
               target="_blank"

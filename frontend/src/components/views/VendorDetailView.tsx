@@ -27,6 +27,7 @@ import {
 } from '../../api/client';
 import { ProfileAvatar } from '../common/ProfileAvatar';
 import { cleanPhone } from '../../utils/formatters';
+import { useUI } from '../../context/UIContext';
 
 // Relative time formatting helper
 const formatRelativeTime = (timestamp?: number | string): string => {
@@ -48,6 +49,7 @@ const formatRelativeTime = (timestamp?: number | string): string => {
 export const VendorDetailView: React.FC = () => {
   const { vendorSlug } = useParams<{ vendorSlug: string }>();
   const navigate = useNavigate();
+  const { enableWhatsAppKnock } = useUI();
 
   const [vendor, setVendor] = useState<VendorDetailItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -230,7 +232,7 @@ export const VendorDetailView: React.FC = () => {
             <span>Refresh</span>
           </button>
 
-          {knockGeneralUrl && (
+          {knockGeneralUrl && enableWhatsAppKnock && (
             <a
               href={knockGeneralUrl}
               target="_blank"
@@ -307,7 +309,7 @@ export const VendorDetailView: React.FC = () => {
 
           {/* Quick Knock Bar */}
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-            {knockGeneralUrl && (
+            {knockGeneralUrl && enableWhatsAppKnock && (
               <a
                 href={knockGeneralUrl}
                 target="_blank"
@@ -650,7 +652,7 @@ export const VendorDetailView: React.FC = () => {
 
                       {/* Knock Action */}
                       <td className="py-3 px-4 text-right">
-                        {knockOfferUrl ? (
+                        {knockOfferUrl && enableWhatsAppKnock ? (
                           <a
                             href={knockOfferUrl}
                             target="_blank"

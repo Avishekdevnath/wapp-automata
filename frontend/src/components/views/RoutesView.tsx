@@ -23,6 +23,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cleanPhone } from '../../utils/formatters';
+import { useUI } from '../../context/UIContext';
 import { ProfileAvatar } from '../common/ProfileAvatar';
 import { fetchRoutes } from '../../api/client';
 import { matchesRouteSlug } from '../../utils/slug';
@@ -95,6 +96,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
   onSelectRoute,
   onOpenPostRoute,
 }) => {
+  const { enableWhatsAppKnock } = useUI();
   const [routes, setRoutes] = useState<RouteItem[]>([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -949,7 +951,7 @@ export const RoutesView: React.FC<RoutesViewProps> = ({
                           <span className="hidden sm:inline">Copy</span>
                         </button>
 
-                        {knockUrl && (
+                        {knockUrl && enableWhatsAppKnock && (
                           <a
                             href={knockUrl}
                             target="_blank"

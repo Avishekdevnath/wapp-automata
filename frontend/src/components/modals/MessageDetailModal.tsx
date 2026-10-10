@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { WhatsAppMessage } from '../../types/message';
 import { formatTime, formatDate, cleanPhone } from '../../utils/formatters';
+import { useUI } from '../../context/UIContext';
 import { ProfileAvatar } from '../common/ProfileAvatar';
 import { WhatsAppMarkdown } from '../common/WhatsAppMarkdown';
 
@@ -23,6 +24,7 @@ interface MessageDetailModalProps {
 }
 
 export const MessageDetailModal: React.FC<MessageDetailModalProps> = ({ message, onClose }) => {
+  const { enableWhatsAppKnock } = useUI();
   const [copiedText, setCopiedText] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
@@ -306,7 +308,7 @@ export const MessageDetailModal: React.FC<MessageDetailModalProps> = ({ message,
         <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between text-xs">
           <div className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">Press ESC to close</div>
           <div className="flex items-center gap-2">
-            {knockUrl && (
+            {knockUrl && enableWhatsAppKnock && (
               <a
                 href={knockUrl}
                 target="_blank"

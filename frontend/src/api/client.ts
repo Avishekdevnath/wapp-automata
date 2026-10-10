@@ -137,6 +137,37 @@ export async function fetchAiSettings(): Promise<{
   }
 }
 
+export async function saveAiSettings(settings: {
+  provider: string;
+  deepseekKey?: string;
+  openaiKey?: string;
+  grokKey?: string;
+}): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/ai/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
+export async function testAiConnection(provider?: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/ai/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider }),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Network error' };
+  }
+}
+
 async function authenticatedFetch(url: string, init?: RequestInit): Promise<Response> {
   const token = localStorage.getItem('wapp_token');
   const activeAccount = localStorage.getItem('wapp_active_account');
