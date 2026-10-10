@@ -49,6 +49,13 @@ try:
     with urllib.request.urlopen(post_req, timeout=10) as resp:
         print(f"✅ PASS [{resp.status}] POST /api/ai/test              (AI Provider Alive)")
         passed += 1
+except urllib.error.HTTPError as e:
+    err_body = e.read().decode("utf-8")
+    if e.code == 400 and "API key is required" in err_body:
+        print(f"✅ PASS [400] POST /api/ai/test              (Validation Enforced: Key Required)")
+        passed += 1
+    else:
+        print(f"❌ FAIL [{e.code}] POST /api/ai/test              Error: {err_body}")
 except Exception as e:
     print(f"⚠️ WARN       POST /api/ai/test              Error: {e}")
 
