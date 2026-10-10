@@ -343,6 +343,36 @@ export interface CreateVendorPayload {
   notes?: string;
 }
 
+export interface VendorRouteOffer {
+  id: string;
+  country: string;
+  route_type: string;
+  billing_pulse: string;
+  rate_per_min: number | null;
+  intent: 'WTS' | 'WTB';
+  created_at: number;
+  raw_text?: string;
+  message_id?: string;
+}
+
+export interface VendorBroadcastMessage {
+  id: string;
+  message_text: string;
+  timestamp: number;
+  chat_name?: string;
+  sender_name?: string;
+}
+
+export interface VendorDetailItem extends Omit<BackendVendorItem, 'routes'> {
+  totalOffers: number;
+  sellOffers: number;
+  buyOffers: number;
+  destinationsCount: number;
+  destinations: string[];
+  routes: VendorRouteOffer[];
+  recentMessages: VendorBroadcastMessage[];
+}
+
 export async function fetchVendors(): Promise<BackendVendorItem[]> {
   try {
     const res = await authenticatedFetch(`${API_BASE}/vendors`);
@@ -352,6 +382,18 @@ export async function fetchVendors(): Promise<BackendVendorItem[]> {
   } catch (err) {
     console.error('Failed to fetch carriers and contacts:', err);
     return [];
+  }
+}
+
+export async function fetchVendorDetail(identifier: string): Promise<VendorDetailItem | null> {
+  try {
+    const res = await authenticatedFetch(`${API_BASE}/vendors/${encodeURIComponent(identifier)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.vendor || null;
+  } catch (err) {
+    console.error('Failed to fetch carrier detail:', err);
+    return null;
   }
 }
 

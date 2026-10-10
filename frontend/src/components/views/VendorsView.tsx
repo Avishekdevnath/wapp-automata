@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   Users,
   Search,
@@ -22,6 +22,8 @@ import {
   ChevronDown,
   Edit3,
   X,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 import { cleanPhone } from '../../utils/formatters';
 import { ProfileAvatar } from '../common/ProfileAvatar';
@@ -565,12 +567,20 @@ export const VendorsView: React.FC = () => {
                         {/* Carrier Name & Avatar */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <ProfileAvatar name={displayName} phone={vendor.phone} size="sm" />
+                            <Link to={`/vendors/${getVendorSlug(vendor)}`} className="shrink-0 hover:opacity-80 transition-opacity" title="View carrier dossier">
+                              <ProfileAvatar name={displayName} phone={vendor.phone} size="sm" />
+                            </Link>
                             <div className="min-w-0">
                               <div className="font-bold text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5">
-                                <span className={isFallback ? 'text-slate-800 dark:text-slate-200' : ''}>
-                                  {displayName}
-                                </span>
+                                <Link
+                                  to={`/vendors/${getVendorSlug(vendor)}`}
+                                  className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors truncate"
+                                  title="View carrier dossier & complete offers portfolio"
+                                >
+                                  <span className={isFallback ? 'text-slate-800 dark:text-slate-200' : ''}>
+                                    {displayName}
+                                  </span>
+                                </Link>
                                 {isFallback && !vendor.name && (
                                   <span className="text-[10px] font-normal text-slate-400 font-sans">(Company)</span>
                                 )}
@@ -649,9 +659,14 @@ export const VendorsView: React.FC = () => {
 
                         {/* Offers Count */}
                         <td className="py-3 px-4 text-center">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-mono">
-                            {vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}
-                          </span>
+                          <Link
+                            to={`/vendors/${getVendorSlug(vendor)}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all font-mono shadow-2xs group cursor-pointer"
+                            title={`View all ${vendor.offersCount} offers in carrier dossier`}
+                          >
+                            <span>{vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+                          </Link>
                         </td>
 
                         {/* Last Activity Formatted */}
@@ -688,6 +703,15 @@ export const VendorsView: React.FC = () => {
                                     : 'top-full mt-1.5'
                                 }`}
                               >
+                                <Link
+                                  to={`/vendors/${getVendorSlug(vendor)}`}
+                                  onClick={() => setActiveDropdownVendorId(null)}
+                                  className="w-full px-3 py-2 flex items-center gap-2 text-slate-900 dark:text-white hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors font-semibold"
+                                >
+                                  <FileText className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                  <span>View Carrier Dossier</span>
+                                </Link>
+
                                 {knockUrl && (
                                   <a
                                     href={knockUrl}
@@ -810,13 +834,21 @@ export const VendorsView: React.FC = () => {
               >
                 <div className="flex items-start justify-between gap-2.5">
                   <div className="flex items-start gap-3 min-w-0">
-                    <ProfileAvatar name={displayName} phone={vendor.phone} size="md" />
+                    <Link to={`/vendors/${getVendorSlug(vendor)}`} className="shrink-0 hover:opacity-80 transition-opacity" title="View carrier dossier">
+                      <ProfileAvatar name={displayName} phone={vendor.phone} size="md" />
+                    </Link>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                          <span className={isFallback ? 'text-slate-800 dark:text-slate-200' : ''}>
-                            {displayName}
-                          </span>
+                          <Link
+                            to={`/vendors/${getVendorSlug(vendor)}`}
+                            className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors truncate"
+                            title="View carrier dossier"
+                          >
+                            <span className={isFallback ? 'text-slate-800 dark:text-slate-200' : ''}>
+                              {displayName}
+                            </span>
+                          </Link>
                         </h4>
                         {isFallback && !vendor.name && (
                           <span className="text-[10px] font-normal text-slate-400 font-sans">(Company)</span>
@@ -836,9 +868,14 @@ export const VendorsView: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-mono">
-                      {vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}
-                    </span>
+                    <Link
+                      to={`/vendors/${getVendorSlug(vendor)}`}
+                      className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all font-mono shadow-2xs group cursor-pointer inline-flex items-center gap-1"
+                      title="View complete route portfolio"
+                    >
+                      <span>{vendor.offersCount} {vendor.offersCount === 1 ? 'Offer' : 'Offers'}</span>
+                      <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+                    </Link>
                     <button
                       type="button"
                       onClick={() => setVendorToEdit(vendor)}

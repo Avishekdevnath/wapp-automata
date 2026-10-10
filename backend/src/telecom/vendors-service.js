@@ -131,3 +131,100 @@ export function deleteVendor(phone) {
   const info = db.prepare('DELETE FROM vendors WHERE phone = ?').run(cleanPhone);
   return info.changes > 0;
 }
+
+export function getVendorDetail(identifier) {
+  if (!identifier) return null;
+  const db = getDb();
+  const cleanId = identifier.trim().toLowerCase();
+  const digitsOnly = cleanId.replace(/\D/g, '');
+
+  // 1. Get all vendors to find the match
+  const { vendors } = getVendors();
+  let matchedVendor = vendors.find(v => {
+    if (v.id.toLowerCase() === cleanId) return true;
+    const vDigits = v.phone.replace(/\D/g, '');
+    if (digitsOnly && digitsOnly.length >= 5 && (vDigits === digitsOnly || cleanId === `+${vDigits}`)) return true;
+    if (v.phone.toLowerCase() === cleanId) return true;
+    // Slug match
+    const compSlug = (v.company || '').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    if (compSlug && compSlug === cleanId) return true;
+    const nameSlug = (v.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    if (nameSlug && nameSlug === cleanId) return true;
+    return false;
+  });
+
+  // Fallback: If not found in aggregated list, check if phone exists directly in db
+  if (!matchedVendor && digitsOnly.length >= 6) {
+    const rawP = cleanId.startsWith('+') ? cleanId : `+${digitsOnly}`;
+    const dbV = db.prepare('SELECT phone, name, company, total_offers, last_seen_at FROM vendors WHERE phone = ? OR phone LIKE ?').get(rawP, `%${digitsOnly}%`);
+    if (dbV) {
+      matchedVendor = {
+        id: 'v_' + dbV.phone.replace(/\D/g, ''),
+        name: dbV.name || dbV.phone,
+        company: dbV.company || '',
+        phone: dbV.phone,
+        country: detectCountry(dbV.phone),
+        offersCount: dbV.total_offers || 0,
+        lastSeen: new Date(dbV.last_seen_at || Date.now()).toISOString(),
+        verified: Boolean(dbV.company && dbV.company.length > 2),
+        routes: []
+      };
+    }
+  }
+
+  if (!matchedVendor) {
+    return null;
+  }
+
+  const vPhone = matchedVendor.phone;
+  const vDigits = vPhone.replace(/\D/g, '');
+
+  // 2. Query ALL routes for this vendor (no limit!)
+  const routes = db.prepare(`
+    SELECT id, country, route_type, billing_pulse, rate_per_min, intent, raw_text, created_at, message_id
+    FROM route_ticks
+    WHERE vendor_phone = ? OR vendor_phone = ? OR vendor_phone LIKE ?
+    ORDER BY created_at DESC
+  `).all(vPhone, '+' + vDigits, `%${vDigits}%`);
+
+  // 3. Compute detailed metrics
+  const sellOffers = routes.filter(r => (r.intent || 'WTS').toUpperCase() === 'WTS').length;
+  const buyOffers = routes.filter(r => (r.intent || '').toUpperCase() === 'WTB').length;
+  const uniqueDestinations = Array.from(new Set(routes.map(r => r.country).filter(Boolean)));
+
+  // 4. Query recent raw messages from caught_messages
+  const recentMessages = db.prepare(`
+    SELECT id, message_text, timestamp, chat_name, sender_name
+    FROM caught_messages
+    WHERE sender_phone = ? OR sender_phone = ? OR sender_phone LIKE ? OR sender_jid LIKE ?
+    ORDER BY timestamp DESC
+    LIMIT 15
+  `).all(vPhone, '+' + vDigits, `%${vDigits}%`, `%${vDigits}%`);
+
+  return {
+    ...matchedVendor,
+    totalOffers: routes.length,
+    sellOffers,
+    buyOffers,
+    destinationsCount: uniqueDestinations.length,
+    destinations: uniqueDestinations,
+    routes: routes.map(r => ({
+      id: r.id,
+      country: r.country,
+      route_type: r.route_type,
+      billing_pulse: r.billing_pulse || '1/1',
+      rate_per_min: r.rate_per_min,
+      intent: (r.intent || 'WTS').toUpperCase(),
+      created_at: r.created_at,
+      raw_text: r.raw_text,
+      message_id: r.message_id
+    })),
+    recentMessages: recentMessages.map(m => ({
+      id: m.id,
+      message_text: m.message_text,
+      timestamp: m.timestamp,
+      chat_name: m.chat_name,
+      sender_name: m.sender_name
+    }))
+  };
+}

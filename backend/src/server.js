@@ -47,6 +47,7 @@ import {
 } from './telecom/routes-service.js';
 import {
   getVendors,
+  getVendorDetail,
   createVendor,
   deleteVendor
 } from './telecom/vendors-service.js';
@@ -617,6 +618,15 @@ app.post('/api/telecom/reparse', (req, res) => {
 app.get('/api/vendors', (req, res) => {
   const result = getVendors();
   res.json(result);
+});
+
+app.get('/api/vendors/:identifier', (req, res) => {
+  const { identifier } = req.params;
+  const vendor = getVendorDetail(identifier);
+  if (!vendor) {
+    return res.status(404).json({ error: 'Vendor not found' });
+  }
+  res.json({ success: true, vendor });
 });
 
 app.post('/api/vendors', (req, res) => {

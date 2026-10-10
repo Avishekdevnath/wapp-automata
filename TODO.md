@@ -1,61 +1,55 @@
-# WappAutomata Frontend Polish & E2E Parity TODO
+# WappAutomata Development Task Tracker (TODO)
 
-Tracking implementation tasks for frontend visual fidelity, modularity, and feature parity with the legacy terminal.
+Tracking implementation tasks for frontend visual fidelity, modularity, and telecom trading workflows.
 
 ---
 
-## Task List
+## Active Sprint: Dedicated Carrier Dossier & Complete Offers Matrix (`/vendors/:slug`)
+
+- [x] **Phase 1: Backend Data API for Carrier Dossier**
+  - [x] 1.1 In `backend/src/telecom/vendors-service.js`, implement `getVendorDetail(identifier)` to query all routes without limits, calculate buy/sell metrics, and pull recent message broadcasts.
+  - [x] 1.2 In `backend/src/server.js`, register `GET /api/vendors/:identifier` route.
+  - [x] 1.3 Validate API response on server via curl testing both phone number and name slugs.
+
+- [x] **Phase 2: Frontend API Client & Type Definitions**
+  - [x] 2.1 In `frontend/src/types/vendor.ts` & `client.ts`, define `VendorDetailItem`, `VendorRouteOffer`, and `VendorBroadcastMessage` interfaces.
+  - [x] 2.2 In `frontend/src/api/client.ts`, implement `fetchVendorDetail(identifier: string)`.
+
+- [x] **Phase 3: Dedicated Carrier Dossier Component (`VendorDetailView.tsx`)**
+  - [x] 3.1 Create `frontend/src/components/views/VendorDetailView.tsx` with header breadcrumb `← Back to Carriers Directory`.
+  - [x] 3.2 Build Carrier Profile Hero card with avatar, contact name, company desk, country badge, direct WhatsApp Knock, and Copy Phone.
+  - [x] 3.3 Build 4 KPI Summary Cards: Total Offers, 🟢 Sell / Available, 🔵 Buy / Need, and Active Destinations.
+  - [x] 3.4 Build Dedicated Route Offers Table with Intent Tabs (`All`, `🟢 Sell / Available`, `🔵 Buy / Need`), search bar, dual Rate/Time columns (`$0.0120/min • ⏱️ 2m ago`), and 1-click "Knock Rate" WhatsApp action.
+  - [x] 3.5 Build Collapsible Recent Raw Broadcasts feed showing original WhatsApp message pitches for this carrier.
+  - [x] 3.6 Implement loading pulse skeletons and graceful 404 / empty states.
+
+- [x] **Phase 4: Directory Cross-Linking & Router Integration**
+  - [x] 4.1 In `frontend/src/components/views/ViewDispatcher.tsx`, lazy-load `VendorDetailView` and bind to `/vendors/:vendorSlug`.
+  - [x] 4.2 In `frontend/src/components/views/VendorsView.tsx`, link Carrier Name, Avatar, and `Offers Volume` badge to navigate to `/vendors/:slug`.
+  - [x] 4.3 In `frontend/src/components/views/VendorsView.tsx`, add `"View Carrier Dossier & Offers"` as the primary action in the table row Actions dropdown menu.
+
+- [ ] **Phase 5: Verification, Quality Gate & Deployment**
+  - [x] 5.1 Execute local build verification: `npm.cmd run build --prefix frontend`.
+  - [ ] 5.2 Verify deep linking, search, intent filtering, knock action, and back navigation.
+  - [ ] 5.3 Commit changes, push to `origin/main`, deploy to VPS (`201.18.215.195`), and verify live.
+
+---
+
+## Completed Tasks Archive
 
 - [x] **Task 1: Modal Geometry & Responsive Width Standard**
-  - [x] Update `frontend/src/components/modals/RouteDetailModal.tsx` to use disciplined compact geometry (`max-w-lg w-full`), eliminating horizontal expansion.
-  - [x] Refactor `RouteDetailModal` internals into an ergonomic 2-column key-value layout with clear hierarchy and centered actions.
-  - [x] Verify `frontend/src/components/modals/MessageDetailModal.tsx` container width (`max-w-xl w-full`).
-  - [x] Update `frontend/src/css/components/modals.css` to prevent unrestrained full-screen stretching on wide desktop monitors.
-
+  - [x] Update `RouteDetailModal.tsx` and `MessageDetailModal.tsx` geometry and key-value layouts.
 - [x] **Task 2: Top 3 Route Pricing Tier Ranking (Gold, Silver, Bronze)**
-  - [x] In `frontend/src/components/views/RoutesView.tsx`, implement dynamic lowest 3 price ranking engine across active filtered routes.
-  - [x] Add Rank 1 Gold highlight: `text-amber-500 dark:text-amber-400 font-extrabold`, `bg-amber-500/15 border-amber-500/40`, and `🥇 #1 Floor` badge.
-  - [x] Add Rank 2 Silver highlight: `text-slate-600 dark:text-slate-200 font-bold`, `bg-slate-500/10 border-slate-400/30`, and `🥈 #2 Rate` badge.
-  - [x] Add Rank 3 Bronze highlight: `text-orange-600 dark:text-orange-400 font-bold`, `bg-orange-500/10 border-orange-500/30`, and `🥉 #3 Rate` badge.
-  - [x] Keep standard routes in clean `text-emerald-600 dark:text-emerald-400` font-mono.
-
+  - [x] Dynamic lowest 3 price ranking engine across active filtered routes with 🥇 #1 Floor, 🥈 #2 Rate, 🥉 #3 Rate badges.
 - [x] **Task 3: Flashing Beacon & Pulsating Radar Incident Alerts**
-  - [x] In `frontend/src/components/views/NewsView.tsx`, add dual-ring radar ping (`animate-ping` + `animate-pulse`) for High-Impact incident cards.
-  - [x] Add pulsating alert badge (`bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40 animate-pulse`) to critical outages and fiber cuts.
-  - [x] Add pulsating incident warning pills on affected route destinations in `frontend/src/components/views/RoutesView.tsx`.
-
+  - [x] Dual-ring radar ping alerts for High-Impact incident cards and routes.
 - [x] **Task 4: Typography & Dual-Mode Contrast Engine Polish**
-  - [x] In `frontend/src/css/typography.css`, remove blanket `!important` text color overrides that wash out deliberate dark elements in light mode.
-  - [x] Ensure full WCAG AAA legibility for all badges, buttons, and headers across both light and dark themes.
-
+  - [x] Full WCAG AAA contrast across dark and light modes.
 - [x] **Task 5: Table Scroll Isolation & Pinned Viewport Headers**
-  - [x] Ensure table headers and search/filter toolbars remain sticky/pinned (`sticky top-0 z-10`).
-  - [x] Ensure only the table body rows scroll smoothly (`overflow-y-auto`).
-  - [x] Verify 10, 25, 50 pagination displays fit comfortably within standard viewport heights.
-
-- [x] **Task 6: Production Build, Graph Map & Decision Log Verification**
-  - [x] Execute `npm run build` in `frontend/` to compile clean production assets to `frontend/dist/`.
-  - [x] Update `frontend/GRAPH_MAP.md` and `brain/10_decisions/decision-log.md`.
-  - [x] Verify functionality and visual appearance on both `http://localhost:5173/` and `http://localhost:4000/`.
-
-- [x] **Task 7: Universal Hand Cursor (`cursor: pointer`) on Hover for Clickable Elements**
-  - [x] Added global CSS reset enforcing `cursor: pointer !important;` for all `button`, `[role="button"]`, `select`, `summary`, `a[href]`, and `.cursor-pointer` elements across `index.css`, `base.css`, and `buttons.css`.
-  - [x] Added `cursor: not-allowed !important;` for disabled buttons and inputs.
-  - [x] Explicitly attached `cursor-pointer` to page size selector pills (10, 25, 50, 100, All) and pagination Prev/Next controls in `StreamPaginationBar.tsx`.
-
-- [x] **Task 8: High-Scale Scrollable Telecom News Feed with Priority & Recency Engine (`#/news`)**
-  - [x] Expanded `BENCHMARK_NEWS` in `scripts/benchmark-data.js` to 18 authentic global carrier advisories (subsea fiber cuts, BTRC verifications, FCC STIR/SHAKEN, FAS warnings, etc.) with realistic time offsets.
-  - [x] Updated `scripts/server/market-api.js` (`GET /api/news`) with configurable limit parameter (up to 500) and seeded SQLite `market_news` table.
-  - [x] Added `BackendNewsItem` interface and `fetchNews()` method to `frontend/src/api/client.ts`.
-  - [x] Re-architected `frontend/src/components/views/NewsView.tsx`:
-    - [x] Dedicated internal scroll container (`max-h-[640px] overflow-y-auto pr-1`) isolating feed scrolling from page header and layout.
-    - [x] Priority & Recency sorting algorithm: `HIGH` urgency alerts always lead at the top, ordered strictly by newest timestamps within each urgency group.
-    - [x] Interactive sort options: Priority & Recency (Default), Newest First (Chronological), High Priority Only, Oldest First.
-    - [x] Instant full-text search across headlines, affected countries, raw advisories, and categories.
-    - [x] Category filter pills with live item count counters (`ALL`, `OUTAGE`, `MAINTENANCE`, `REGULATION`, `FRAUD`, `INFRASTRUCTURE`).
-    - [x] Pulsating radar beacon pings (`animate-ping` + `animate-pulse`) and glowing borders for `HIGH` urgency incidents.
-    - [x] Collapsible AI Executive Risk Briefing card with dynamic threat scoring.
-    - [x] Pinned pagination bar with per-page selectors (6, 12, 24, All), page navigation, and universal hand cursor.
-    - [x] One-click "Copy Alert" action with clipboard feedback and expandable dispatch text.
-
-
+  - [x] Sticky table headers and isolated vertical scroll containers.
+- [x] **Task 6: WhatsApp Profile Name Display Fix**
+  - [x] Fixed `WhatsAppConnectionCard.tsx` to read `deviceStatus.pushName` instead of `deviceStatus.platform`, displaying `DNA` correctly.
+- [x] **Task 7: Trade Intent (Buy/Sell) Matrix Filtering & Badges**
+  - [x] Added `WTS` vs `WTB` intent badges, intent tab switching, and dual rate/time sorting in Route Matrix.
+- [x] **Task 8: Hidable AI Trade Negotiation Pitch Generator**
+  - [x] Added toggle switch in Settings to show/hide AI Pitch Generator based on trader preference.

@@ -10,6 +10,7 @@ const TrendsView = lazy(() => import('./TrendsView').then((m) => ({ default: m.T
 const InsightsView = lazy(() => import('./InsightsView').then((m) => ({ default: m.InsightsView })));
 const NewsView = lazy(() => import('./NewsView').then((m) => ({ default: m.NewsView })));
 const VendorsView = lazy(() => import('./VendorsView').then((m) => ({ default: m.VendorsView })));
+const VendorDetailView = lazy(() => import('./VendorDetailView').then((m) => ({ default: m.VendorDetailView })));
 const PipelineView = lazy(() => import('./PipelineView').then((m) => ({ default: m.PipelineView })));
 const DevView = lazy(() => import('./DevView').then((m) => ({ default: m.DevView })));
 const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default: m.SettingsView })));
@@ -136,7 +137,7 @@ export const ViewDispatcher: React.FC<ViewDispatcherProps> = ({
         path="/vendors/:vendorSlug"
         element={
           <Suspense fallback={<ViewFallback />}>
-            <VendorsView />
+            <VendorDetailView />
           </Suspense>
         }
       />
