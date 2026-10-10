@@ -125,6 +125,17 @@ function initializeSchemas(db) {
     );
   `);
 
+  // Default system settings (seed initial portal terminal password from environment if configured)
+  try {
+    const envPassword = process.env.DASHBOARD_PASSWORD || process.env.TERMINAL_PASSWORD || (process.env.DASHBOARD_PASSWORDS ? process.env.DASHBOARD_PASSWORDS.split(',')[0].trim() : null);
+    if (envPassword) {
+      db.prepare(`
+        INSERT OR IGNORE INTO system_settings (key, value)
+        VALUES ('terminal_password', ?)
+      `).run(envPassword);
+    }
+  } catch (_) {}
+
   // Runtime column safety checks
   const columnsToMigrate = [
     ['quoted_message_id', 'TEXT'],

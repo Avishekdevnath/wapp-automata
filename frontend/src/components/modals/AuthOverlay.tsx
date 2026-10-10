@@ -268,17 +268,17 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({ onSuccess }) => {
                 <span>Checking linked WhatsApp companion status...</span>
               </div>
             ) : !otpStatus?.connected ? (
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-left space-y-2">
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-left space-y-2.5">
                 <div className="flex items-center gap-2 text-amber-400 text-xs font-bold">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>WhatsApp Companion Unlinked</span>
+                  <span>WhatsApp Not Connected</span>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  The active desk is currently disconnected from WhatsApp. Verification codes cannot be dispatched.
+                  WhatsApp is not connected to receive an OTP verification code.
                 </p>
-                <p className="text-[10px] text-slate-400 font-mono">
-                  Tip: Reconnect your WhatsApp session or contact your server operator to reset credentials.
-                </p>
+                <div className="p-2.5 rounded-xl bg-dark-900/80 border border-amber-500/30 text-[11px] text-amber-300 font-medium">
+                  🔑 If you forgot your password, please ask the developer for the password.
+                </div>
               </div>
             ) : (
               <div className="space-y-4 text-left">

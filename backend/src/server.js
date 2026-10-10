@@ -108,6 +108,20 @@ function maskPhoneNumber(phone) {
   return `+${start} •••• ${end}`;
 }
 
+function getConfiguredPasswords() {
+  const envList = [
+    process.env.DASHBOARD_PASSWORDS,
+    process.env.DASHBOARD_PASSWORD,
+    process.env.TERMINAL_PASSWORD
+  ]
+    .filter(Boolean)
+    .flatMap(s => s.split(','))
+    .map(p => p.trim())
+    .filter(Boolean);
+
+  return envList.length > 0 ? Array.from(new Set(envList)) : [];
+}
+
 app.post('/api/auth/login', (req, res) => {
   const { password } = req.body || {};
   const db = getDb();
@@ -117,8 +131,16 @@ app.post('/api/auth/login', (req, res) => {
     if (row && row.value) stored = row.value;
   } catch (_) {}
 
-  // If a password has been set, check it; otherwise permit initial setup
-  if (stored && stored !== password) {
+  const validPasswords = getConfiguredPasswords();
+  if (stored && !validPasswords.includes(stored)) {
+    validPasswords.unshift(stored);
+  }
+
+  if (validPasswords.length === 0) {
+    return res.status(500).json({ success: false, error: 'Terminal password not configured. Please contact administrator.' });
+  }
+
+  if (!password || !validPasswords.includes(password)) {
     return res.status(401).json({ success: false, error: 'Invalid password. Please check your credentials.' });
   }
 
@@ -314,6 +336,14 @@ app.post(['/api/accounts/reset', '/api/account/wipe'], async (req, res) => {
   try {
     const currentId = getActiveAccountId();
     console.log(`⚠️ [Account] Full factory reset requested for [${currentId}]...`);
+
+    // Preserve current terminal password across wipe
+    let preservedPassword = null;
+    try {
+      const row = getDb(currentId).prepare("SELECT value FROM system_settings WHERE key = 'terminal_password'").get();
+      if (row && row.value) preservedPassword = row.value;
+    } catch (_) {}
+
     await logoutWhatsApp();
     closeDb();
 
@@ -343,8 +373,16 @@ app.post(['/api/accounts/reset', '/api/account/wipe'], async (req, res) => {
       } catch (_) {}
     }
 
-    // Re-initialize blank database with schemas
-    getDb(currentId);
+    // Re-initialize blank database with schemas and restore password
+    const newDb = getDb(currentId);
+    const envDefaults = getConfiguredPasswords();
+    const targetPassword = preservedPassword || envDefaults[0] || null;
+    if (targetPassword) {
+      try {
+        newDb.prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('terminal_password', ?)").run(targetPassword);
+      } catch (_) {}
+    }
+
     broadcastSse('account_reset', { accountId: currentId });
     broadcastSse('cleared', { count: 0 });
 
@@ -751,10 +789,30 @@ app.post('/api/settings/dms', (req, res) => {
 
 app.post('/api/settings/password', (req, res) => {
   try {
-    const { newPassword } = req.body || {};
-    if (!newPassword) return res.status(400).json({ error: 'Password required' });
+    const { currentPassword, newPassword } = req.body || {};
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 4) {
+      return res.status(400).json({ error: 'New password must be at least 4 characters long.' });
+    }
     const db = getDb();
-    db.prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('terminal_password', ?)").run(newPassword);
+
+    // Verify current password if provided
+    if (currentPassword !== undefined && currentPassword !== null && currentPassword !== '') {
+      let stored = null;
+      try {
+        const row = db.prepare("SELECT value FROM system_settings WHERE key = 'terminal_password'").get();
+        if (row && row.value) stored = row.value;
+      } catch (_) {}
+      const validPasswords = getConfiguredPasswords();
+      if (stored && !validPasswords.includes(stored)) {
+        validPasswords.unshift(stored);
+      }
+
+      if (!validPasswords.includes(currentPassword)) {
+        return res.status(401).json({ error: 'Current password is incorrect. Please verify and try again.' });
+      }
+    }
+
+    db.prepare("INSERT OR REPLACE INTO system_settings (key, value) VALUES ('terminal_password', ?)").run(newPassword.trim());
     res.json({ success: true, message: 'Password updated successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });

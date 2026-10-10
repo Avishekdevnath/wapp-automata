@@ -135,7 +135,7 @@ sequenceDiagram
 | **L5** | `src/components/stream/StreamFilterBar.tsx` | Keyword search input (`/`), chat type filter, export buttons | `StreamFilterBar` | None |
 | **L5** | `src/components/stream/StreamPaginationBar.tsx` | Page size selector (10, 25, 50, 100, All), prev/next buttons | `StreamPaginationBar` | None |
 | **L6** | `src/components/modals/ModalRoot.tsx` | Central modal manager rendering active modal overlays | `ModalRoot` | All modal components, `UIContext` |
-| **L6** | `src/components/modals/AuthOverlay.tsx` | Terminal password unlock gate (`wapp2026`) | `AuthOverlay` | `api/client.ts` |
+| **L6** | `src/components/modals/AuthOverlay.tsx` | Terminal password unlock gate (authenticated via server/env) | `AuthOverlay` | `api/client.ts` |
 | **L6** | `src/components/modals/DeviceModal.tsx` | QR code pairing, 8-digit phone code pairing, reset session | `DeviceModal` | `types/status.ts` |
 | **L6** | `src/components/modals/StorageModal.tsx` | Disk space %, media delete, 30-day retention prune | `StorageModal` | None |
 | **L6** | `src/components/modals/DataManagementModal.tsx` | Accidental data loss protection banner, selective delete | `DataManagementModal` | None |
