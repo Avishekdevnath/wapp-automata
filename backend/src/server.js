@@ -964,11 +964,22 @@ app.post('/api/ai/test', async (req, res) => {
     const config = AI_CONFIG_ENDPOINTS[targetProvider];
 
     if (!config) {
-      return res.status(400).json({ success: false, error: 'Unknown AI provider' });
+      return res.status(400).json({ success: false, status: 'error', error: 'Unknown AI provider' });
     }
 
-    if (targetProvider !== 'local' && !apiKey) {
-      return res.status(400).json({ success: false, error: 'API key is required for testing' });
+    let effectiveKey = (apiKey && typeof apiKey === 'string') ? apiKey.trim() : '';
+    if (!effectiveKey && targetProvider !== 'local') {
+      try {
+        const db = getDb();
+        const row = db.prepare("SELECT value FROM system_settings WHERE key = ?").get(`ai_${targetProvider}_key`);
+        if (row && row.value) {
+          effectiveKey = String(row.value).trim();
+        }
+      } catch (_) {}
+    }
+
+    if (targetProvider !== 'local' && !effectiveKey) {
+      return res.status(400).json({ success: false, status: 'error', error: 'API key is required for testing. Please enter or save your key first.' });
     }
 
     const testPayload = {
@@ -985,20 +996,32 @@ app.post('/api/ai/test', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(apiKey ? { 'Authorization': `Bearer ${apiKey.trim()}` } : {})
+        ...(effectiveKey ? { 'Authorization': `Bearer ${effectiveKey}` } : {})
       },
       body: JSON.stringify(testPayload),
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(12000)
     });
 
     if (!resp.ok) {
       const errText = await resp.text();
-      return res.status(resp.status).json({ success: false, error: `Provider error (${resp.status}): ${errText.slice(0, 150)}` });
+      return res.status(resp.status).json({
+        success: false,
+        status: 'error',
+        error: `Provider error (${resp.status}): ${errText.slice(0, 150)}`
+      });
     }
 
-    res.json({ success: true, message: `Successfully connected to ${targetProvider.toUpperCase()}!` });
+    res.json({
+      success: true,
+      status: 'ok',
+      message: `Successfully connected to ${targetProvider.toUpperCase()}!`
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: `Connection failed: ${err.message}` });
+    res.status(500).json({
+      success: false,
+      status: 'error',
+      error: `Connection failed: ${err.message}`
+    });
   }
 });
 

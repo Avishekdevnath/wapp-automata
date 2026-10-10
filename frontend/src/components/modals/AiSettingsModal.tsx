@@ -53,19 +53,24 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({
     setTesting(true);
     setFeedback(null);
     try {
+      const activeKey = provider === 'deepseek' ? deepseekKey : provider === 'openai' ? openaiKey : grokKey;
+      const token = localStorage.getItem('wapp_token');
       const res = await fetch('/api/ai/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           provider,
-          apiKey: provider === 'deepseek' ? deepseekKey : provider === 'openai' ? openaiKey : grokKey,
+          apiKey: activeKey,
         }),
       });
       const data = await res.json();
-      if (res.ok && data.status === 'ok') {
+      if (res.ok && (data.status === 'ok' || data.success === true)) {
         setFeedback({ status: 'ok', message: data.message || `${provider.toUpperCase()} connection successful!` });
       } else {
-        setFeedback({ status: 'error', message: data.error || 'Connection failed. Check API key.' });
+        setFeedback({ status: 'error', message: data.error || data.message || 'Connection failed. Check API key.' });
       }
     } catch {
       setFeedback({ status: 'error', message: 'Network error communicating with AI endpoint.' });
@@ -79,9 +84,13 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({
     setSaving(true);
     setFeedback(null);
     try {
+      const token = localStorage.getItem('wapp_token');
       const res = await fetch('/api/ai/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           provider,
           deepseekKey,

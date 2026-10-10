@@ -155,12 +155,12 @@ export async function saveAiSettings(settings: {
   }
 }
 
-export async function testAiConnection(provider?: string): Promise<{ success: boolean; message?: string; error?: string }> {
+export async function testAiConnection(provider?: string, apiKey?: string): Promise<{ success: boolean; status?: string; message?: string; error?: string }> {
   try {
     const res = await authenticatedFetch(`${API_BASE}/ai/test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider }),
+      body: JSON.stringify({ provider, apiKey: apiKey ? apiKey.trim() : undefined }),
     });
     return await res.json();
   } catch (err: any) {

@@ -66,8 +66,8 @@ export const AiTradingFeaturesCard: React.FC = () => {
     setIsTesting(true);
     setFeedback(null);
     try {
-      const res = await testAiConnection(provider);
-      if (res.success) {
+      const res = await testAiConnection(provider, apiKey);
+      if (res.success || res.status === 'ok') {
         setFeedback({ type: 'success', text: `Connection successful: ${res.message || 'AI engine responding!'}` });
       } else {
         setFeedback({ type: 'error', text: res.error || 'Connection failed. Please verify API key.' });
@@ -250,7 +250,7 @@ export const AiTradingFeaturesCard: React.FC = () => {
             <button
               type="button"
               onClick={handleTestConnection}
-              disabled={isTesting || (!apiKey && provider !== 'local')}
+              disabled={isTesting || (!apiKey && !hasConfiguredKey && provider !== 'local')}
               className="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-dark-700 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
               {isTesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
