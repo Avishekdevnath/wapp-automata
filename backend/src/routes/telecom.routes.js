@@ -121,7 +121,7 @@ telecomRouter.get('/insights', (req, res) => {
     const totalRoutes = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get()?.c || 0;
     const totalCountries = db.prepare('SELECT COUNT(DISTINCT country) as c FROM route_ticks').get()?.c || 0;
     const totalVendors = db.prepare('SELECT COUNT(*) as c FROM vendors').get()?.c || 0;
-    const urgentNews = db.prepare("SELECT COUNT(*) as c FROM news_advisories WHERE urgency IN ('CRITICAL', 'HIGH')").get()?.c || 0;
+    const urgentNews = db.prepare("SELECT COUNT(*) as c FROM market_news WHERE urgency IN ('CRITICAL', 'HIGH')").get()?.c || 0;
 
     res.json({
       summary: { totalRoutes, totalCountries, totalVendors, urgentNews },
