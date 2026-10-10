@@ -9,14 +9,14 @@ import {
   Moon,
   Settings,
   Keyboard,
-  Lock,
-  Building2
+  Lock
 } from 'lucide-react';
 import type { ViewType } from './AppSidebar';
 import type { DeviceStatus } from '../../types/status';
 import { useUI } from '../../context/UIContext';
 import { useAccount } from '../../context/AccountContext';
 import { cleanPhone } from '../../utils/formatters';
+import { TelciaLogo } from '../common/TelciaLogo';
 
 interface AppHeaderProps {
   activeView: ViewType;
@@ -118,7 +118,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300"
             title="Active Terminal Desk (Single Desk Mode)"
           >
-            <Building2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <TelciaLogo size="xs" glow={false} />
             <span className="truncate max-w-[120px]">
               {activeAccount?.label || 'Telcia Production'}
             </span>

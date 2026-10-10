@@ -1,6 +1,7 @@
 import React from 'react';
-import { Settings, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import type { SettingsStats } from '../../../api/client';
+import { TelciaLogo } from '../../common/TelciaLogo';
 
 interface SettingsHeroHeaderProps {
   stats: SettingsStats | null;
@@ -17,12 +18,7 @@ export const SettingsHeroHeader: React.FC<SettingsHeroHeaderProps> = ({
     <div className="glass-card p-5 sm:p-6 rounded-2xl border border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900/60 shadow-md dark:shadow-xl space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#006a4e] via-emerald-600 to-[#004d38] p-[1.5px] shadow-lg shadow-emerald-950/20 shrink-0">
-            <div className="w-full h-full bg-slate-900 dark:bg-dark-950 rounded-[10px] flex items-center justify-center relative overflow-hidden">
-              <span className="absolute w-4 h-4 rounded-full bg-[#f42a41] opacity-90 shadow-[0_0_10px_rgba(244,42,65,0.8)]" />
-              <Settings className="w-5 h-5 text-white relative z-10" />
-            </div>
-          </div>
+          <TelciaLogo size="md" />
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">

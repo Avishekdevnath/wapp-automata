@@ -20,6 +20,7 @@ import type { StreamStats } from '../../types/message';
 import type { DeviceStatus } from '../../types/status';
 import { fetchSidebarCounts, fetchSettingsStats, type SidebarCounts } from '../../api/client';
 import { useUI } from '../../context/UIContext';
+import { TelciaLogo } from '../common/TelciaLogo';
 
 export type ViewType =
   | 'routes'
@@ -253,12 +254,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         <div>
           <div className="h-16 px-5 border-b border-slate-200 dark:border-dark-700/80 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img
-                src="/logo.png"
-                alt="Telcia"
-                className="w-10 h-10 rounded-xl object-cover shadow-md shadow-emerald-950/20 shrink-0 border border-emerald-500/30"
-                title="TELCIA • Telecom Cognitive Intelligent Agent"
-              />
+              <TelciaLogo size="md" />
 
               <div className="sidebar-brand-text">
                 <div className="flex items-center gap-1.5">
