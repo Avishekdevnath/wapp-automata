@@ -545,6 +545,13 @@ export async function logoutWhatsApp() {
     fs.rmSync(paths.sessionDir, { recursive: true, force: true });
     fs.mkdirSync(paths.sessionDir, { recursive: true });
   }
+  const mediaDir = path.join(paths.dataDir, 'media');
+  if (fs.existsSync(mediaDir)) {
+    try {
+      fs.rmSync(mediaDir, { recursive: true, force: true });
+      fs.mkdirSync(mediaDir, { recursive: true });
+    } catch (_) {}
+  }
   try {
     const deleted = deleteWhatsAppSessionData();
     console.log(`🧹 [WhatsApp] Deleted on logout: ${deleted.msgs} raw messages, ${deleted.grps} groups, ${deleted.lids} member identities.`);
