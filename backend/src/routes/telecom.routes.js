@@ -16,6 +16,7 @@ import {
   getNews,
   clearNews
 } from '../telecom/news-service.js';
+import { getDb } from '../storage/db.js';
 import { getStatus } from '../collector/whatsapp.js';
 import { broadcastSse } from '../sse.js';
 
@@ -109,3 +110,33 @@ telecomRouter.delete('/news', (req, res) => {
   const count = clearNews();
   res.json({ success: true, deleted: count });
 });
+
+// ==========================================
+// 4. Market Intelligence & Arbitrage Insights
+// ==========================================
+
+telecomRouter.get('/insights', (req, res) => {
+  try {
+    const db = getDb();
+    const totalRoutes = db.prepare('SELECT COUNT(*) as c FROM route_ticks').get()?.c || 0;
+    const totalCountries = db.prepare('SELECT COUNT(DISTINCT country) as c FROM route_ticks').get()?.c || 0;
+    const totalVendors = db.prepare('SELECT COUNT(*) as c FROM vendors').get()?.c || 0;
+    const urgentNews = db.prepare("SELECT COUNT(*) as c FROM news_advisories WHERE urgency IN ('CRITICAL', 'HIGH')").get()?.c || 0;
+
+    res.json({
+      summary: { totalRoutes, totalCountries, totalVendors, urgentNews },
+      arbitrageOpportunities: []
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+telecomRouter.get('/arbitrage', (req, res) => {
+  res.json({ status: 'ok', opportunities: [] });
+});
+
+telecomRouter.post('/insights/pitch', (req, res) => {
+  res.json({ status: 'ok', pitches: [] });
+});
+

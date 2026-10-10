@@ -67,11 +67,18 @@ app.use('/api/auth', authRouter);
 app.use('/api', authRouter);
 app.use('/api', whatsappRouter);
 app.use('/api/accounts', accountsRouter);
+app.use('/api/account', accountsRouter);
+app.use('/api/admin', accountsRouter);
 app.use('/api', accountsRouter);
 app.use('/api', messagesRouter);
 app.use('/api', telecomRouter);
 app.use('/api', settingsRouter);
 app.use('/api', aiRouter);
+
+// JSON 404 Fallback for any unhandled /api requests (avoids HTML error responses)
+app.use('/api', (req, res) => {
+  res.status(404).json({ success: false, error: `API route ${req.method} ${req.originalUrl} not found`, status: 'not_found' });
+});
 
 // Dedicated Authentic WhatsApp Web UI route
 const CHAT_UI_PATH = path.join(ROOT_DIR, 'backend', 'public', 'chat.html');

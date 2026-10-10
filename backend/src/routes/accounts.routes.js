@@ -21,8 +21,33 @@ import { getConfiguredPasswords } from './auth.routes.js';
 export const accountsRouter = Router();
 
 // 1. List All Desks/Accounts
-accountsRouter.get('/', (req, res) => {
+accountsRouter.get(['/', '/accounts'], (req, res) => {
   res.json({ accounts: listAccounts(), activeAccountId: getActiveAccountId() });
+});
+
+// 1.1 Fleet Status for Workspace Monitoring
+accountsRouter.get(['/fleet', '/admin/fleet', '/admin/desks'], (req, res) => {
+  const currentId = getActiveAccountId();
+  const status = getStatus();
+  const phone = status.user?.phone || (status.user?.id ? ('+' + status.user.id.split('@')[0].split(':')[0]) : null);
+  const scopedFleet = [{
+    accountId: currentId,
+    status: status.status === 'connected' ? 'authenticated' : (status.status || 'disconnected'),
+    phone,
+    name: status.user?.name || `Desk ${currentId.toUpperCase()}`
+  }];
+  res.json({ status: 'ok', fleet: scopedFleet });
+});
+
+// 1.2 Restart Desk Companion Socket
+accountsRouter.post(['/restart', '/admin/desks/restart', '/desks/restart'], async (req, res) => {
+  try {
+    const { restartWhatsApp } = await import('../collector/whatsapp.js');
+    await restartWhatsApp();
+    res.json({ success: true, message: 'Desk socket restarted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 2. Create a New Trading Desk
@@ -71,7 +96,7 @@ accountsRouter.post('/switch', async (req, res) => {
 });
 
 // 4. Full Factory Reset for Active Account
-accountsRouter.post(['/reset', '/wipe'], async (req, res) => {
+accountsRouter.post(['/reset', '/wipe', '/account/wipe', '/account/reset', '/accounts/wipe', '/accounts/reset'], async (req, res) => {
   try {
     const currentId = getActiveAccountId();
     console.log(`⚠️ [Account] Full factory reset requested for [${currentId}]...`);
