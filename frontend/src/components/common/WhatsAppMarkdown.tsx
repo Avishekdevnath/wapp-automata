@@ -8,18 +8,22 @@ interface WhatsAppMarkdownProps {
 }
 
 interface InlineToken {
-  type: 'text' | 'bold' | 'italic' | 'strike' | 'code' | 'url';
+  type: 'text' | 'bold' | 'italic' | 'strike' | 'code' | 'url' | 'link';
   content: string;
   raw?: string;
+  href?: string;
 }
 
 /**
- * Tokenizes a single line of text according to WhatsApp markdown rules:
+ * Tokenizes a single line of text supporting:
  * - Code: `code`
- * - URL: https://... or http://... or www....
- * - Bold: *bold* (word/boundary sensitive)
+ * - Links: [title](url)
+ * - URLs: https://... or http://... or www....
+ * - Markdown bold: **bold** or __bold__
+ * - WhatsApp bold: *bold*
+ * - Markdown strike: ~~strike~~
+ * - WhatsApp strike: ~strike~
  * - Italic: _italic_ (avoiding snake_case)
- * - Strikethrough: ~strike~
  */
 function parseInline(text: string): InlineToken[] {
   const tokens: InlineToken[] = [];
@@ -27,7 +31,11 @@ function parseInline(text: string): InlineToken[] {
 
   const patterns = [
     { type: 'code' as const, regex: /^`([^`\n]+)`/ },
+    { type: 'link' as const, regex: /^\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:|\/)[^\s)]+)\)/ },
     { type: 'url' as const, regex: /^(https?:\/\/[^\s<)]+|www\.[^\s<)]+)/ },
+    { type: 'bold' as const, regex: /^\*\*([^\s*](?:[\s\S]*?[^\s*])?)\*\*/ },
+    { type: 'bold' as const, regex: /^__([^\s_](?:[\s\S]*?[^\s_])?)__/ },
+    { type: 'strike' as const, regex: /^~~([^\s~](?:[\s\S]*?[^\s~])?)~~/ },
     { type: 'bold' as const, regex: /^\*([^\s*](?:[^*\n]*?[^\s*])?)\*/ },
     { type: 'strike' as const, regex: /^~([^\s~](?:[^~\n]*?[^\s~])?)~/ },
     { type: 'italic' as const, regex: /^_([^\s_](?:[^_\n]*?[^\s_])?)_/ },
@@ -39,7 +47,7 @@ function parseInline(text: string): InlineToken[] {
     for (const { type, regex } of patterns) {
       const match = remaining.match(regex);
       if (match) {
-        // WhatsApp guard: _ must not be surrounded by alphanumeric characters (e.g. snake_case)
+        // WhatsApp guard: _ must not be surrounded by alphanumeric characters (e.g. snake_case like user_id)
         if (type === 'italic') {
           const prevChar = text[text.length - remaining.length - 1];
           if (prevChar && /\w/.test(prevChar)) {
@@ -52,14 +60,18 @@ function parseInline(text: string): InlineToken[] {
         }
 
         matched = true;
-        tokens.push({ type, raw: match[0], content: match[1] });
+        if (type === 'link') {
+          tokens.push({ type, raw: match[0], content: match[1], href: match[2] });
+        } else {
+          tokens.push({ type, raw: match[0], content: match[1] });
+        }
         remaining = remaining.slice(match[0].length);
         break;
       }
     }
 
     if (!matched) {
-      const nextSpecial = remaining.search(/[`*~_]|https?:\/\/|www\./);
+      const nextSpecial = remaining.search(/[`*~_\[]|https?:\/\/|www\./);
       if (nextSpecial === -1) {
         tokens.push({ type: 'text', content: remaining });
         break;
@@ -124,6 +136,23 @@ function renderInlineTokens(tokens: InlineToken[], keyPrefix = ''): React.ReactN
             {token.content}
           </code>
         );
+
+      case 'link': {
+        const href = token.href?.startsWith('http') || token.href?.startsWith('/') ? token.href : `https://${token.href}`;
+        return (
+          <a
+            key={key}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 underline underline-offset-2 inline-flex items-center gap-0.5 font-medium transition-colors"
+          >
+            <span>{token.content}</span>
+            <ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0 inline" />
+          </a>
+        );
+      }
 
       case 'url': {
         const href = token.content.startsWith('http') ? token.content : `https://${token.content}`;
@@ -205,6 +234,7 @@ export const WhatsAppMarkdown: React.FC<WhatsAppMarkdownProps> = ({
     // In compact mode, strip multiline fences to single-line representation
     const simplified = content
       .replace(/```(?:[a-zA-Z0-9_-]+)?\n?([\s\S]*?)```/g, '`$1`')
+      .replace(/^#{1,6}\s+/gm, '')
       .replace(/\n+/g, ' ');
     const tokens = parseInline(simplified);
     return <span className={className}>{renderInlineTokens(tokens, 'compact')}</span>;
@@ -315,6 +345,54 @@ export const WhatsAppMarkdown: React.FC<WhatsAppMarkdownProps> = ({
         };
 
         lines.forEach((line, lineIdx) => {
+          // Check Headings: #, ##, ###, ####, #####, ######
+          const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+          if (headingMatch) {
+            flushAllBlocks(lineIdx);
+            const level = headingMatch[1].length;
+            const headingText = headingMatch[2];
+            const tokens = parseInline(headingText);
+            if (level === 1) {
+              renderedLines.push(
+                <h1
+                  key={`h1-${segIdx}-${lineIdx}`}
+                  className="text-sm md:text-base font-extrabold text-slate-900 dark:text-white pt-2.5 pb-1 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2"
+                >
+                  {renderInlineTokens(tokens, `h1-${segIdx}-${lineIdx}`)}
+                </h1>
+              );
+            } else if (level === 2) {
+              renderedLines.push(
+                <h2
+                  key={`h2-${segIdx}-${lineIdx}`}
+                  className="text-xs md:text-sm font-bold text-slate-900 dark:text-white pt-2 pb-0.5 flex items-center gap-1.5"
+                >
+                  {renderInlineTokens(tokens, `h2-${segIdx}-${lineIdx}`)}
+                </h2>
+              );
+            } else {
+              renderedLines.push(
+                <h3
+                  key={`h3-${segIdx}-${lineIdx}`}
+                  className="text-xs font-bold text-slate-900 dark:text-white pt-1.5 pb-0.5"
+                >
+                  {renderInlineTokens(tokens, `h3-${segIdx}-${lineIdx}`)}
+                </h3>
+              );
+            }
+            return;
+          }
+
+          // Check Horizontal Rule: ---, ***, ___
+          const hrMatch = line.match(/^(\*{3,}|-{3,}|_{3,})$/);
+          if (hrMatch) {
+            flushAllBlocks(lineIdx);
+            renderedLines.push(
+              <hr key={`hr-${segIdx}-${lineIdx}`} className="my-2 border-slate-200 dark:border-slate-800" />
+            );
+            return;
+          }
+
           // Check Blockquote: > text
           const quoteMatch = line.match(/^>\s?(.*)$/);
           if (quoteMatch) {
@@ -326,8 +404,8 @@ export const WhatsAppMarkdown: React.FC<WhatsAppMarkdownProps> = ({
             flushQuote(`fq-post-${segIdx}-${lineIdx}`);
           }
 
-          // Check Bullet list: - text or * text
-          const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+          // Check Bullet list: - text or * text or • text
+          const bulletMatch = line.match(/^[-*•]\s+(.*)$/);
           if (bulletMatch) {
             flushNumList(`fn-pre-b-${segIdx}-${lineIdx}`);
             currentBulletList.push(bulletMatch[1]);
@@ -336,8 +414,8 @@ export const WhatsAppMarkdown: React.FC<WhatsAppMarkdownProps> = ({
             flushBulletList(`fb-post-${segIdx}-${lineIdx}`);
           }
 
-          // Check Numbered list: 1. text
-          const numMatch = line.match(/^(\d+)\.\s+(.*)$/);
+          // Check Numbered list: 1. text or 1) text
+          const numMatch = line.match(/^(\d+)[\.)]\s+(.*)$/);
           if (numMatch) {
             currentNumList.push({ num: numMatch[1], text: numMatch[2] });
             return;
@@ -355,7 +433,7 @@ export const WhatsAppMarkdown: React.FC<WhatsAppMarkdownProps> = ({
           // Normal Paragraph Line:
           const tokens = parseInline(line);
           renderedLines.push(
-            <div key={`p-${segIdx}-${lineIdx}`} className="text-xs">
+            <div key={`p-${segIdx}-${lineIdx}`} className="text-xs leading-relaxed">
               {renderInlineTokens(tokens, `line-${segIdx}-${lineIdx}`)}
             </div>
           );
