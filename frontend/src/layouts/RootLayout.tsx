@@ -46,18 +46,17 @@ export const RootLayout: React.FC<RootLayoutProps> = ({
       {/* 3. Main Workspace Shell */}
       <div id="main-app" className="flex-1 flex h-full overflow-hidden">
         {/* Responsive Left Sidebar */}
-        {isSidebarOpen && (
-          <AppSidebar
-            activeView={activeView}
-            onSwitchView={switchView}
-            isMobileOpen={isMobileSidebarOpen}
-            onCloseMobile={closeMobileSidebar}
-            onOpenDeviceModal={() => openModal('device')}
-            onOpenStorageModal={() => openModal('storage')}
-            stats={stats}
-            deviceStatus={deviceStatus}
-          />
-        )}
+        <AppSidebar
+          activeView={activeView}
+          onSwitchView={switchView}
+          isCollapsed={!isSidebarOpen}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={closeMobileSidebar}
+          onOpenDeviceModal={() => openModal('device')}
+          onOpenStorageModal={() => openModal('storage')}
+          stats={stats}
+          deviceStatus={deviceStatus}
+        />
 
         {/* Content Wrapper */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-100/60 dark:bg-dark-900/40 transition-colors">

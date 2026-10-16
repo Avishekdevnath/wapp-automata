@@ -37,6 +37,7 @@ export type ViewType =
 interface AppSidebarProps {
   activeView: ViewType;
   onSwitchView: (view: ViewType) => void;
+  isCollapsed?: boolean;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
   onOpenDeviceModal: () => void;
@@ -48,6 +49,7 @@ interface AppSidebarProps {
 export const AppSidebar: React.FC<AppSidebarProps> = ({
   activeView,
   onSwitchView,
+  isCollapsed = false,
   isMobileOpen,
   onCloseMobile,
   onOpenDeviceModal,
@@ -246,7 +248,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       {/* RESPONSIVE SIDEBAR */}
       <aside
         id="app-sidebar"
-        className={`fixed md:relative md:static inset-y-0 left-0 z-40 w-64 h-full bg-white dark:bg-dark-900 border-r border-slate-200 dark:border-dark-700/80 flex flex-col justify-between shrink-0 overflow-y-auto transform transition-all duration-300 ease-in-out ${
+        className={`fixed md:relative md:static inset-y-0 left-0 z-40 h-full bg-white dark:bg-dark-900 border-r border-slate-200 dark:border-dark-700/80 flex flex-col justify-between shrink-0 overflow-y-auto transform transition-all duration-300 ease-in-out ${
+          isCollapsed ? 'sidebar-collapsed md:w-[68px] w-64' : 'w-64'
+        } ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
@@ -288,13 +292,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               .filter((item) => item.id === 'settings' || sidebarMenuPrefs[item.id] !== false)
               .map((item) => {
               const Icon = item.icon;
+              const itemTitle = `${item.label}${item.badge ? ` (${item.badge})` : ''}`;
               if ((item as any).isExternal) {
                 return (
                   <a
                     key={item.id}
                     href={item.path}
                     className="sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all hover:bg-slate-100 dark:hover:bg-dark-800"
-                    title="Open Authentic WhatsApp Web Interface"
+                    title={itemTitle}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Icon className={`w-4 h-4 shrink-0 ${item.iconColor}`} />
@@ -312,6 +317,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                     onSwitchView(item.id);
                     onCloseMobile();
                   }}
+                  title={itemTitle}
                   className={({ isActive }) =>
                     `sidebar-nav-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between transition-all ${
                       isActive ? 'active' : ''
@@ -331,8 +337,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             <div className="pt-2 border-t border-slate-200 dark:border-dark-800/80">
               <button
                 onClick={onOpenDeviceModal}
-                title="Link WhatsApp (Scan QR Code)"
-                className="w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 dark:text-amber-300 border border-amber-500/30 transition-all shadow-sm"
+                title={isLinked ? 'WhatsApp Connected' : 'Link WhatsApp (Scan QR Code)'}
+                className="sidebar-device-btn w-full px-3 py-2.5 rounded-xl font-medium text-xs flex items-center justify-between bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 dark:text-amber-300 border border-amber-500/30 transition-all shadow-sm"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <QrCode className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
@@ -355,12 +361,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
 
         {/* Bottom Status & System Health */}
-        <div className="p-4 border-t border-slate-200 dark:border-dark-700/80 space-y-3">
+        <div className="sidebar-bottom-panel p-4 border-t border-slate-200 dark:border-dark-700/80 space-y-3">
           {/* Storage Health Indicator */}
           <div
             onClick={onOpenStorageModal}
-            title="Storage & Cache Manager"
-            className="cursor-pointer p-3 rounded-xl bg-slate-50 dark:bg-dark-950/70 border border-slate-200 dark:border-dark-800 hover:border-emerald-500 transition-colors"
+            title={`Storage & Cache Manager (${diskPercent}%)`}
+            className="sidebar-storage-box cursor-pointer p-3 rounded-xl bg-slate-50 dark:bg-dark-950/70 border border-slate-200 dark:border-dark-800 hover:border-emerald-500 transition-colors"
           >
             <div className="sidebar-storage-details">
               <div className="flex items-center justify-between text-xs mb-1.5">
@@ -400,6 +406,21 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   style={{ width: `${Math.min(100, Math.max(3, diskPercent))}%` }}
                 />
               </div>
+            </div>
+
+            <div className="sidebar-storage-icon-only hidden text-center">
+              <HardDrive
+                className={`w-4 h-4 mx-auto ${
+                  diskPercent >= 90
+                    ? 'text-rose-500'
+                    : diskPercent >= 75
+                    ? 'text-amber-500'
+                    : 'text-emerald-500 dark:text-emerald-400'
+                }`}
+              />
+              <span className="text-[10px] font-mono font-bold block mt-1 text-slate-700 dark:text-slate-300">
+                {diskPercent}%
+              </span>
             </div>
           </div>
 

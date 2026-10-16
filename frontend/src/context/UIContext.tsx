@@ -106,14 +106,24 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   }, [navigate]);
 
   // 2. Responsive Sidebar State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('telcia_sidebar_open');
+      if (saved !== null) return saved === 'true';
+    } catch (_) {}
+    return true;
+  });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const toggleSidebar = useCallback(() => {
     if (window.innerWidth < 768) {
       setIsMobileSidebarOpen((prev) => !prev);
     } else {
-      setIsSidebarOpen((prev) => !prev);
+      setIsSidebarOpen((prev) => {
+        const next = !prev;
+        localStorage.setItem('telcia_sidebar_open', String(next));
+        return next;
+      });
     }
   }, []);
 
