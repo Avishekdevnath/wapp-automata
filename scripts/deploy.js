@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+import { execSync } from 'node:child_process';
 
 const VPS_HOST = process.env.VPS_HOST || '201.18.215.195';
 const VPS_USER = process.env.VPS_USER || 'root';
